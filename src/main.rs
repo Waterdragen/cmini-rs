@@ -1,14 +1,12 @@
+mod util;
+
 use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};
 use serenity::model::gateway::{Ready, GatewayIntents};
 use serenity::model::channel::Message;
 use std::fs;
 
-mod util {
-    pub mod consts;
-}
-
-use util::consts::{CMINI_CHANNEL, TRIGGERS};
+use crate::util::consts::{CMINI_CHANNEL, TRIGGERS};
 
 struct Handler;
 
