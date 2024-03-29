@@ -1,20 +1,21 @@
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Key {
-    row: u8,
-    col: u8,
-    finger: String,
+pub struct Position {
+    pub row: u8,
+    pub col: u8,
+    pub finger: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Layout {
-    name: String,
-    user: u64,
-    board: String,
-    keys: HashMap<String, Key>,
-    free: Vec<Key>,
+    pub name: String,
+    pub user: u64,
+    pub board: String,
+    pub keys: HashMap<String, Position>,
+    pub free: Vec<Position>,
 }
 
 #[derive(PartialEq)]
@@ -57,5 +58,17 @@ impl KwargValue {
     }
     pub fn get_str(self) -> String {
         self.str_.unwrap_or_else(|| String::new())
+    }
+}
+
+impl Debug for KwargValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match (self.bool_, self.vec_.as_ref(), self.str_.as_ref()) {
+            (Some(bool_), _, _) => bool_.to_string(),
+            (_, Some(vec_), _) => format!("{:?}", vec_),
+            (_, _, Some(str_)) => str_.to_string(),
+            _ => String::from("<None>"),
+        };
+        write!(f, "{}", s)
     }
 }

@@ -80,6 +80,12 @@ pub fn get_kwargs(s: &str, arg_type: ArgType, cmd_kwargs: &HashMap<String, Kwarg
     parsed_kwargs
 }
 
+pub fn map_from_vec(v: Vec<(&str, KwargType)>) -> HashMap<String, KwargType> {
+    v.into_iter()
+        .map(|(key, value)| (key.to_string(), value))
+        .collect()
+}
+
 fn starts_with_kw_prefix(word: &str) -> bool {
     vec!["--", "—", "––"].iter().any(|prefix| word.starts_with(prefix))
 }
@@ -100,4 +106,33 @@ fn is_kwarg(kwargs: &HashMap<String, KwargType>, word: &str) -> bool {
     }
     let word = remove_kw_prefix(word);
     kwargs.contains_key(&word)
+}
+
+#[test]
+fn test_kwarg() {
+    let cmd_kwargs = map_from_vec(vec![
+        ("vec", KwargType::Vec),
+        ("bool", KwargType::Bool),
+        ("str", KwargType::Str),
+    ]);
+    let kwargs = get_kwargs("", ArgType::Str, &cmd_kwargs);
+    print_map(&kwargs);
+    let kwargs = get_kwargs("hello vec --vec 1 2 3", ArgType::Str, &cmd_kwargs);
+    print_map(&kwargs);
+    let kwargs = get_kwargs("hello str --str bogos binted", ArgType::Str, &cmd_kwargs);
+    print_map(&kwargs);
+    let kwargs = get_kwargs("hello bool --bool", ArgType::Str, &cmd_kwargs);
+    print_map(&kwargs);
+    let kwargs = get_kwargs("hello all --vec a b --str c d --bool", ArgType::Str, &cmd_kwargs);
+    print_map(&kwargs);
+    let kwargs = get_kwargs("hello all --other --flag", ArgType::Str, &cmd_kwargs);
+    print_map(&kwargs);
+}
+
+fn print_map(map: &HashMap<String, KwargValue>) {
+    println!("{{");
+    for (key, value) in map.iter() {
+        print!("({key:?}, {value:?}),");
+    }
+    println!("\n}}");
 }

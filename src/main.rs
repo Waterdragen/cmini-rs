@@ -1,3 +1,5 @@
+extern crate core;
+
 mod util;
 
 use serenity::async_trait;
