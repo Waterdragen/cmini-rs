@@ -54,6 +54,12 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if !args.is_empty() && args.contains(&String::from("cache")) {
+        util::cache::cache_main();
+        return;
+    }
+
     let token = fs::read_to_string("token.txt")
         .expect("Expected a token in the token.txt file");
 

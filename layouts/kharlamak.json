@@ -1,0 +1,173 @@
+{
+    "name": "kharlamak",
+    "user": 344861283834920960,
+    "board": "ortho",
+    "keys": {
+        "\u044d": {
+            "row": 0,
+            "col": 0,
+            "finger": "LP"
+        },
+        "\u044c": {
+            "row": 0,
+            "col": 1,
+            "finger": "LR"
+        },
+        "\u0443": {
+            "row": 0,
+            "col": 2,
+            "finger": "LM"
+        },
+        "\u043a": {
+            "row": 0,
+            "col": 3,
+            "finger": "LI"
+        },
+        "\u044e": {
+            "row": 0,
+            "col": 4,
+            "finger": "LI"
+        },
+        "\u0448": {
+            "row": 0,
+            "col": 5,
+            "finger": "RI"
+        },
+        "\u043f": {
+            "row": 0,
+            "col": 6,
+            "finger": "RI"
+        },
+        "\u0440": {
+            "row": 0,
+            "col": 7,
+            "finger": "RM"
+        },
+        "\u0434": {
+            "row": 0,
+            "col": 8,
+            "finger": "RR"
+        },
+        "\u0433": {
+            "row": 0,
+            "col": 9,
+            "finger": "RP"
+        },
+        "\u0446": {
+            "row": 0,
+            "col": 10,
+            "finger": "RP"
+        },
+        "\u0444": {
+            "row": 0,
+            "col": 11,
+            "finger": "RP"
+        },
+        "\u0438": {
+            "row": 1,
+            "col": 0,
+            "finger": "LP"
+        },
+        "\u0430": {
+            "row": 1,
+            "col": 1,
+            "finger": "LR"
+        },
+        "\u043e": {
+            "row": 1,
+            "col": 2,
+            "finger": "LM"
+        },
+        "\u0435": {
+            "row": 1,
+            "col": 3,
+            "finger": "LI"
+        },
+        "\u044f": {
+            "row": 1,
+            "col": 4,
+            "finger": "LI"
+        },
+        "\u043c": {
+            "row": 1,
+            "col": 5,
+            "finger": "RI"
+        },
+        "\u0442": {
+            "row": 1,
+            "col": 6,
+            "finger": "RI"
+        },
+        "\u043d": {
+            "row": 1,
+            "col": 7,
+            "finger": "RM"
+        },
+        "\u0441": {
+            "row": 1,
+            "col": 8,
+            "finger": "RR"
+        },
+        "\u0432": {
+            "row": 1,
+            "col": 9,
+            "finger": "RP"
+        },
+        "\u0449": {
+            "row": 1,
+            "col": 10,
+            "finger": "RP"
+        },
+        "\u044a": {
+            "row": 2,
+            "col": 0,
+            "finger": "LP"
+        },
+        "\u0439": {
+            "row": 2,
+            "col": 1,
+            "finger": "LR"
+        },
+        "\u044b": {
+            "row": 2,
+            "col": 2,
+            "finger": "LM"
+        },
+        "\u0445": {
+            "row": 2,
+            "col": 3,
+            "finger": "LI"
+        },
+        "\u0451": {
+            "row": 2,
+            "col": 4,
+            "finger": "LI"
+        },
+        "\u0437": {
+            "row": 2,
+            "col": 5,
+            "finger": "RI"
+        },
+        "\u0431": {
+            "row": 2,
+            "col": 6,
+            "finger": "RI"
+        },
+        "\u043b": {
+            "row": 2,
+            "col": 7,
+            "finger": "RM"
+        },
+        "\u0447": {
+            "row": 2,
+            "col": 8,
+            "finger": "RR"
+        },
+        "\u0436": {
+            "row": 2,
+            "col": 9,
+            "finger": "RP"
+        }
+    },
+    "free": []
+}

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Position {
@@ -15,6 +16,7 @@ pub struct Layout {
     pub user: u64,
     pub board: String,
     pub keys: HashMap<String, Position>,
+    #[serde(default)]
     pub free: Vec<Position>,
 }
 
@@ -72,3 +74,5 @@ impl Debug for KwargValue {
         write!(f, "{}", s)
     }
 }
+
+pub type Corpus = Arc<Vec<(Vec<char>, u64)>>;

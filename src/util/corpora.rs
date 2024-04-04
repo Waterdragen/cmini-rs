@@ -1,35 +1,33 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
-use crate::util::jsons::{get_map_str_str, get_map_str_u64};
+use crate::util::jsons::{get_map_str_str, get_vec_vec_char_u64};
+use crate::util::core::Corpus;
 
 pub static CORPUS: &'static str = "mt-quotes";
 pub static NGRAMS: &[&str; 3] = &["monograms", "bigrams", "trigrams"];
-
-pub type Corpus = Arc<RwLock<HashMap<String, u64>>>;
 
 lazy_static!(
     static ref LOADED: Arc<Mutex<HashMap<String, Corpus>>>
     = Arc::new(Mutex::new(HashMap::new()));
 );
 
-pub fn load_corpus(path: &str) -> Arc<RwLock<HashMap<String, u64>>> {
+pub fn load_corpus<'a>(path: &str) -> Corpus {
     let mut loaded = LOADED.lock().unwrap();
     if !loaded.contains_key(path) {
-        let map = get_map_str_u64(path);
-        loaded.insert(path.to_string(), Arc::new(RwLock::new(map)));
+        let vec_ = get_vec_vec_char_u64(path);
+        loaded.insert(path.to_string(), Arc::new(vec_));
     }
-    let map = loaded.get(path).unwrap();
-    Arc::clone(map)
+    Arc::clone(loaded.get(path).unwrap())
 }
 
-pub fn ngrams(n: usize, id: u64) -> Corpus {
+pub fn ngrams<'a>(n: usize, id: u64) -> Corpus {
     let user_corpus = get_user_corpus(id);
     let path = format!("./corpora/{}/{}.json", user_corpus, NGRAMS[n - 1]);
     load_corpus(&path)
 }
 
-pub fn words(id: u64) -> Corpus {
+pub fn words<'a>(id: u64) -> Corpus {
     let user_corpus = get_user_corpus(id);
     let path = format!("./corpora/{}/words.json", user_corpus);
     load_corpus(&path)

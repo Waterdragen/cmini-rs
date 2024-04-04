@@ -1,0 +1,168 @@
+{
+    "name": "vietnamese-telex-2",
+    "user": 344487953076322306,
+    "board": "ortho",
+    "keys": {
+        "#": {
+            "row": 0,
+            "col": 0,
+            "finger": "LP"
+        },
+        "w": {
+            "row": 0,
+            "col": 1,
+            "finger": "LR"
+        },
+        "a": {
+            "row": 0,
+            "col": 2,
+            "finger": "LM"
+        },
+        "o": {
+            "row": 0,
+            "col": 3,
+            "finger": "LI"
+        },
+        ",": {
+            "row": 0,
+            "col": 4,
+            "finger": "LI"
+        },
+        "l": {
+            "row": 0,
+            "col": 5,
+            "finger": "RI"
+        },
+        "f": {
+            "row": 0,
+            "col": 6,
+            "finger": "RI"
+        },
+        "v": {
+            "row": 0,
+            "col": 7,
+            "finger": "RM"
+        },
+        "h": {
+            "row": 0,
+            "col": 8,
+            "finger": "RR"
+        },
+        "p": {
+            "row": 0,
+            "col": 9,
+            "finger": "RP"
+        },
+        "/": {
+            "row": 0,
+            "col": 10,
+            "finger": "RP"
+        },
+        "g": {
+            "row": 1,
+            "col": 0,
+            "finger": "LP"
+        },
+        "u": {
+            "row": 1,
+            "col": 1,
+            "finger": "LR"
+        },
+        "e": {
+            "row": 1,
+            "col": 2,
+            "finger": "LM"
+        },
+        "x": {
+            "row": 1,
+            "col": 3,
+            "finger": "LI"
+        },
+        "b": {
+            "row": 1,
+            "col": 4,
+            "finger": "LI"
+        },
+        "d": {
+            "row": 1,
+            "col": 5,
+            "finger": "RI"
+        },
+        "s": {
+            "row": 1,
+            "col": 6,
+            "finger": "RI"
+        },
+        "i": {
+            "row": 1,
+            "col": 7,
+            "finger": "RM"
+        },
+        "n": {
+            "row": 1,
+            "col": 8,
+            "finger": "RR"
+        },
+        "t": {
+            "row": 1,
+            "col": 9,
+            "finger": "RP"
+        },
+        ";": {
+            "row": 1,
+            "col": 10,
+            "finger": "RP"
+        },
+        "c": {
+            "row": 2,
+            "col": 0,
+            "finger": "LP"
+        },
+        ".": {
+            "row": 2,
+            "col": 1,
+            "finger": "LR"
+        },
+        "k": {
+            "row": 2,
+            "col": 2,
+            "finger": "LM"
+        },
+        "q": {
+            "row": 2,
+            "col": 3,
+            "finger": "LI"
+        },
+        "'": {
+            "row": 2,
+            "col": 4,
+            "finger": "LI"
+        },
+        "j": {
+            "row": 2,
+            "col": 5,
+            "finger": "RI"
+        },
+        "r": {
+            "row": 2,
+            "col": 6,
+            "finger": "RI"
+        },
+        "y": {
+            "row": 2,
+            "col": 7,
+            "finger": "RM"
+        },
+        "m": {
+            "row": 2,
+            "col": 8,
+            "finger": "RR"
+        },
+        "z": {
+            "row": 2,
+            "col": 9,
+            "finger": "RP"
+        }
+    },
+    "free": []
+}

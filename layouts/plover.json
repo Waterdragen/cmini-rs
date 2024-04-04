@@ -1,0 +1,12 @@
+{
+    "name": "plover",
+    "user": 269222652042936341,
+    "board": "ortho",
+    "keys": {
+        "p": {
+            "row": 1,
+            "col": 4,
+            "finger": "LI"
+        }
+    }
+}

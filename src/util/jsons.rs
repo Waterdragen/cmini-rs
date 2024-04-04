@@ -74,7 +74,7 @@ pub fn get_map_str_u64(path: &str) -> HashMap<String, u64> {
 
 pub fn get_layout(path: &str) -> Layout {
     let json = read_json(path);
-    serde_json::from_value(json).expect("Failed to parse layout")
+    serde_json::from_value(json).expect(&format!("Failed to parse layout {}", path))
 }
 
 pub fn get_map_u64_vec_str(path: &str) -> HashMap<u64, Vec<String>> {
@@ -97,6 +97,25 @@ pub fn get_map_u64_vec_str(path: &str) -> HashMap<u64, Vec<String>> {
         }
     }
     map
+}
+
+pub fn get_vec_vec_char_u64(path: &str) -> Vec<(Vec<char>, u64)> {
+    let json = read_json(path);
+    if let Value::Object(obj) = json {
+        obj.into_iter()
+            .flat_map(|(key, value)| {
+                let mut chars: Vec<char> = Vec::with_capacity(3);
+                key.to_lowercase().chars().for_each(|c| {
+                    chars.push(c);
+                });
+                let number: u64 = value.as_u64().unwrap_or(0);
+                Some((chars, number))
+            })
+            .collect()
+    }
+    else {
+        Vec::new()
+    }
 }
 
 pub fn get_map_str_map_str_f64(path: &str) -> HashMap<String, HashMap<String, f64>> {
@@ -190,7 +209,7 @@ mod tests {
     }
 
     fn test_get_map_u64_vec_str() {
-        let path = "./authors2.json";
+        let path = "./authors.json";
         let map = get_map_u64_vec_str(path);
         for (key, value) in map {
             println!("{key}: {:?}", value);
@@ -203,5 +222,11 @@ mod tests {
         for (key, value) in map {
             println!("{key}: {:?}", value);
         }
+    }
+
+    fn test_get_vec_vec_char_u64() {
+        let path = "./corpora/english-1k/trigrams.json";
+        let vec_ = get_vec_vec_char_u64(path);
+        println!("{:?}", vec_);
     }
 }
