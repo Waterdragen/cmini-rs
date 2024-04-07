@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use serde_json::Value;
+use crate::util::analyzer_util::ThreeFingerCombo;
 use crate::util::core::Layout;
 
 fn read_json(path: &str) -> Value {
@@ -99,7 +100,7 @@ pub fn get_map_u64_vec_str(path: &str) -> HashMap<u64, Vec<String>> {
     map
 }
 
-pub fn get_vec_vec_char_u64(path: &str) -> Vec<(Vec<char>, u64)> {
+pub fn get_vec_vec_char_f64(path: &str) -> Vec<(Vec<char>, f64)> {
     let json = read_json(path);
     if let Value::Object(obj) = json {
         obj.into_iter()
@@ -108,7 +109,7 @@ pub fn get_vec_vec_char_u64(path: &str) -> Vec<(Vec<char>, u64)> {
                 key.to_lowercase().chars().for_each(|c| {
                     chars.push(c);
                 });
-                let number: u64 = value.as_u64().unwrap_or(0);
+                let number: f64 = value.as_f64().unwrap_or(0.0);
                 Some((chars, number))
             })
             .collect()
@@ -137,6 +138,20 @@ pub fn get_map_str_map_str_f64(path: &str) -> HashMap<String, HashMap<String, f6
         }
     }
     map
+}
+
+pub fn get_table(table_path: &str) -> HashMap<ThreeFingerCombo, String> {
+    let json = read_json(table_path);
+    let mut hashmap: HashMap<ThreeFingerCombo, String> = HashMap::new();
+
+    if let Value::Object(obj) = json {
+        for (key, value) in obj {
+            if let Value::String(str_) = value {
+                hashmap.insert(ThreeFingerCombo::new(key), str_);
+            }
+        }
+    }
+    hashmap
 }
 
 pub fn write_map_str_map_str_f64(path: &str, map: &HashMap<String, HashMap<String, f64>>) {
@@ -224,9 +239,9 @@ mod tests {
         }
     }
 
-    fn test_get_vec_vec_char_u64() {
+    fn test_get_vec_vec_char_f64() {
         let path = "./corpora/english-1k/trigrams.json";
-        let vec_ = get_vec_vec_char_u64(path);
+        let vec_ = get_vec_vec_char_f64(path);
         println!("{:?}", vec_);
     }
 }

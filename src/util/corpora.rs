@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
-use crate::util::jsons::{get_map_str_str, get_vec_vec_char_u64};
+use crate::util::jsons::{get_map_str_str, get_vec_vec_char_f64};
 use crate::util::core::Corpus;
 
 pub static CORPUS: &'static str = "mt-quotes";
@@ -15,7 +15,7 @@ lazy_static!(
 pub fn load_corpus<'a>(path: &str) -> Corpus {
     let mut loaded = LOADED.lock().unwrap();
     if !loaded.contains_key(path) {
-        let vec_ = get_vec_vec_char_u64(path);
+        let vec_ = get_vec_vec_char_f64(path);
         loaded.insert(path.to_string(), Arc::new(vec_));
     }
     Arc::clone(loaded.get(path).unwrap())

@@ -1,4 +1,5 @@
 pub mod analyzer;
+pub mod analyzer_util;
 pub mod authors;
 pub mod cache;
 pub mod consts;

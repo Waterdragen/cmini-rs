@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
+use std::hash::{Hash, Hasher};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -75,4 +76,4 @@ impl Debug for KwargValue {
     }
 }
 
-pub type Corpus = Arc<Vec<(Vec<char>, u64)>>;
+pub type Corpus = Arc<Vec<(Vec<char>, f64)>>;
