@@ -1,5 +1,6 @@
+use std::cmp::PartialEq;
 use std::collections::HashMap;
-use crate::util::core::{ArgType, KwargType, KwargValue};
+use crate::util::core::{ArgType, Kwarg, KwargType};
 
 pub fn get_args(s: &str) -> Vec<&str> {
     s.split_whitespace().collect()
@@ -15,7 +16,7 @@ pub fn get_layout(s: &str) -> (String, String) {
 }
 
 pub fn get_kwargs(s: &str, arg_type: ArgType, cmd_kwargs: &HashMap<String, KwargType>)
-                  -> HashMap<String, KwargValue> {
+                  -> HashMap<String, Kwarg> {
     let words: Vec<&str> = s.split_whitespace().collect();
 
     let mut arg_index = 0usize;
@@ -28,12 +29,12 @@ pub fn get_kwargs(s: &str, arg_type: ArgType, cmd_kwargs: &HashMap<String, Kwarg
 
     // Make default hashmap
     let args: Vec<String> = words[..arg_index].iter().map(|s| s.to_string()).collect();
-    let mut parsed_kwargs: HashMap<String, KwargValue> = HashMap::new();
+    let mut parsed_kwargs: HashMap<String, Kwarg> = HashMap::new();
     parsed_kwargs.insert(String::from("args"),
-                         if arg_type == ArgType::Str {KwargValue::from_str(args.join(" "))}
-                            else {KwargValue::from_vec(args)});
-    for (kw_name, _) in cmd_kwargs.iter() {
-        parsed_kwargs.insert(String::from(kw_name), KwargValue::from_none());
+                         if arg_type == ArgType::Str {Kwarg::Str(args.join(" "))}
+                            else {Kwarg::Vec(args)});
+    for (kw_name, kw_value) in cmd_kwargs.iter() {
+        parsed_kwargs.insert(String::from(kw_name), Kwarg::Default);
     }
 
     let words: &Vec<&str> = &words[arg_index..].to_vec();
@@ -51,14 +52,14 @@ pub fn get_kwargs(s: &str, arg_type: ArgType, cmd_kwargs: &HashMap<String, Kwarg
         // Encountered next keyword, stops previous vec
         if in_vec {
             parsed_kwargs.insert(last_vec_kwarg.clone(),
-                if last_kwarg_type == &KwargType::Vec
-                    {KwargValue::from_vec(words[last_in_vec..index].iter().map(|s| s.to_string()).collect())}
-                    else {KwargValue::from_str(words[last_in_vec..index].join(" "))}
+                    if last_kwarg_type == &KwargType::Vec
+                    {Kwarg::Vec(words[last_in_vec..index].iter().map(|s| s.to_string()).collect())}
+                    else {Kwarg::Str(words[last_in_vec..index].join(" "))}
             );
         }
         in_vec = kw_type == &KwargType::Vec || kw_type == &KwargType::Str;
         if !in_vec {
-            parsed_kwargs.insert(word.clone(), KwargValue::from_bool(true));
+            parsed_kwargs.insert(word.clone(), Kwarg::Bool(true));
         }
 
         // Starts a new list after kwarg
@@ -72,8 +73,8 @@ pub fn get_kwargs(s: &str, arg_type: ArgType, cmd_kwargs: &HashMap<String, Kwarg
     // Close the last vec
     if in_vec {
         parsed_kwargs.insert(last_vec_kwarg,
-            if last_kwarg_type == &KwargType::Vec {KwargValue::from_vec(words[last_in_vec..].iter().map(|s| s.to_string()).collect())}
-                else {KwargValue::from_str(words[last_in_vec..].join(" "))}
+            if last_kwarg_type == &KwargType::Vec {Kwarg::Vec(words[last_in_vec..].iter().map(|s| s.to_string()).collect())}
+                else {Kwarg::Str(words[last_in_vec..].join(" "))}
         );
     }
 
@@ -108,31 +109,37 @@ fn is_kwarg(kwargs: &HashMap<String, KwargType>, word: &str) -> bool {
     kwargs.contains_key(&word)
 }
 
-#[test]
-fn test_kwarg() {
-    let cmd_kwargs = map_from_vec(vec![
-        ("vec", KwargType::Vec),
-        ("bool", KwargType::Bool),
-        ("str", KwargType::Str),
-    ]);
-    let kwargs = get_kwargs("", ArgType::Str, &cmd_kwargs);
-    print_map(&kwargs);
-    let kwargs = get_kwargs("hello vec --vec 1 2 3", ArgType::Str, &cmd_kwargs);
-    print_map(&kwargs);
-    let kwargs = get_kwargs("hello str --str bogos binted", ArgType::Str, &cmd_kwargs);
-    print_map(&kwargs);
-    let kwargs = get_kwargs("hello bool --bool", ArgType::Str, &cmd_kwargs);
-    print_map(&kwargs);
-    let kwargs = get_kwargs("hello all --vec a b --str c d --bool", ArgType::Str, &cmd_kwargs);
-    print_map(&kwargs);
-    let kwargs = get_kwargs("hello all --other --flag", ArgType::Str, &cmd_kwargs);
-    print_map(&kwargs);
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_kwarg() {
+        let cmd_kwargs = map_from_vec(vec![
+            ("vec", KwargType::Vec),
+            ("bool", KwargType::Bool),
+            ("str", KwargType::Str),
+        ]);
+        let kwargs = get_kwargs("", ArgType::Str, &cmd_kwargs);
+        print_map(&kwargs);
+        let kwargs = get_kwargs("hello vec --vec 1 2 3", ArgType::Str, &cmd_kwargs);
+        print_map(&kwargs);
+        let kwargs = get_kwargs("hello str --str bogos binted", ArgType::Str, &cmd_kwargs);
+        print_map(&kwargs);
+        let kwargs = get_kwargs("hello bool --bool", ArgType::Str, &cmd_kwargs);
+        print_map(&kwargs);
+        let kwargs = get_kwargs("hello all --vec a b --str c d --bool", ArgType::Str, &cmd_kwargs);
+        print_map(&kwargs);
+        let kwargs = get_kwargs("hello all --other --flag", ArgType::Str, &cmd_kwargs);
+        print_map(&kwargs);
+    }
+
+    fn print_map(map: &HashMap<String, Kwarg>) {
+        println!("{{");
+        for (key, value) in map.iter() {
+            print!("({key:?}, {value:?}),");
+        }
+        println!("\n}}");
+    }
 }
 
-fn print_map(map: &HashMap<String, KwargValue>) {
-    println!("{{");
-    for (key, value) in map.iter() {
-        print!("({key:?}, {value:?}),");
-    }
-    println!("\n}}");
-}

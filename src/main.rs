@@ -1,6 +1,7 @@
 extern crate core;
 
 mod util;
+mod test;
 
 use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};

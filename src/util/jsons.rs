@@ -1,9 +1,10 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+use std::sync::{Arc, RwLock};
 use serde_json::Value;
-use crate::util::analyzer_util::ThreeFingerCombo;
-use crate::util::core::Layout;
+use fxhash::{FxHashMap};
+use indexmap::IndexMap;
+use crate::util::core::{CachedStat, RawLayoutConfig, Metric, RawCorpus, JsonLayoutConfig, LayoutConfig, ServerLayouts};
 
 fn read_json(path: &str) -> Value {
     let mut file = File::open(path).expect(
@@ -15,156 +16,171 @@ fn read_json(path: &str) -> Value {
     json
 }
 
-pub fn get_map_str_str(path: &str) -> HashMap<String, String> {
+pub fn get_map_str_str(path: &str) -> FxHashMap<String, String> {
     let json = read_json(path);
-    let mut hashmap: HashMap<String, String> = HashMap::new();
+    let mut map: FxHashMap<String, String> = FxHashMap::default();
 
-    if let Value::Object(obj) = json {
-        for (key, value) in obj {
-            if let Value::String(str_) = value {
-                hashmap.insert(key, str_);
-            }
-        }
+    let obj = json.as_object().unwrap();
+
+    for (key, value) in obj {
+        map.insert(key.clone(), value.to_string());
     }
-    hashmap
+    map
 }
 
 pub fn get_vec_str(path: &str) -> Vec<String> {
     let json = read_json(path);
-    match json {
-        Value::Array(arr) => {
-            arr.into_iter()
-                .filter_map(|val| Some(val.to_string()))
-                .collect()
-        }
-        _ => Vec::new()
+    let arr = json.as_array().unwrap();
+    arr.into_iter()
+        .map(|val| {val.to_string()})
+        .collect()
+}
+
+pub fn get_map_str_vec_u64(path: &str) -> FxHashMap<String, Vec<u64>> {
+    let json = read_json(path);
+    let mut map: FxHashMap<String, Vec<u64>> = FxHashMap::default();
+
+    let obj = json.as_object().unwrap();
+    for (key, value) in obj {
+        let arr = value.as_array().unwrap();
+        let vec_ = arr
+            .into_iter()
+            .filter_map(|val| val.as_u64())
+            .collect();
+        map.insert(key.clone(), vec_);
     }
+    map
 }
 
-pub fn get_map_str_vec_u64(path: &str) -> HashMap<String, Vec<u64>> {
+pub fn get_map_str_u64(path: &str) -> FxHashMap<String, u64> {
     let json = read_json(path);
-    let mut hashmap: HashMap<String, Vec<u64>> = HashMap::new();
+    let mut map: FxHashMap<String, u64> = FxHashMap::default();
 
-    if let Value::Object(obj) = json {
-        for (key, value) in obj {
-            if let Value::Array(arr) = value {
-                let vec_ = arr
-                    .into_iter()
-                    .filter_map(|val| val.as_u64())
-                    .collect();
-                hashmap.insert(key, vec_);
-            }
-        }
+    let obj = json.as_object().unwrap();
+    for (key, value) in obj {
+        map.insert(key.clone(), value.as_u64().unwrap());
     }
-    hashmap
+    map
 }
 
-pub fn get_map_str_u64(path: &str) -> HashMap<String, u64> {
+pub fn get_raw_layouts(path: &str) -> ServerLayouts {
     let json = read_json(path);
-    let mut hashmap: HashMap<String, u64> = HashMap::new();
-
-    if let Value::Object(obj) = json {
-        for (key, value) in obj {
-            if let Some(u64_) = value.as_u64() {
-                hashmap.insert(key, u64_);
-            }
-        }
-    }
-    hashmap
+    let raw_layouts: IndexMap<String, JsonLayoutConfig> = serde_json::from_value(json).expect("Failed to parse layout.json");
+    let layouts: IndexMap<String, LayoutConfig> = raw_layouts
+        .into_iter()
+        .map(|(name, raw_layout)| {
+            (name.clone(), Arc::new(RawLayoutConfig::from_json(&name, raw_layout)))
+        })
+        .collect();
+    Arc::new(RwLock::new(layouts))
 }
 
-pub fn get_layout(path: &str) -> Layout {
+pub fn get_map_u64_vec_str(path: &str) -> FxHashMap<u64, Vec<String>> {
     let json = read_json(path);
-    serde_json::from_value(json).expect(&format!("Failed to parse layout {}", path))
-}
-
-pub fn get_map_u64_vec_str(path: &str) -> HashMap<u64, Vec<String>> {
-    let json = read_json(path);
-    let mut map: HashMap<u64, Vec<String>> = HashMap::new();
-    if let Value::Object(obj) = json {
-        for (id_str, names) in obj {
-            match id_str.parse::<u64>() {
-                Err(_) => continue,
-                Ok(u64_) => {
-                    if let Value::Array(arr) = names {
-                        let arr: Vec<String> = arr.iter()
-                                                  .filter_map(|v| v.as_str())
-                                                  .map(|s| s.to_string())
-                                                  .collect();
-                        map.insert(u64_, arr);
-                    }
-                },
-            }
+    let mut map: FxHashMap<u64, Vec<String>> = FxHashMap::default();
+    let obj = json.as_object().unwrap();
+    for (id_str, names) in obj {
+        match id_str.parse::<u64>() {
+            Err(_) => continue,
+            Ok(u64_) => {
+                let arr = names.as_array().unwrap();
+                let arr: Vec<String> = arr.iter()
+                                          .filter_map(|v| v.as_str())
+                                          .map(|s| s.to_string())
+                                          .collect();
+                map.insert(u64_, arr);
+            },
         }
     }
     map
 }
 
-pub fn get_vec_vec_char_f64(path: &str) -> Vec<(Vec<char>, f64)> {
+pub fn get_corpus(path: &str) -> RawCorpus {
     let json = read_json(path);
-    if let Value::Object(obj) = json {
-        obj.into_iter()
-            .flat_map(|(key, value)| {
-                let mut chars: Vec<char> = Vec::with_capacity(3);
-                key.to_lowercase().chars().for_each(|c| {
-                    chars.push(c);
-                });
-                let number: f64 = value.as_f64().unwrap_or(0.0);
-                Some((chars, number))
-            })
-            .collect()
-    }
-    else {
-        Vec::new()
-    }
+    let obj = json.as_object().unwrap();
+    obj.into_iter()
+        .map(|(key, value)| {
+            let mut chars: Vec<char> = Vec::with_capacity(3);
+            key.to_lowercase().chars().for_each(|c| {
+                chars.push(c);
+            });
+            let number: u64 = value.as_u64().unwrap_or(0);
+            (chars, number)
+        })
+        .collect()
 }
 
-pub fn get_map_str_map_str_f64(path: &str) -> HashMap<String, HashMap<String, f64>> {
+#[deprecated]
+pub fn get_map_str_map_str_f64(path: &str) -> FxHashMap<String, FxHashMap<String, f64>> {
     let json = read_json(path);
-    let mut map: HashMap<String, HashMap<String, f64>> = HashMap::new();
-    if let Value::Object(obj) = json {
-        for (corpus, stat) in obj {
-            if let Value::Object(stat) = stat {
-                let stat_map: HashMap<String, f64>
-                    = stat.iter()
-                          .filter_map(|item| {
-                        match item.1.as_f64() {
-                            Some(f64_) => Some((item.0.to_string(), f64_)),
-                            None => None,
-                        }
-                    }).collect();
-                map.insert(corpus, stat_map);
-            }
-        }
+    let mut map: FxHashMap<String, FxHashMap<String, f64>> = FxHashMap::default();
+    let obj = json.as_object().unwrap();
+    for (corpus, stat) in obj {
+        let stat = stat.as_object().unwrap();
+        let stat_map: FxHashMap<String, f64>
+            = stat.iter()
+                  .filter_map(|item| {
+                match item.1.as_f64() {
+                    Some(f64_) => Some((item.0.to_string(), f64_)),
+                    None => None,
+                }
+            }).collect();
+        map.insert(corpus.clone(), stat_map);
     }
     map
 }
 
-pub fn get_table(table_path: &str) -> HashMap<ThreeFingerCombo, String> {
-    let json = read_json(table_path);
-    let mut hashmap: HashMap<ThreeFingerCombo, String> = HashMap::new();
+pub fn get_cached_stat(path: &str) -> CachedStat {
+    let json = read_json(path);
+    let mut cached_stat: CachedStat = FxHashMap::default();
 
-    if let Value::Object(obj) = json {
-        for (key, value) in obj {
-            if let Value::String(str_) = value {
-                hashmap.insert(ThreeFingerCombo::new(key), str_);
-            }
-        }
+    let obj = json.as_object().unwrap();
+    for (corpus, stat) in obj {
+        let stat = stat.as_object().unwrap();
+        let stat: FxHashMap<Metric, f64> = stat.iter()
+            .map(|(metric, freq)| {
+                (Metric::from_string(metric), freq.as_f64().unwrap())
+            }).collect();
+        cached_stat.insert(corpus.clone(), stat);
     }
-    hashmap
+    cached_stat
 }
 
-pub fn write_map_str_map_str_f64(path: &str, map: &HashMap<String, HashMap<String, f64>>) {
+pub fn get_table(path: &str) -> [Metric; 4096] {
+    let fingers: FxHashMap<String, u16> = FxHashMap::from_iter([
+            ("LP", 0u16), ("LR", 1), ("LM", 2), ("LI", 3), ("LT", 4),
+            ("RT", 5), ("RI", 6), ("RM", 7), ("RR", 8), ("RP", 9)
+        ]
+        .into_iter()
+        .map(|(finger, value)| { (finger.to_string(), value) })
+    );
+
+    let json = read_json(path);
+    let mut table = [Metric::Unknown; 4096];
+    let obj = json.as_object().unwrap();
+    for (finger_combo, gram_type) in obj {
+        let finger0 = *fingers.get(&finger_combo[0..2]).unwrap();
+        let finger1 = *fingers.get(&finger_combo[2..4]).unwrap();
+        let finger2 = *fingers.get(&finger_combo[4..6]).unwrap();
+        let hash_value = (finger0 << 8) | (finger1 << 4) | finger2;
+        let gram_type = Metric::from_string(finger_combo);
+        table[usize::from(hash_value)] = gram_type;
+    }
+
+    table
+}
+
+pub fn write_cached_stat(path: &str, map: &mut CachedStat) {
     let file = File::create(path).unwrap();
     serde_json::to_writer_pretty(file, map).unwrap();
 }
 
-pub fn write_layout(path: &str, ll: &Layout) {
+pub fn write_layouts(path: &str, lls: &ServerLayouts) {
     let file = File::create(path).unwrap();
-    serde_json::to_writer_pretty(file, ll).unwrap();
+    serde_json::to_writer_pretty(file, lls).unwrap()
 }
 
-pub fn write_map_u64_vec_str(path: &str, map: &HashMap<u64, Vec<String>>) {
+pub fn write_map_u64_vec_str(path: &str, map: &FxHashMap<u64, Vec<String>>) {
     let file = File::create(path).unwrap();
     serde_json::to_writer_pretty(file, map).unwrap();
 }
@@ -198,31 +214,6 @@ mod tests {
         }
     }
 
-    fn test_get_map_str_u64() {
-        let path = "./authors.json";
-        let map = get_map_str_u64(path);
-        for (key, value) in map.into_iter() {
-            println!("{}, {}", key, value);
-        }
-    }
-
-    fn test_get_layout() {
-        let path = "./layouts/a02.json";
-        let layout = get_layout(path);
-        println!("{:?}", layout);
-    }
-
-    fn test_write_layout() {
-        let layout = Layout {
-            name: String::from("bogos"),
-            user: 12345,
-            board: String::from("binted"),
-            keys: HashMap::new(),
-            free: Vec::new(),
-        };
-        write_layout("./bogos_binted.json", &layout);
-    }
-
     fn test_get_map_u64_vec_str() {
         let path = "./authors.json";
         let map = get_map_u64_vec_str(path);
@@ -231,6 +222,7 @@ mod tests {
         }
     }
 
+    // hold test
     fn test_get_map_str_map_str_f64() {
         let path = "./cache/a02.json";
         let map = get_map_str_map_str_f64(path);
@@ -239,9 +231,9 @@ mod tests {
         }
     }
 
-    fn test_get_vec_vec_char_f64() {
+    fn test_get_corpus() {
         let path = "./corpora/english-1k/trigrams.json";
-        let vec_ = get_vec_vec_char_f64(path);
+        let vec_ = get_corpus(path);
         println!("{:?}", vec_);
     }
 }

@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use fxhash::FxHashMap;
 use std::sync::{Arc, RwLock};
 use crate::util::jsons::get_map_str_str;
 use lazy_static::lazy_static;
 
 lazy_static!(
-    static ref __LINKS: Arc<RwLock<HashMap<String, String>>>
+    static ref __LINKS: Arc<RwLock<FxHashMap<String, String>>>
         = Arc::new(RwLock::new(get_map_str_str("./links.json")));
 );
 

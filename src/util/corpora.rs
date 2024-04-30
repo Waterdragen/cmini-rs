@@ -1,23 +1,24 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
+use fxhash::FxHashMap;
 use lazy_static::lazy_static;
-use crate::util::jsons::{get_map_str_str, get_vec_vec_char_f64};
-use crate::util::core::Corpus;
+use crate::util::jsons::{get_map_str_str, get_corpus};
+use crate::util::core::{Corpus, ServerCorpora};
 
-pub static CORPUS: &'static str = "mt-quotes";
-pub static NGRAMS: &[&str; 3] = &["monograms", "bigrams", "trigrams"];
+pub const CORPUS: &'static str = "mt-quotes";
+pub const NGRAMS: &'static [&'static str; 3] = &["monograms", "bigrams", "trigrams"];
 
 lazy_static!(
-    static ref LOADED: Arc<Mutex<HashMap<String, Corpus>>>
-    = Arc::new(Mutex::new(HashMap::new()));
+    static ref LOADED: ServerCorpora = Arc::new(RwLock::new(FxHashMap::default()));
 );
 
 pub fn load_corpus<'a>(path: &str) -> Corpus {
-    let mut loaded = LOADED.lock().unwrap();
+    let loaded = LOADED.read().unwrap();
     if !loaded.contains_key(path) {
-        let vec_ = get_vec_vec_char_f64(path);
-        loaded.insert(path.to_string(), Arc::new(vec_));
+        let mut loaded_mut = LOADED.write().unwrap();
+        let vec_ = get_corpus(path);
+        loaded_mut.insert(path.to_string(), Arc::new(vec_));
     }
+    let loaded = LOADED.read().unwrap();
     Arc::clone(loaded.get(path).unwrap())
 }
 

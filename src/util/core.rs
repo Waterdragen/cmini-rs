@@ -1,24 +1,73 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::hash::{Hash, Hasher};
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+
+use indexmap::IndexMap;
+use fxhash::{FxBuildHasher, FxHashMap};
+use nohash_hasher::NoHashHasher;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
+
+pub type Row = u8;
+pub type Col = u8;
+pub type Finger = u16;
+pub type Key = char;
+pub type Position = (Row, Col, Finger);
+pub type RawCorpus = Vec<(Vec<Key>, u64)>;
+pub type Corpus = Arc<RawCorpus>;
+
+pub type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
+pub type NoHashMap<K, V> = HashMap<K, V, NoHashHasher<K>>;
+pub type SyncFxMap<K, V> = Arc<RwLock<FxHashMap<K, Arc<V>>>>;
+pub type SyncIndexMap<K, V> = Arc<RwLock<IndexMap<K, Arc<V>>>>;
+
+pub type Layout = FxHashMap<Key, Position>;
+pub type LayoutConfig = Arc<RawLayoutConfig>;
+pub type CachedStat = FxHashMap<String, FxHashMap<Metric, f64>>;
+
+pub type ServerCorpora = SyncFxMap<String, RawCorpus>;
+pub type ServerLayouts = SyncIndexMap<String, RawLayoutConfig>;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Position {
-    pub row: u8,
-    pub col: u8,
-    pub finger: String,
+pub struct JsonLayoutConfig {
+    pub user: u64,
+    pub board: String,
+    pub keys: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Layout {
+impl JsonLayoutConfig {
+    pub fn from_raw(layout_config: &RawLayoutConfig) -> Self {
+        JsonLayoutConfig {
+            user: layout_config.user,
+            board: layout_config.board.clone(),
+            keys: pack_layout(&layout_config.keys),
+        }
+    }
+}
+
+pub struct RawLayoutConfig {
     pub name: String,
     pub user: u64,
     pub board: String,
-    pub keys: HashMap<String, Position>,
-    #[serde(default)]
-    pub free: Vec<Position>,
+    pub keys: FxHashMap<char, Position>,
+}
+
+impl RawLayoutConfig {
+    pub fn from_json(name: &str, json_layout: JsonLayoutConfig) -> Self {
+        RawLayoutConfig {
+            name: name.to_string(),
+            user: json_layout.user,
+            board: json_layout.board.clone(),
+            keys: unpack_layout(&json_layout.keys),
+        }
+    }
+}
+
+impl Serialize for RawLayoutConfig {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        JsonLayoutConfig::from_raw(&self).serialize(serializer)
+    }
 }
 
 #[derive(PartialEq)]
@@ -34,46 +83,159 @@ pub enum KwargType {
     Str,
 }
 
-pub struct KwargValue {
-    bool_: Option<bool>,
-    vec_: Option<Vec<String>>,
-    str_: Option<String>,
+#[derive(Debug, Clone, PartialEq)]
+pub enum Kwarg {
+    Bool(bool),
+    Vec(Vec<String>),
+    Str(String),
+    Default,
 }
 
-impl KwargValue {
-    pub fn from_bool(bool_: bool) -> Self {
-        KwargValue{bool_: Some(bool_), vec_: None, str_: None}
+impl Kwarg {
+    pub fn as_bool(&self) -> bool {
+        match self {
+            Kwarg::Bool(b) => *b,
+            _ => panic!("{self:?} is not a bool")
+        }
     }
-    pub fn from_vec(vec_: Vec<String>) -> Self {
-        KwargValue{bool_: None, vec_: Some(vec_), str_: None}
-    }
-    pub fn from_str(str_: String) -> Self {
-        KwargValue{bool_: None, vec_: None, str_: Some(str_)}
-    }
-    pub fn from_none() -> Self {
-        KwargValue{bool_: None, vec_: None, str_: None}
-    }
-    pub fn get_bool(self) -> bool {
-        self.bool_.unwrap_or_else(|| false)
-    }
-    pub fn get_vec(self) -> Vec<String> {
-        self.vec_.unwrap_or_else(move || Vec::new())
-    }
-    pub fn get_str(self) -> String {
-        self.str_.unwrap_or_else(|| String::new())
-    }
-}
 
-impl Debug for KwargValue {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let s = match (self.bool_, self.vec_.as_ref(), self.str_.as_ref()) {
-            (Some(bool_), _, _) => bool_.to_string(),
-            (_, Some(vec_), _) => format!("{:?}", vec_),
-            (_, _, Some(str_)) => str_.to_string(),
-            _ => String::from("<None>"),
-        };
-        write!(f, "{}", s)
+    pub fn as_vec(&self) -> &Vec<String> {
+        match self {
+            Kwarg::Vec(v) => v,
+            _ => panic!("{self:?} is not a vec")
+        }
+    }
+
+    pub fn as_string(&self) -> &str {
+        match self {
+            Kwarg::Str(s) => s,
+            _ => panic!("{self:?} is not a string")
+        }
     }
 }
 
-pub type Corpus = Arc<Vec<(Vec<char>, f64)>>;
+
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter)]
+pub enum Metric {
+    Sfb,
+    Sft,
+    Sfr,
+    Alt,
+    AltSfs,
+    Red,
+    BadRed,
+    RedSfs,
+    BadRedSfs,
+    InOne,
+    OutOne,
+    InRoll,
+    OutRoll,
+    Unknown,
+}
+
+impl Metric {
+    pub fn from_string(s: &str) -> Self {
+        match s {
+            "sfb" => Metric::Sfb,
+            "sft" => Metric::Sft,
+            "sfr" => Metric::Sfr,
+            "alt" => Metric::Alt,
+            "alt-sfs" => Metric::AltSfs,
+            "red" => Metric::Red,
+            "bad-red" => Metric::BadRed,
+            "red-sfs" => Metric::RedSfs,
+            "bad-red-sfs" => Metric::BadRedSfs,
+            "inoneh" => Metric::InOne,
+            "outoneh" => Metric::OutOne,
+            "inroll" => Metric::InRoll,
+            "outroll" => Metric::OutRoll,
+            "unknown" => Metric::Unknown,
+            _ => panic!("Invalid metric {s}")
+        }
+    }
+
+    pub const fn to_str(&self) -> &str {
+        match self {
+            Metric::Sfb => "sfb",
+            Metric::Sft => "sft",
+            Metric::Sfr => "sfr",
+            Metric::Alt => "alt",
+            Metric::AltSfs => "alt-sfs",
+            Metric::Red => "red",
+            Metric::BadRed => "bad-red",
+            Metric::RedSfs => "red-sfs",
+            Metric::BadRedSfs => "bad-red-sfs",
+            Metric::InOne => "inoneh",
+            Metric::OutOne => "outoneh",
+            Metric::InRoll => "inroll",
+            Metric::OutRoll => "outroll",
+            Metric::Unknown => "unknown",
+        }
+    }
+
+    pub fn new_counter() -> FxHashMap<Metric, u64> {
+        FxHashMap::from_iter(Metric::iter().map(|metric| {
+            (metric, 0)
+        }))
+    }
+
+    pub fn normalize_counter(counter: &FxHashMap<Metric, u64>) -> FxHashMap<Metric, f64> {
+        let total = counter.values().sum::<u64>() as f64;
+        FxHashMap::from_iter(counter.iter().map(|(metric, freq)| {
+            (*metric, *freq as f64 / total)
+        }))
+    }
+}
+
+impl Serialize for Metric {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        serializer.serialize_str(self.to_str())
+    }
+}
+
+fn pack_pos((row, col, finger): &Position) -> String {
+    let mut packed = (u16::from(*row) & 0xf) << 8;
+    packed |= (u16::from(*col) & 0xf) << 4;
+    packed |= finger & 0xf;
+    format!("{:03x}", packed)
+}
+
+fn unpack_pos(packed_str: &str) -> Position {
+    let packed = u16::from_str_radix(packed_str, 16).unwrap();
+    let row = (packed >> 8 & 0xf) as u8;
+    let col = (packed >> 4 & 0xf) as u8;
+    let finger = packed & 0xf;
+    (row, col, finger)
+}
+
+fn pack_layout(layout: &Layout) -> String {
+    let mut layout_packed_ordered: Vec<(String, u32)> = layout.iter().map(|(key, pos)| {
+        let mut packed_keypos = String::with_capacity(4);
+        packed_keypos.push(*key);
+        let packed_pos = pack_pos(pos);
+        packed_keypos.push_str(&packed_pos);
+        let order = ((pos.0 as u32) << 8) + (pos.1 as u32);
+        (packed_keypos, order)
+    }).collect();
+    layout_packed_ordered.sort_by(|item0, item1| {
+        item0.1.cmp(&item1.1)
+    });
+    let layout_packed: String = layout_packed_ordered.into_iter().map(|(keypos, _)| {
+        keypos
+    }).collect();
+
+    layout_packed
+}
+
+fn unpack_layout(layout_packed: &str) -> Layout {
+    let mut layout = Layout::default();
+    let unpacked_chars: Vec<char> = layout_packed.chars().collect();
+
+    for start in (0..layout_packed.len()).step_by(4) {
+        let key = unpacked_chars[start];
+        let chunk = &layout_packed[start + 1 .. start + 4];
+        let pos = unpack_pos(chunk);
+        layout.insert(key, pos);
+    }
+    layout
+}

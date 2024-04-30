@@ -1,31 +1,25 @@
-use std::collections::HashMap;
 use std::path::Path;
 use rayon::prelude::*;
-use std::time::{Duration, Instant};
-use crate::util::jsons::{
-    get_map_str_map_str_f64,
-    get_layout,
-    write_map_str_map_str_f64,
-};
-use crate::util::core::{Layout, Corpus};
+use std::time::Instant;
+use fxhash::FxHashMap;
+use crate::util::jsons::{get_cached_stat, write_cached_stat};
+use crate::util::core::{CachedStat, Corpus, RawLayoutConfig, Metric, LayoutConfig};
 use crate::util::{analyzer, corpora, memory};
 
-pub type CachedStat = HashMap<String, HashMap<String, f64>>;
+fn get_layout(name: &str) -> LayoutConfig {
+    memory::get(name).unwrap()
+}
 
-fn cache_get(name: &str) -> Option<CachedStat> {
+fn get_cache(name: &str) -> Option<CachedStat> {
     let name = name.to_lowercase();
     let path = format!("./cache/{}.json", name);
     if !Path::new(&path).exists() {
         return None;
     }
-    Some(get_map_str_map_str_f64(&path))
+    Some(get_cached_stat(&path))
 }
 
-fn layout_get(name: &str) -> Layout {
-    get_layout(&format!("./layouts/{}.json", name))
-}
-
-fn cache_fill<'a>(ll: &Layout, data: Option<&'a mut CachedStat>, corpus: &str) -> &'a mut CachedStat {
+fn cache_fill<'a>(ll: &RawLayoutConfig, data: Option<&'a mut CachedStat>, corpus: &str) -> &'a mut CachedStat {
     let path = format!("./corpora/{}/trigrams.json", corpus);
     let trigrams: Corpus = corpora::load_corpus(&path);
     let stats = analyzer::trigrams(ll, &trigrams);
@@ -36,7 +30,7 @@ fn cache_fill<'a>(ll: &Layout, data: Option<&'a mut CachedStat>, corpus: &str) -
             data
         },
         None => {
-            let mut update: CachedStat = HashMap::new();
+            let mut update: CachedStat = FxHashMap::default();
             update.insert(corpus.to_string(), stats);
             Box::leak(Box::new(update))
         },
@@ -44,19 +38,19 @@ fn cache_fill<'a>(ll: &Layout, data: Option<&'a mut CachedStat>, corpus: &str) -
 }
 
 fn update<'a>(name: &str, data: &'a mut CachedStat) -> &'a mut CachedStat {
-    write_map_str_map_str_f64(&format!("./cache/{}.json", name), &data);
+    write_cached_stat(&format!("./cache/{}.json", name), data);
     data
 }
 
-pub fn get<'a>(name: &str, corpus: &str) -> Option<HashMap<String, f64>> {
+pub fn get<'a>(name: &str, corpus: &str) -> Option<FxHashMap<Metric, f64>> {
     if name == "" || corpus == "" {
         return None;
     }
     let name = name.to_lowercase();
     let corpus = corpus.to_lowercase();
 
-    let data = cache_get(&name);
-    let mut data = data.unwrap_or_else(|| HashMap::new());
+    let data = get_cache(&name);
+    let mut data = data.unwrap_or_else(|| FxHashMap::default());
 
     if data.contains_key(&corpus) {
         return data.remove(&corpus);
@@ -88,17 +82,17 @@ fn cache_files() {
     // let mut layout_times: Vec<Duration> = Vec::new();
     // let corpora_count = corpus_names.len();
     // let mut update_times = Duration::from_millis(0);
-    names[..10].iter().for_each(|name| {
+    names.iter().for_each(|name| {
         // let layout_start = Instant::now();
-        let ll = get_layout(&format!("./layouts/{}.json", name));
-        let mut data = cache_get(&name);
+        let ll = get_layout(name);
+        let mut data = get_cache(&name);
         let mut data: Option<&mut CachedStat> = data.as_mut();
 
         for corpus in corpus_names.iter() {
             println!("Layout: {}, Corpus: {}", ll.name, corpus);
             data = Some(cache_fill(&ll, data, corpus));
         }
-        let update_start = Instant::now();
+        // let update_start = Instant::now();
         update(&name, data.unwrap());
         // layout_times.push(layout_start.elapsed());
         // update_times += update_start.elapsed();

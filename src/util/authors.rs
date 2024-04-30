@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use fxhash::FxHashMap;
 use strsim::jaro_winkler;
 use serenity::model::channel::Message;
 use crate::util::jsons::{get_map_u64_vec_str, write_map_u64_vec_str};
 
-fn get_authors() -> HashMap<u64, Vec<String>> {
+fn get_authors() -> FxHashMap<u64, Vec<String>> {
     get_map_u64_vec_str("./authors.json")
 }
 
