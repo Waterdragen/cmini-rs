@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use tokio::time::Instant;
 use fxhash::FxHashMap;
-use crate::util::core::{Corpus, Layout, RawLayoutConfig, Metric, NoHashMap};
+use crate::util::core::{Corpus, Layout, RawLayoutConfig, Metric};
 use crate::util::jsons::{get_table};
 
 lazy_static!(
@@ -45,24 +45,24 @@ pub fn trigrams(ll: &RawLayoutConfig, grams: &Corpus) -> FxHashMap<Metric, f64> 
     // let analyzer_start = Instant::now();
     let mut counter = Metric::new_counter();
     let fingers = &ll.keys;
-    let sfr = &Metric::Sfr;
-    let unknown = &Metric::Unknown;
-    let space = ' ';
+    const SFR: &Metric = &Metric::Sfr;
+    const UNKNOWN: &Metric = &Metric::Unknown;
+    const SPACE: char = ' ';
 
     grams.iter().for_each(|(gram, count)| {
         let gram0 = gram[0];
         let gram1 = gram[1];
         let gram2 = gram[2];
-        if gram0 == space || gram1 == space || gram2 == space {
+        if gram0 == SPACE || gram1 == SPACE || gram2 == SPACE {
             return;
         }
         if gram0 == gram1 || gram1 == gram2 || gram0 == gram2 {
-            *counter.get_mut(sfr).expect("cannot get sfr") += count;
+            *counter.get_mut(SFR).unwrap_or_else(|| panic!("cannot get sfr")) += count;
             return;
         }
         let finger_hash = get_finger_hash(fingers, gram0, gram1, gram2);
         if finger_hash.is_none() {
-            *counter.get_mut(unknown).expect("cannot get unknown") += count;
+            *counter.get_mut(UNKNOWN).unwrap_or_else(|| panic!("cannot get unknown")) += count;
             return;
         }
         let finger_hash = finger_hash.unwrap();
@@ -71,8 +71,7 @@ pub fn trigrams(ll: &RawLayoutConfig, grams: &Corpus) -> FxHashMap<Metric, f64> 
 
         *counter
             .get_mut(gram_type)
-            .expect(
-                &format!("cannot get gram type {:?}", gram_type)
+            .unwrap_or_else(|| panic!("cannot get gram type {:?}", gram_type)
             ) += count;
     });
     // println!("analyzer::trigrams(): {:?} gram length: {}", analyzer_start.elapsed(), grams.len());

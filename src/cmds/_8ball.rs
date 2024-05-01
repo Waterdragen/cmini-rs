@@ -1,4 +1,4 @@
-use crate::util::core::Commandable;
+use crate::util::core::{Commandable, DynCommand};
 use rand::SeedableRng;
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
@@ -12,7 +12,7 @@ const RESPONSES: [&'static str; 12] = [
 pub struct Command;
 
 impl Commandable for Command {
-    fn init() -> Box<dyn Commandable + Send + Sync + 'static> where Self: Sized + 'static {
+    fn init() -> DynCommand where Self: Sized + 'static {
         Box::new(Command {})
     }
 

@@ -1,11 +1,11 @@
-use crate::util::core::Commandable;
+use crate::util::core::{Commandable, DynCommand};
 
 const LINK: &'static str = "<https://github.com/waterdragen/cmini-rs>";
 
 pub struct Command;
 
 impl Commandable for Command {
-    fn init() -> Box<dyn Commandable + Send + Sync + 'static> where Self: Sized + 'static {
+    fn init() -> DynCommand where Self: Sized + 'static {
         Box::new(Command{})
     }
 

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
+use std::hash::{BuildHasherDefault, Hash, Hasher};
+use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
 use indexmap::IndexMap;
@@ -22,12 +24,17 @@ pub type NoHashMap<K, V> = HashMap<K, V, NoHashHasher<K>>;
 pub type SyncFxMap<K, V> = Arc<RwLock<FxHashMap<K, Arc<V>>>>;
 pub type SyncIndexMap<K, V> = Arc<RwLock<IndexMap<K, Arc<V>>>>;
 
-pub type Layout = FxHashMap<Key, Position>;
+pub type Layout = FxHashMap<char, Position>;
 pub type LayoutConfig = Arc<RawLayoutConfig>;
 pub type CachedStat = FxHashMap<String, FxHashMap<Metric, f64>>;
 
 pub type ServerCorpora = SyncFxMap<String, RawCorpus>;
 pub type ServerLayouts = SyncIndexMap<String, RawLayoutConfig>;
+
+// Trait: Commandable
+// Struct: Command
+// Instance Smart Pointer: DynCommand
+pub type DynCommand = Box<dyn Commandable + Send + Sync + 'static>;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct JsonLayoutConfig {
@@ -50,7 +57,7 @@ pub struct RawLayoutConfig {
     pub name: String,
     pub user: u64,
     pub board: String,
-    pub keys: FxHashMap<char, Position>,
+    pub keys: Layout,
 }
 
 impl RawLayoutConfig {
@@ -116,6 +123,7 @@ impl Kwarg {
 
 
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter)]
+#[repr(u8)]
 pub enum Metric {
     Sfb,
     Sft,
@@ -195,7 +203,7 @@ impl Serialize for Metric {
 }
 
 pub trait Commandable {
-    fn init() -> Box<dyn Commandable + Send + Sync + 'static> where Self: Sized + 'static;
+    fn init() -> DynCommand where Self: Sized + 'static;
     fn exec(&self, args: &str) -> String;
     fn usage<'a>(&self) -> &'a str;
     fn desc<'a>(&self) -> &'a str;

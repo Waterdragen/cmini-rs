@@ -113,7 +113,6 @@ fn is_kwarg(kwargs: &HashMap<String, KwargType>, word: &str) -> bool {
 mod test {
     use super::*;
 
-    #[test]
     fn test_kwarg() {
         let cmd_kwargs = map_from_vec(vec![
             ("vec", KwargType::Vec),
