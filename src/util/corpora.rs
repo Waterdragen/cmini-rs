@@ -13,13 +13,14 @@ lazy_static!(
 
 pub fn load_corpus<'a>(path: &str) -> Corpus {
     let loaded = LOADED.read().unwrap();
-    if !loaded.contains_key(path) {
-        let mut loaded_mut = LOADED.write().unwrap();
-        let vec_ = get_corpus(path);
-        loaded_mut.insert(path.to_string(), Arc::new(vec_));
+    if loaded.contains_key(path) {
+        return Arc::clone(loaded.get(path).unwrap())
     }
-    let loaded = LOADED.read().unwrap();
-    Arc::clone(loaded.get(path).unwrap())
+    drop(loaded);
+    let mut loaded_mut = LOADED.write().unwrap();
+    let vec_ = get_corpus(path);
+    loaded_mut.insert(path.to_string(), Arc::new(vec_));
+    Arc::clone(loaded_mut.get(path).unwrap())
 }
 
 pub fn ngrams<'a>(n: usize, id: u64) -> Corpus {

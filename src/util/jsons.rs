@@ -163,9 +163,10 @@ pub fn get_table(path: &str) -> [Metric; 4096] {
         let finger1 = *fingers.get(&finger_combo[2..4]).unwrap();
         let finger2 = *fingers.get(&finger_combo[4..6]).unwrap();
         let hash_value = (finger0 << 8) | (finger1 << 4) | finger2;
-        let gram_type = Metric::from_string(finger_combo);
+        let gram_type = Metric::from_string(gram_type.as_str().unwrap());
         table[usize::from(hash_value)] = gram_type;
     }
+    println!("{:?}", table[0]);
 
     table
 }
@@ -222,7 +223,7 @@ mod tests {
         }
     }
 
-    // hold test
+    #[deprecated]
     fn test_get_map_str_map_str_f64() {
         let path = "./cache/a02.json";
         let map = get_map_str_map_str_f64(path);

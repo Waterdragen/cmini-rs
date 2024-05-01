@@ -60,18 +60,8 @@ pub fn get<'a>(name: &str, corpus: &str) -> Option<FxHashMap<Metric, f64>> {
 }
 
 fn cache_files() {
-    let files = std::fs::read_dir("./layouts/").unwrap();
-    let names: Vec<String> = files.filter_map(|file| {
-        file.ok().and_then(|file| {
-            let path = file.path();
-            let file_name = path.file_name()?.to_str()?;
-            if !file_name.ends_with(".json") {
-                return None;
-            }
-            let basename = Path::new(file_name).file_stem()?.to_str()?;
-            Some(basename.to_string())
-        })
-    }).collect();
+    let layouts = memory::LAYOUTS.read().unwrap();
+    let names: Vec<&str> = layouts.keys().map(String::as_str).collect();
     let corpus_files = std::fs::read_dir("./corpora/").unwrap();
     let corpus_names: Vec<String> = corpus_files.filter_map(|file| {
         file.ok().and_then(|file| {
@@ -79,10 +69,7 @@ fn cache_files() {
         })
     }).collect();
 
-    // let mut layout_times: Vec<Duration> = Vec::new();
-    // let corpora_count = corpus_names.len();
-    // let mut update_times = Duration::from_millis(0);
-    names.iter().for_each(|name| {
+    names.par_iter().for_each(|name| {
         // let layout_start = Instant::now();
         let ll = get_layout(name);
         let mut data = get_cache(&name);
@@ -92,16 +79,8 @@ fn cache_files() {
             println!("Layout: {}, Corpus: {}", ll.name, corpus);
             data = Some(cache_fill(&ll, data, corpus));
         }
-        // let update_start = Instant::now();
         update(&name, data.unwrap());
-        // layout_times.push(layout_start.elapsed());
-        // update_times += update_start.elapsed();
     });
-    // println!("Initial cache fill: {:?}ms", layout_times[..corpora_count].iter().map(|v| v.as_secs_f64()).sum::<f64>() * 1000.0 / corpora_count as f64);
-    // println!("Subsequent cache fill: {:?}ms", layout_times[corpora_count..].iter().map(|v| v.as_secs_f64()).sum::<f64>() * 1000.0 / corpora_count as f64 / 9.0);println!("Initial cache fill: {:?}ms", layout_times[..corpora_count].iter().map(|v| v.as_secs_f64()).sum::<f64>() * 1000.0 / corpora_count as f64);
-    // println!("Initial layout: {:?}ms", layout_times[0].as_secs_f64() * 1000.0);
-    // println!("Subsequent layout: {:?}ms", layout_times[1..].iter().map(|v| v.as_secs_f64()).sum::<f64>() * 1000.0 / 9.0);
-    // println!("update: {:?}", update_times / 10);
 }
 
 pub fn cache_main() {

@@ -175,12 +175,13 @@ impl Metric {
 
     pub fn new_counter() -> FxHashMap<Metric, u64> {
         FxHashMap::from_iter(Metric::iter().map(|metric| {
-            (metric, 0)
+            (metric, 0u64)
         }))
     }
 
     pub fn normalize_counter(counter: &FxHashMap<Metric, u64>) -> FxHashMap<Metric, f64> {
         let total = counter.values().sum::<u64>() as f64;
+        assert_ne!(total, 0.0);
         FxHashMap::from_iter(counter.iter().map(|(metric, freq)| {
             (*metric, *freq as f64 / total)
         }))
@@ -190,6 +191,29 @@ impl Metric {
 impl Serialize for Metric {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         serializer.serialize_str(self.to_str())
+    }
+}
+
+pub trait Commandable {
+    fn init() -> Box<dyn Commandable + Send + Sync + 'static> where Self: Sized + 'static;
+    fn exec(&self, args: &str) -> String;
+    fn usage<'a>(&self) -> &'a str;
+    fn desc<'a>(&self) -> &'a str;
+
+    fn help(&self) -> String {
+        let mut help_message = String::new();
+        help_message.push_str(self.usage());
+        help_message.push('\n');
+        help_message.push_str(self.desc());
+        help_message
+    }
+
+    fn cmini_channel_only(&self) -> bool {
+        false
+    }
+
+    fn mod_only(&self) -> bool {
+        false
     }
 }
 
@@ -231,10 +255,13 @@ fn unpack_layout(layout_packed: &str) -> Layout {
     let mut layout = Layout::default();
     let unpacked_chars: Vec<char> = layout_packed.chars().collect();
 
-    for start in (0..layout_packed.len()).step_by(4) {
+    for start in (0..unpacked_chars.len()).step_by(4) {
         let key = unpacked_chars[start];
-        let chunk = &layout_packed[start + 1 .. start + 4];
-        let pos = unpack_pos(chunk);
+        let mut chunk = String::with_capacity(3);
+        (start + 1 .. start + 4).for_each(|index| {
+            chunk.push(unpacked_chars[index])
+        });
+        let pos = unpack_pos(&chunk);
         layout.insert(key, pos);
     }
     layout

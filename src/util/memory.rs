@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 use lazy_static::lazy_static;
 use strsim::jaro_winkler;
 
-use crate::util::jsons::get_raw_layouts;
+use crate::util::jsons::{get_raw_layouts, write_layouts};
 use crate::util::core::{LayoutConfig, ServerLayouts};
 
 lazy_static!(
@@ -20,32 +20,15 @@ pub fn add(ll: LayoutConfig) -> bool {
 }
 
 pub fn get<'a>(name: &str) -> Option<LayoutConfig> {
-    let path = format!("./layouts/{}.json", name);
-    if !Path::new(&path).exists() {
-        return None;
+    match has_layout(name) {
+        true => Some(get_layout(name)),
+        false => None,
     }
-    Some(get_layout(&path))
 }
 
 pub fn find(name: &str) -> LayoutConfig {
-    let layout_files = std::fs::read_dir("./layouts").unwrap();
-    let mut max_score = 0.0;
-    let mut closest = String::new();
-
-    for file in layout_files {
-        if let Ok(entry) = file {
-            if let Some(file_name) = entry.file_name().to_str() {
-                let base_name = file_name.trim_end_matches(".json");
-                let score = jaro_winkler(name, base_name);
-
-                if score > max_score {
-                    max_score = score;
-                    closest = base_name.to_string();
-                }
-            }
-        }
-    }
-    get_layout(&format!("./layouts/{}.json", closest))
+    let closest = best_match(name);
+    get_layout(&closest)
 }
 
 pub fn remove(name: &str, id: u64) -> bool {
@@ -56,6 +39,10 @@ pub fn remove_as_admin(name: &str, id: u64) -> bool {
     remove_layout(name, id, true)
 }
 
+pub fn sync_layouts() {
+    write_layouts("./layouts.json", &LAYOUTS);
+}
+
 fn add_layout(ll: LayoutConfig) {
     let mut layouts_mut = LAYOUTS.write().unwrap();
     let name = ll.name.clone();
@@ -64,7 +51,7 @@ fn add_layout(ll: LayoutConfig) {
 
 fn get_layout(name: &str) -> LayoutConfig {
     let layouts = LAYOUTS.read().unwrap();
-    let layout = layouts.get(name).unwrap();
+    let layout = layouts.get(name).expect(&format!("Cannot get {name}"));
     Arc::clone(layout)
 }
 
@@ -84,6 +71,22 @@ fn remove_layout(name: &str, id: u64, admin: bool) -> bool {
         layouts_mut.swap_remove(name);
     }
     check
+}
+
+fn best_match(base_name: &str) -> String {
+    let layouts = LAYOUTS.read().unwrap();
+    let mut max_score = 0.0;
+    let mut closest = String::new();
+
+    for name in layouts.keys() {
+        let score = jaro_winkler(name, base_name);
+
+        if score > max_score {
+            max_score = score;
+            closest = base_name.to_string();
+        }
+    }
+    closest
 }
 
 
