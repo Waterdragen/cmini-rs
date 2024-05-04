@@ -50,28 +50,31 @@ pub mod layout {
 
 
 pub mod stats {
+    use fxhash::FxHashMap;
     use crate::util::conv::freq;
     use crate::util::core::{Metric, Stat};
 
-    const INTERVAL: usize = 4;
+    const INTERVAL: usize = 3;
 
     pub fn pack(stats: &Stat) -> String {
-        let mut packed = String::with_capacity(INTERVAL * stats.len());
+        let mut packed: Vec<char> = Vec::new();
+        packed.resize(INTERVAL * stats.len(), ' ');
         stats.iter()
             .for_each(|(metric, freq)| {
-                packed.push(metric.pack());
-                packed.push_str(&freq::pack(*freq));
+                let index = usize::from(metric.pack()) * INTERVAL;
+                packed[index..index + INTERVAL].copy_from_slice(&freq::pack(*freq));
             });
-        packed
+        packed.into_iter().collect()
     }
 
     pub fn unpack(packed: &str) -> Stat {
-        (0..packed.len()).step_by(INTERVAL).map(|index| {
-            let packed_stat = &packed[index..index + INTERVAL];
-            let packed_metric = packed_stat.chars().next().unwrap();
-            let packed_freq = &packed_stat[1..];
-            (Metric::unpack(packed_metric), freq::unpack(packed_freq))
-        }).collect()
+        let mut stats = FxHashMap::default();
+        let packed: Vec<char> = packed.chars().collect();
+        (0..packed.len()).step_by(INTERVAL).enumerate().for_each(|(metric_num, index)| {
+            let packed_freq = &packed[index..index + INTERVAL];
+            stats.insert(Metric::unpack(metric_num as u8), freq::unpack(packed_freq));
+        });
+        stats
     }
 }
 
@@ -100,18 +103,17 @@ mod freq {
     use crate::util::conv::base64;
 
     #[inline]
-    pub fn pack(f: f64) -> String {
+    pub fn pack(f: f64) -> [char; 3] {
         let num = (f * 100_000.0).round() as u32;
-        let mut packed = String::with_capacity(3);
-        packed.push(base64::pack((num >> 12 & 0x3f) as u8));
-        packed.push(base64::pack((num >> 6 & 0x3f) as u8));
-        packed.push(base64::pack((num & 0x3f) as u8));
-        packed
+        [
+            base64::pack((num >> 12 & 0x3f) as u8),
+            base64::pack((num >> 6 & 0x3f) as u8),
+            base64::pack((num & 0x3f) as u8),
+        ]
     }
 
     #[inline]
-    pub fn unpack(s: &str) -> f64 {
-        let chars = s.chars().collect::<Vec<_>>();
+    pub fn unpack(chars: &[char]) -> f64 {
         let num = base64::unpack(chars[0]) << 12 | base64::unpack(chars[1]) << 6 | base64::unpack(chars[2]);
         num as f64 / 100_000.0
     }

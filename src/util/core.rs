@@ -213,15 +213,13 @@ impl Metric {
         }
     }
 
-    pub fn pack(self) -> char {
-        let num: u8 = self.into();
-        let hex = format!("{:01x}", num);
-        hex.chars().next().unwrap()
+    #[inline]
+    pub fn pack(self) -> u8 {
+        self.into()
     }
 
-    pub fn unpack(c: char) -> Self {
-        let s = String::from(c);
-        let num = u8::from_str_radix(&s, 16).unwrap_or_else(|_| panic!("Failed to convert to u8. Unexpected value '{c}'"));
+    #[inline]
+    pub fn unpack(num: u8) -> Self {
         Metric::try_from(num).unwrap_or_else(|_| panic!("Failed to convert to Metric. Unexpected value `{num}`"))
     }
 

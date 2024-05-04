@@ -46,7 +46,10 @@ fn update(name: &str, data: CachedStatConfig) {
     cached_stats.insert(name.to_string(), data);
 }
 
-
+fn sort() {
+    let mut cached_stats = CACHED_STATS.write().unwrap();
+    cached_stats.sort_keys();
+}
 
 fn cache_files() {
     let start = Instant::now();
@@ -82,6 +85,8 @@ fn cache_files() {
         };
         update(&name, Arc::new(cached));
     });
+    sort();
+
     let duration = start.elapsed();
     println!("Cpu bound elapsed: {:?}", duration);
 
