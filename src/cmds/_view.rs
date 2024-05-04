@@ -1,6 +1,5 @@
 use crate::util::core::{Commandable, DynCommand};
-
-const LINK: &'static str = "<https://github.com/waterdragen/cmini-rs>";
+use crate::util::{layout, memory};
 
 pub struct Command;
 
@@ -9,15 +8,16 @@ impl Commandable for Command {
         Box::new(Command{})
     }
 
-    fn exec(&self, _: &str, _: u64) -> String {
-        LINK.to_string()
+    fn exec(&self, name: &str, id: u64) -> String {
+        let ll = memory::find(name);
+        layout::to_string(&ll, id)
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "github"
+        "view [layout name]"
     }
 
     fn desc<'a>(&self) -> &'a str {
-        "get the link of the cmini github repository"
+        "see the stats of a layout"
     }
 }

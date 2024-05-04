@@ -1,15 +1,15 @@
 use lazy_static::lazy_static;
 use tokio::time::Instant;
 use fxhash::FxHashMap;
-use crate::util::core::{Corpus, Layout, RawLayoutConfig, Metric};
+use crate::util::core::{Corpus, Layout, RawLayoutConfig, Metric, Stat, FingerUsage, Finger, Key};
 use crate::util::jsons::{get_table};
 
 lazy_static!(
     static ref TABLE: [Metric; 4096] = get_table("./table.json");
 );
 
-pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FxHashMap<u16, f64> {
-    let mut fingers: FxHashMap<u16, u64> = FxHashMap::default();
+pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FingerUsage {
+    let mut fingers: FxHashMap<Finger, u64> = FxHashMap::default();
 
     for (gram, count) in grams.iter() {
         let gram = gram[0];
@@ -24,7 +24,7 @@ pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FxHashMap<u16, f64
     }
     let total = fingers.values().sum::<u64>() as f64;
 
-    let mut fingers: FxHashMap<u16, f64> = fingers.into_iter()
+    let mut fingers: FingerUsage = fingers.into_iter()
         .map(|(finger, freq)| {
             (finger, freq as f64 / total)
         })
@@ -41,13 +41,13 @@ pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FxHashMap<u16, f64
 }
 
 
-pub fn trigrams(ll: &RawLayoutConfig, grams: &Corpus) -> FxHashMap<Metric, f64> {
+pub fn trigrams(ll: &RawLayoutConfig, grams: &Corpus) -> Stat {
     // let analyzer_start = Instant::now();
     let mut counter = Metric::new_counter();
     let fingers = &ll.keys;
     const SFR: &Metric = &Metric::Sfr;
     const UNKNOWN: &Metric = &Metric::Unknown;
-    const SPACE: char = ' ';
+    const SPACE: Key = ' ';
 
     grams.iter().for_each(|(gram, count)| {
         let gram0 = gram[0];
@@ -80,7 +80,7 @@ pub fn trigrams(ll: &RawLayoutConfig, grams: &Corpus) -> FxHashMap<Metric, f64> 
 }
 
 #[inline]
-fn get_finger_hash(layout: &Layout, gram0: char, gram1: char, gram2: char) -> Option<u16> {
+fn get_finger_hash(layout: &Layout, gram0: Key, gram1: Key, gram2: Key) -> Option<Finger> {
     let finger0 = layout.get(&gram0)?.2;
     let finger1 = layout.get(&gram1)?.2;
     let finger2 = layout.get(&gram2)?.2;

@@ -1,5 +1,6 @@
 mod _8ball;
 mod _github;
+mod _view;
 
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
@@ -10,6 +11,7 @@ lazy_static!(
         ("8ball", _8ball::Command::init()),
         ("gh", _github::Command::init()),
         ("github", _github::Command::init()),
+        ("view", _view::Command::init()),
     ].into_iter().map(|(name, obj)| (name.to_string(), obj)));
 );
 

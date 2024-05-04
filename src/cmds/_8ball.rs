@@ -16,7 +16,7 @@ impl Commandable for Command {
         Box::new(Command {})
     }
 
-    fn exec(&self, _args: &str) -> String {
+    fn exec(&self, _: &str, _: u64) -> String {
         let mut rng = StdRng::from_entropy();
         RESPONSES.choose(&mut rng).unwrap().to_string()
     }

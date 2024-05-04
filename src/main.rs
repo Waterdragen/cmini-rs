@@ -9,7 +9,9 @@ use serenity::client::{Client, Context, EventHandler};
 use serenity::model::gateway::{Ready, GatewayIntents};
 use serenity::model::channel::Message;
 use std::fs;
+use std::io::Write;
 use tokio::time::{self, Duration};
+use tokio::signal;
 
 use crate::util::consts::{CMINI_CHANNEL, TRIGGERS};
 
@@ -43,9 +45,11 @@ impl EventHandler for Handler {
 
         let words: Vec<&str> = msg.content.split_whitespace().collect();
         let (action, args) = split_action_args(is_dm, &words);
+        let id = *msg.author.id.as_u64();
+
         let mut cmini_channel_only = false;
         let response = match cmds::get_cmd(&action) {
-            Some(cmd) => { cmini_channel_only = cmd.cmini_channel_only(); cmd.exec(&args) },
+            Some(cmd) => { cmini_channel_only = cmd.cmini_channel_only(); cmd.exec(&args, id) },
             None => format!("Error: {} is not an available command", &action),
         };
 
@@ -78,16 +82,7 @@ async fn daily_cron_job() {
     }
 }
 
-#[tokio::main]
-async fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    if !args.is_empty() && args.contains(&String::from("cache")) {
-        util::cache::cache_main();
-        return;
-    }
-
-    tokio::spawn(daily_cron_job());
-
+async fn start_discord_bot() {
     let token = fs::read_to_string("token.txt")
         .expect("Expected a token in the token.txt file");
 
@@ -103,5 +98,27 @@ async fn main() {
 
     if let Err(err) = client.start().await {
         println!("Client error: {:?}", err);
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if !args.is_empty() && args.contains(&String::from("cache")) {
+        util::cache::cache_main();
+        return;
+    }
+
+    tokio::spawn(daily_cron_job());
+    tokio::spawn(start_discord_bot());
+
+    let _ = signal::ctrl_c().await;
+    let mut input = String::new();
+    println!("Aborting cmini. Warning: cmini might have unsaved changes!");
+    print!("Sync data? [Y/n]: ");
+    std::io::stdout().flush().unwrap();
+    std::io::stdin().read_line(&mut input).unwrap();
+    if input.trim().to_lowercase() != "n" {
+        sync_data()
     }
 }

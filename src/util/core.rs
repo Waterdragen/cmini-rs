@@ -1,15 +1,17 @@
 use std::collections::HashMap;
-use std::fmt::{Debug, Formatter};
-use std::hash::{BuildHasherDefault, Hash, Hasher};
-use std::marker::PhantomData;
+use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 use std::sync::{Arc, RwLock};
 
 use indexmap::IndexMap;
 use fxhash::{FxBuildHasher, FxHashMap};
 use nohash_hasher::NoHashHasher;
+use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::{Error, Visitor};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
+use crate::util::conv;
 
 pub type Row = u8;
 pub type Col = u8;
@@ -22,14 +24,18 @@ pub type Corpus = Arc<RawCorpus>;
 pub type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
 pub type NoHashMap<K, V> = HashMap<K, V, NoHashHasher<K>>;
 pub type SyncFxMap<K, V> = Arc<RwLock<FxHashMap<K, Arc<V>>>>;
-pub type SyncIndexMap<K, V> = Arc<RwLock<IndexMap<K, Arc<V>>>>;
+pub type SyncIndexMap<K, V> = Arc<RwLock<FxIndexMap<K, Arc<V>>>>;
 
-pub type Layout = FxHashMap<char, Position>;
+pub type Layout = FxHashMap<Key, Position>;
 pub type LayoutConfig = Arc<RawLayoutConfig>;
-pub type CachedStat = FxHashMap<String, FxHashMap<Metric, f64>>;
+pub type Stat = FxHashMap<Metric, f64>;
+pub type FingerUsage = FxHashMap<Finger, f64>;
+pub type CachedStats = FxHashMap<String, Arc<Stat>>;
+pub type CachedStatConfig = Arc<RawCachedStatConfig>;
 
 pub type ServerCorpora = SyncFxMap<String, RawCorpus>;
 pub type ServerLayouts = SyncIndexMap<String, RawLayoutConfig>;
+pub type ServerCachedStats = SyncIndexMap<String, RawCachedStatConfig>;
 
 // Trait: Commandable
 // Struct: Command
@@ -48,7 +54,7 @@ impl JsonLayoutConfig {
         JsonLayoutConfig {
             user: layout_config.user,
             board: layout_config.board.clone(),
-            keys: pack_layout(&layout_config.keys),
+            keys: conv::layout::pack(&layout_config.keys),
         }
     }
 }
@@ -58,6 +64,7 @@ pub struct RawLayoutConfig {
     pub user: u64,
     pub board: String,
     pub keys: Layout,
+    pub sum: u64,
 }
 
 impl RawLayoutConfig {
@@ -66,7 +73,8 @@ impl RawLayoutConfig {
             name: name.to_string(),
             user: json_layout.user,
             board: json_layout.board.clone(),
-            keys: unpack_layout(&json_layout.keys),
+            keys: conv::layout::unpack(&json_layout.keys),
+            sum: conv::hash_keys(&json_layout.keys),
         }
     }
 }
@@ -74,6 +82,49 @@ impl RawLayoutConfig {
 impl Serialize for RawLayoutConfig {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         JsonLayoutConfig::from_raw(&self).serialize(serializer)
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct JsonCachedStatConfig {
+    pub sum: u64,
+    pub stats: FxIndexMap<String, String>,
+}
+
+impl JsonCachedStatConfig {
+    pub fn from_raw(cached_stat_config: &RawCachedStatConfig) -> Self {
+        let mut stats: FxIndexMap<String, String> = FxIndexMap::from_iter(
+            cached_stat_config.stats.iter().map(
+                |(corpus, stat)| (corpus.clone(), conv::stats::pack(stat))
+            ));
+        stats.sort_unstable_keys();
+        JsonCachedStatConfig {
+            sum: cached_stat_config.sum,
+            stats,
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct RawCachedStatConfig {
+    pub sum: u64,
+    pub stats: CachedStats,
+}
+
+impl RawCachedStatConfig {
+    pub fn from_json(json: JsonCachedStatConfig) -> Self {
+        RawCachedStatConfig {
+            sum: json.sum,
+            stats: json.stats.into_iter()
+                .map(|(corpus, packed)| (corpus, Arc::new(conv::stats::unpack(&packed))))
+                .collect()
+        }
+    }
+}
+
+impl Serialize for RawCachedStatConfig {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        JsonCachedStatConfig::from_raw(self).serialize(serializer)
     }
 }
 
@@ -122,7 +173,7 @@ impl Kwarg {
 }
 
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
 pub enum Metric {
     Sfb,
@@ -142,7 +193,7 @@ pub enum Metric {
 }
 
 impl Metric {
-    pub fn from_string(s: &str) -> Self {
+    pub fn from_str(s: &str) -> Self {
         match s {
             "sfb" => Metric::Sfb,
             "sft" => Metric::Sft,
@@ -162,23 +213,16 @@ impl Metric {
         }
     }
 
-    pub const fn to_str(&self) -> &str {
-        match self {
-            Metric::Sfb => "sfb",
-            Metric::Sft => "sft",
-            Metric::Sfr => "sfr",
-            Metric::Alt => "alt",
-            Metric::AltSfs => "alt-sfs",
-            Metric::Red => "red",
-            Metric::BadRed => "bad-red",
-            Metric::RedSfs => "red-sfs",
-            Metric::BadRedSfs => "bad-red-sfs",
-            Metric::InOne => "inoneh",
-            Metric::OutOne => "outoneh",
-            Metric::InRoll => "inroll",
-            Metric::OutRoll => "outroll",
-            Metric::Unknown => "unknown",
-        }
+    pub fn pack(self) -> char {
+        let num: u8 = self.into();
+        let hex = format!("{:01x}", num);
+        hex.chars().next().unwrap()
+    }
+
+    pub fn unpack(c: char) -> Self {
+        let s = String::from(c);
+        let num = u8::from_str_radix(&s, 16).unwrap_or_else(|_| panic!("Failed to convert to u8. Unexpected value '{c}'"));
+        Metric::try_from(num).unwrap_or_else(|_| panic!("Failed to convert to Metric. Unexpected value `{num}`"))
     }
 
     pub fn new_counter() -> FxHashMap<Metric, u64> {
@@ -187,24 +231,18 @@ impl Metric {
         }))
     }
 
-    pub fn normalize_counter(counter: &FxHashMap<Metric, u64>) -> FxHashMap<Metric, f64> {
+    pub fn normalize_counter(counter: &FxHashMap<Metric, u64>) -> Stat {
         let total = counter.values().sum::<u64>() as f64;
-        assert_ne!(total, 0.0);
+        debug_assert_ne!(total, 0.0);
         FxHashMap::from_iter(counter.iter().map(|(metric, freq)| {
             (*metric, *freq as f64 / total)
         }))
     }
 }
 
-impl Serialize for Metric {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        serializer.serialize_str(self.to_str())
-    }
-}
-
 pub trait Commandable {
     fn init() -> DynCommand where Self: Sized + 'static;
-    fn exec(&self, args: &str) -> String;
+    fn exec(&self, args: &str, id: u64) -> String;
     fn usage<'a>(&self) -> &'a str;
     fn desc<'a>(&self) -> &'a str;
 
@@ -223,54 +261,4 @@ pub trait Commandable {
     fn mod_only(&self) -> bool {
         false
     }
-}
-
-fn pack_pos((row, col, finger): &Position) -> String {
-    let mut packed = (u16::from(*row) & 0xf) << 8;
-    packed |= (u16::from(*col) & 0xf) << 4;
-    packed |= finger & 0xf;
-    format!("{:03x}", packed)
-}
-
-fn unpack_pos(packed_str: &str) -> Position {
-    let packed = u16::from_str_radix(packed_str, 16).unwrap();
-    let row = (packed >> 8 & 0xf) as u8;
-    let col = (packed >> 4 & 0xf) as u8;
-    let finger = packed & 0xf;
-    (row, col, finger)
-}
-
-fn pack_layout(layout: &Layout) -> String {
-    let mut layout_packed_ordered: Vec<(String, u32)> = layout.iter().map(|(key, pos)| {
-        let mut packed_keypos = String::with_capacity(4);
-        packed_keypos.push(*key);
-        let packed_pos = pack_pos(pos);
-        packed_keypos.push_str(&packed_pos);
-        let order = ((pos.0 as u32) << 8) + (pos.1 as u32);
-        (packed_keypos, order)
-    }).collect();
-    layout_packed_ordered.sort_by(|item0, item1| {
-        item0.1.cmp(&item1.1)
-    });
-    let layout_packed: String = layout_packed_ordered.into_iter().map(|(keypos, _)| {
-        keypos
-    }).collect();
-
-    layout_packed
-}
-
-fn unpack_layout(layout_packed: &str) -> Layout {
-    let mut layout = Layout::default();
-    let unpacked_chars: Vec<char> = layout_packed.chars().collect();
-
-    for start in (0..unpacked_chars.len()).step_by(4) {
-        let key = unpacked_chars[start];
-        let mut chunk = String::with_capacity(3);
-        (start + 1 .. start + 4).for_each(|index| {
-            chunk.push(unpacked_chars[index])
-        });
-        let pos = unpack_pos(&chunk);
-        layout.insert(key, pos);
-    }
-    layout
 }

@@ -1,10 +1,10 @@
 use std::fs::File;
 use std::io::Read;
+use std::ops::Index;
 use std::sync::{Arc, RwLock};
 use serde_json::Value;
 use fxhash::{FxHashMap};
-use indexmap::IndexMap;
-use crate::util::core::{CachedStat, RawLayoutConfig, Metric, RawCorpus, JsonLayoutConfig, LayoutConfig, ServerLayouts};
+use crate::util::core::{CachedStats, CachedStatConfig, FxIndexMap, JsonLayoutConfig, JsonCachedStatConfig, LayoutConfig, Metric, RawLayoutConfig, RawCachedStatConfig, RawCorpus, ServerCachedStats, ServerLayouts, Key};
 
 fn read_json(path: &str) -> Value {
     let mut file = File::open(path).expect(
@@ -12,7 +12,7 @@ fn read_json(path: &str) -> Value {
     );
     let mut contents = String::new();
     file.read_to_string(&mut contents).expect("Failed to read file");
-    let json: Value = serde_json::from_str(&contents).expect("Failed to parse JSON");
+    let json: Value = serde_json::from_str(&contents).expect(&format!("Failed to parse JSON {}", path));
     json
 }
 
@@ -23,7 +23,7 @@ pub fn get_map_str_str(path: &str) -> FxHashMap<String, String> {
     let obj = json.as_object().unwrap();
 
     for (key, value) in obj {
-        map.insert(key.clone(), value.to_string());
+        map.insert(key.clone(), value.as_str().unwrap().to_string());
     }
     map
 }
@@ -32,7 +32,7 @@ pub fn get_vec_str(path: &str) -> Vec<String> {
     let json = read_json(path);
     let arr = json.as_array().unwrap();
     arr.into_iter()
-        .map(|val| {val.to_string()})
+        .map(|val| {val.as_str().unwrap().to_string()})
         .collect()
 }
 
@@ -63,10 +63,10 @@ pub fn get_map_str_u64(path: &str) -> FxHashMap<String, u64> {
     map
 }
 
-pub fn get_raw_layouts(path: &str) -> ServerLayouts {
+pub fn get_server_layouts(path: &str) -> ServerLayouts {
     let json = read_json(path);
-    let raw_layouts: IndexMap<String, JsonLayoutConfig> = serde_json::from_value(json).expect("Failed to parse layout.json");
-    let layouts: IndexMap<String, LayoutConfig> = raw_layouts
+    let raw_layouts: FxIndexMap<String, JsonLayoutConfig> = serde_json::from_value(json).expect("Failed to parse layout.json");
+    let layouts: FxIndexMap<String, LayoutConfig> = raw_layouts
         .into_iter()
         .map(|(name, raw_layout)| {
             (name.clone(), Arc::new(RawLayoutConfig::from_json(&name, raw_layout)))
@@ -100,7 +100,7 @@ pub fn get_corpus(path: &str) -> RawCorpus {
     let obj = json.as_object().unwrap();
     obj.into_iter()
         .map(|(key, value)| {
-            let mut chars: Vec<char> = Vec::with_capacity(3);
+            let mut chars: Vec<Key> = Vec::with_capacity(3);
             key.to_lowercase().chars().for_each(|c| {
                 chars.push(c);
             });
@@ -108,6 +108,17 @@ pub fn get_corpus(path: &str) -> RawCorpus {
             (chars, number)
         })
         .collect()
+}
+
+pub fn get_server_cached_stats(path: &str) -> ServerCachedStats {
+    let json = read_json(path);
+    let obj = json.as_object().unwrap();
+    let raw_cached_stats: FxIndexMap<String, CachedStatConfig> = FxIndexMap::from_iter(
+        obj.iter().map(|(key, value)| {
+            let json_cached: JsonCachedStatConfig = serde_json::from_value(value.clone()).unwrap();
+            (key.clone(), Arc::new(RawCachedStatConfig::from_json(json_cached)))
+    }));
+    Arc::new(RwLock::new(raw_cached_stats))
 }
 
 #[deprecated]
@@ -130,18 +141,25 @@ pub fn get_map_str_map_str_f64(path: &str) -> FxHashMap<String, FxHashMap<String
     map
 }
 
-pub fn get_cached_stat(path: &str) -> CachedStat {
+#[deprecated]
+pub fn get_cached_json(path: &str) -> RawCachedStatConfig {
     let json = read_json(path);
-    let mut cached_stat: CachedStat = FxHashMap::default();
+    let json_cached: JsonCachedStatConfig = serde_json::from_value(json).expect("Cannot get cached json");
+    RawCachedStatConfig::from_json(json_cached)
+}
+
+pub fn get_cached_stat(path: &str) -> CachedStats {
+    let json = read_json(path);
+    let mut cached_stat: CachedStats = FxHashMap::default();
 
     let obj = json.as_object().unwrap();
     for (corpus, stat) in obj {
         let stat = stat.as_object().unwrap();
         let stat: FxHashMap<Metric, f64> = stat.iter()
             .map(|(metric, freq)| {
-                (Metric::from_string(metric), freq.as_f64().unwrap())
+                (Metric::from_str(metric), freq.as_f64().unwrap())
             }).collect();
-        cached_stat.insert(corpus.clone(), stat);
+        cached_stat.insert(corpus.clone(), Arc::new(stat));
     }
     cached_stat
 }
@@ -163,17 +181,18 @@ pub fn get_table(path: &str) -> [Metric; 4096] {
         let finger1 = *fingers.get(&finger_combo[2..4]).unwrap();
         let finger2 = *fingers.get(&finger_combo[4..6]).unwrap();
         let hash_value = (finger0 << 8) | (finger1 << 4) | finger2;
-        let gram_type = Metric::from_string(gram_type.as_str().unwrap());
+        let gram_type = Metric::from_str(gram_type.as_str().unwrap());
         table[usize::from(hash_value)] = gram_type;
     }
-    println!("{:?}", table[0]);
 
     table
 }
 
-pub fn write_cached_stat(path: &str, map: &mut CachedStat) {
+#[deprecated]
+pub fn write_cached_stat(path: &str, map: &mut CachedStats) {
     let file = File::create(path).unwrap();
-    serde_json::to_writer_pretty(file, map).unwrap();
+    // serde_json::to_writer_pretty(file, map).unwrap();
+    unimplemented!()
 }
 
 pub fn write_layouts(path: &str, lls: &ServerLayouts) {
@@ -184,6 +203,11 @@ pub fn write_layouts(path: &str, lls: &ServerLayouts) {
 pub fn write_map_u64_vec_str(path: &str, map: &FxHashMap<u64, Vec<String>>) {
     let file = File::create(path).unwrap();
     serde_json::to_writer_pretty(file, map).unwrap();
+}
+
+pub fn write_cached_stats(path: &str, cached_stats: &ServerCachedStats) {
+    let file = File::create(path).unwrap();
+    serde_json::to_writer_pretty(file, cached_stats).unwrap()
 }
 
 #[cfg(test)]
@@ -236,5 +260,14 @@ mod tests {
         let path = "./corpora/english-1k/trigrams.json";
         let vec_ = get_corpus(path);
         println!("{:?}", vec_);
+    }
+
+    fn test_get_cached_json() {
+        let path = "./cache/a02.json";
+        let map = get_cached_json(path);
+        println!("{}", map.sum);
+        for (key, value) in map.stats {
+            println!("{key}: {:?}", value);
+        }
     }
 }

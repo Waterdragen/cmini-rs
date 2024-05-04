@@ -1,14 +1,15 @@
-use std::path::Path;
 use std::sync::{Arc, RwLock};
+use fxhash::FxHashMap;
 
 use lazy_static::lazy_static;
 use strsim::jaro_winkler;
 
-use crate::util::jsons::{get_raw_layouts, write_layouts};
+use crate::util::jsons::{get_server_layouts, write_layouts, get_map_str_vec_u64};
 use crate::util::core::{LayoutConfig, ServerLayouts};
 
 lazy_static!(
-    pub static ref LAYOUTS: ServerLayouts = get_raw_layouts("./layouts.json");
+    pub static ref LAYOUTS: ServerLayouts = get_server_layouts("./layouts.json");
+    pub static ref LIKES: FxHashMap<String, Vec<u64>> = get_map_str_vec_u64("./likes.json");
 );
 
 pub fn add(ll: LayoutConfig) -> bool {
@@ -37,6 +38,13 @@ pub fn remove(name: &str, id: u64) -> bool {
 
 pub fn remove_as_admin(name: &str, id: u64) -> bool {
     remove_layout(name, id, true)
+}
+
+pub fn get_like_count(name: &str) -> usize {
+    match LIKES.get(name) {
+        Some(liked_users) => liked_users.len(),
+        None => 0,
+    }
 }
 
 pub fn sync_layouts() {

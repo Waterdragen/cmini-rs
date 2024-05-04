@@ -1,65 +1,55 @@
-use std::path::Path;
+use std::sync::Arc;
 use rayon::prelude::*;
 use std::time::Instant;
 use fxhash::FxHashMap;
-use crate::util::jsons::{get_cached_stat, write_cached_stat};
-use crate::util::core::{CachedStat, Corpus, RawLayoutConfig, Metric, LayoutConfig};
+use lazy_static::lazy_static;
+use crate::util::jsons::{get_server_cached_stats, write_cached_stats};
+use crate::util::core::{CachedStats, Corpus, RawLayoutConfig, LayoutConfig, RawCachedStatConfig, ServerCachedStats, CachedStatConfig, Stat};
 use crate::util::{analyzer, corpora, memory};
 
-fn get_layout(name: &str) -> LayoutConfig {
-    memory::get(name).unwrap()
-}
+lazy_static!(
+    pub static ref CACHED_STATS: ServerCachedStats = get_server_cached_stats("./cached_stats.json");
+);
 
-fn get_cache(name: &str) -> Option<CachedStat> {
-    let name = name.to_lowercase();
-    let path = format!("./cache/{}.json", name);
-    if !Path::new(&path).exists() {
-        return None;
-    }
-    Some(get_cached_stat(&path))
-}
-
-fn cache_fill<'a>(ll: &RawLayoutConfig, data: Option<&'a mut CachedStat>, corpus: &str) -> &'a mut CachedStat {
-    let path = format!("./corpora/{}/trigrams.json", corpus);
-    let trigrams: Corpus = corpora::load_corpus(&path);
-    let stats = analyzer::trigrams(ll, &trigrams);
-
-    match data {
-        Some(data) => {
-            data.insert(corpus.to_string(), stats);
-            data
-        },
-        None => {
-            let mut update: CachedStat = FxHashMap::default();
-            update.insert(corpus.to_string(), stats);
-            Box::leak(Box::new(update))
-        },
-    }
-}
-
-fn update<'a>(name: &str, data: &'a mut CachedStat) -> &'a mut CachedStat {
-    write_cached_stat(&format!("./cache/{}.json", name), data);
-    data
-}
-
-pub fn get<'a>(name: &str, corpus: &str) -> Option<FxHashMap<Metric, f64>> {
+pub fn get(name: &str, corpus: &str) -> Option<Arc<Stat>> {
     if name == "" || corpus == "" {
         return None;
     }
     let name = name.to_lowercase();
     let corpus = corpus.to_lowercase();
 
-    let data = get_cache(&name);
-    let mut data = data.unwrap_or_else(|| FxHashMap::default());
-
-    if data.contains_key(&corpus) {
-        return data.remove(&corpus);
-    }
-    let data = update(&name, cache_fill(&memory::find(&name), Some(Box::leak(Box::new(data))), &corpus));
-    data.remove(&corpus)
+    let cached_stats = CACHED_STATS.read().unwrap();
+    let stats = cached_stats.get(&name)?.stats.get(&corpus)?;
+    Some(Arc::clone(stats))
 }
 
+fn get_layout(name: &str) -> LayoutConfig {
+    memory::get(name).unwrap()
+}
+
+fn get_cache(name: &str) -> Option<CachedStatConfig> {
+    let cached_stats = CACHED_STATS.read().unwrap();
+    let name = name.to_lowercase();
+    Some(Arc::clone(cached_stats.get(&name)?))
+}
+
+fn cache_fill(ll: &RawLayoutConfig, data: &mut CachedStats, corpus: &str) {
+    let path = format!("./corpora/{}/trigrams.json", corpus);
+    let trigrams: Corpus = corpora::load_corpus(&path);
+    let stats = analyzer::trigrams(ll, &trigrams);
+
+    data.insert(corpus.to_string(), Arc::new(stats));
+}
+
+fn update(name: &str, data: CachedStatConfig) {
+    let mut cached_stats = CACHED_STATS.write().unwrap();
+    cached_stats.insert(name.to_string(), data);
+}
+
+
+
 fn cache_files() {
+    let start = Instant::now();
     let layouts = memory::LAYOUTS.read().unwrap();
     let names: Vec<&str> = layouts.keys().map(String::as_str).collect();
     let corpus_files = std::fs::read_dir("./corpora/").unwrap();
@@ -72,15 +62,33 @@ fn cache_files() {
     names.par_iter().for_each(|name| {
         // let layout_start = Instant::now();
         let ll = get_layout(name);
-        let mut data = get_cache(&name);
-        let mut data: Option<&mut CachedStat> = data.as_mut();
+        let cached = get_cache(&name);
+        if let Some(cached) = &cached {
+            if cached.sum == ll.sum {
+                println!("Layout: {}", &ll.name);
+                return;
+            }
+        }
+
+        let mut stats: CachedStats = FxHashMap::default();
 
         for corpus in corpus_names.iter() {
-            println!("Layout: {}, Corpus: {}", ll.name, corpus);
-            data = Some(cache_fill(&ll, data, corpus));
+            println!("Layout: {}, Corpus: {}", &ll.name, corpus);
+            cache_fill(&ll, &mut stats, corpus);
         }
-        update(&name, data.unwrap());
+        let cached = RawCachedStatConfig {
+            sum: ll.sum,
+            stats,
+        };
+        update(&name, Arc::new(cached));
     });
+    let duration = start.elapsed();
+    println!("Cpu bound elapsed: {:?}", duration);
+
+    let start = Instant::now();
+    write_cached_stats("./cached_stats.json", &CACHED_STATS);
+    let duration = start.elapsed();
+    println!("I/O bound elapsed: {:?}", duration);
 }
 
 pub fn cache_main() {
