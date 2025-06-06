@@ -2,9 +2,9 @@
 
 extern crate core;
 
-mod util;
-mod test;
 mod cmds;
+mod test;
+mod util;
 
 use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};
@@ -12,16 +12,35 @@ use serenity::model::gateway::{Ready, GatewayIntents};
 use serenity::model::channel::Message;
 use std::fs;
 use std::io::Write;
+use std::sync::{Arc, RwLock};
+use once_cell::sync::Lazy;
 use tokio::time::{self, Duration};
 use tokio::signal;
 
-use crate::util::consts::{CMINI_CHANNEL, TRIGGERS};
+use crate::util::consts::{CMINI_CHANNEL, TRIGGERS, ADMINS};
+
+static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock::new(false)));
+
+fn maintenance_check(id: u64) -> bool {
+    let mode = MAINTENANCE_MODE.read().unwrap();
+    if *mode {
+        return ADMINS.contains(&id);
+    }
+    !*mode
+}
 
 fn split_action_args(is_dm: bool, words: &[&str]) -> (String, String) {
-    match is_dm {
-        true => (words.first().unwrap_or(&"").to_lowercase(), words[1..].join(" ")),
-        false => (words.get(1).unwrap_or(&"").to_lowercase(), words[2..].join(" "))
-    }
+    let (first, rest) = match is_dm {
+        true => (0, 1..),
+        false => (1, 2..),
+    };
+    (
+        words.get(first).unwrap_or(&"").to_lowercase(),
+        match words.get(rest) {
+            None => String::new(),
+            Some(s) => s.join(" "),
+        }
+    )
 }
 
 struct Handler;
@@ -31,6 +50,11 @@ impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
         // Ignore other bots and empty messages
         if msg.author.bot || msg.content.is_empty() {
+            return;
+        }
+
+        let id = *msg.author.id.as_u64();
+        if !maintenance_check(id) {
             return;
         }
 
@@ -47,12 +71,24 @@ impl EventHandler for Handler {
 
         let words: Vec<&str> = msg.content.split_whitespace().collect();
         let (action, args) = split_action_args(is_dm, &words);
-        let id = *msg.author.id.as_u64();
 
         let mut cmini_channel_only = false;
-        let response = match cmds::get_cmd(&action) {
-            Some(cmd) => { cmini_channel_only = cmd.cmini_channel_only(); cmd.exec(&args, id) },
-            None => format!("Error: {} is not an available command", &action),
+        let response = match action.as_ref() {
+            "" => {
+                "Try `!cmini help`".to_owned()
+            }
+            "akl" => {
+                "Not yet implemented".to_owned()
+            },
+            "maintenance" | "1984" => {
+                cmds::maintenance::Command.exec(&args, id, Arc::clone(&MAINTENANCE_MODE))
+            }
+            _ => {
+                match cmds::get_cmd(&action) {
+                    Some(cmd) => { cmini_channel_only = cmd.cmini_channel_only(); cmd.exec(&args, id) },
+                    None => format!("Error: {} is not an available command", &action),
+                }
+            }
         };
 
         // DM required?

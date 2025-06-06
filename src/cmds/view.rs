@@ -4,10 +4,6 @@ use crate::util::{layout, memory};
 pub struct Command;
 
 impl Commandable for Command {
-    fn init() -> DynCommand where Self: Sized + 'static {
-        Box::new(Command{})
-    }
-
     fn exec(&self, name: &str, id: u64) -> String {
         let ll = memory::find(name);
         layout::to_string(&ll, id)

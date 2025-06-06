@@ -40,7 +40,7 @@ pub type ServerCachedStats = SyncIndexMap<String, RawCachedStatConfig>;
 // Trait: Commandable
 // Struct: Command
 // Instance Smart Pointer: DynCommand
-pub type DynCommand = Box<dyn Commandable + Send + Sync + 'static>;
+pub type DynCommand = Box<dyn Commandable>;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct JsonLayoutConfig {
@@ -193,11 +193,14 @@ impl Metric {
     }
 }
 
-pub trait Commandable {
-    fn init() -> DynCommand where Self: Sized + 'static;
+pub trait Commandable: Send + Sync {
     fn exec(&self, args: &str, id: u64) -> String;
     fn usage<'a>(&self) -> &'a str;
     fn desc<'a>(&self) -> &'a str;
+
+    fn init(self) -> Box<dyn Commandable> where Self: Sized + 'static {
+        Box::new(self)
+    }
 
     fn help(&self) -> String {
         let mut help_message = String::new();
