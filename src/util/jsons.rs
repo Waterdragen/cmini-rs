@@ -4,15 +4,16 @@ use std::ops::Index;
 use std::sync::{Arc, RwLock};
 use serde_json::Value;
 use fxhash::{FxHashMap};
-use crate::util::core::{CachedStats, CachedStatConfig, FxIndexMap, JsonLayoutConfig, JsonCachedStatConfig, LayoutConfig, Metric, RawLayoutConfig, RawCachedStatConfig, RawCorpus, ServerCachedStats, ServerLayouts, Key};
+use serenity::futures::{TryFutureExt, TryStreamExt};
+use crate::util::core::{CachedStatConfig, FxIndexMap, JsonLayoutConfig, JsonCachedStatConfig, LayoutConfig, Metric, RawLayoutConfig, RawCachedStatConfig, RawCorpus, ServerCachedStats, ServerLayouts, Key};
 
 fn read_json(path: &str) -> Value {
-    let mut file = File::open(path).expect(
-        format!("Failed to open file {}", path).as_str()
+    let mut file = File::open(path).unwrap_or_else(
+        |_| panic!("Failed to open file {}", path)
     );
     let mut contents = String::new();
-    file.read_to_string(&mut contents).expect("Failed to read file");
-    let json: Value = serde_json::from_str(&contents).expect(&format!("Failed to parse JSON {}", path));
+    file.read_to_string(&mut contents).unwrap_or_else(|_| panic!("Failed to read file"));
+    let json: Value = serde_json::from_str(&contents).unwrap_or_else(|_| panic!("Failed to parse JSON {}", path));
     json
 }
 
@@ -22,13 +23,12 @@ fn read_json_checked(path: &str) -> Result<Value, String> {
         Err(_) => return Err(format!("Failed to open file {}", path)),
     };
     let mut contents = String::new();
-    if let Err(_) = file.read_to_string(&mut contents) {
-        return Err(String::from("Failed to read file"));
-    };
-    match serde_json::from_str(&contents) {
-        Ok(json) => Ok(json),
-        Err(_) => Err(format!("Failed to parse JSON {}", path))
-    }
+
+    let _ = file.read_to_string(&mut contents)
+                .map_err(|_| "Failed to read file".to_owned())?;
+
+    serde_json::from_str(&contents)
+        .map_err(|_| format!("Failed to parse JSON {}", path))?
 }
 
 pub fn get_map_str_str(path: &str) -> FxHashMap<String, String> {
@@ -46,7 +46,7 @@ pub fn get_map_str_str(path: &str) -> FxHashMap<String, String> {
 pub fn get_vec_str(path: &str) -> Vec<String> {
     let json = read_json(path);
     let arr = json.as_array().unwrap();
-    arr.into_iter()
+    arr.iter()
         .map(|val| {val.as_str().unwrap().to_string()})
         .collect()
 }
@@ -59,7 +59,7 @@ pub fn get_map_str_vec_u64(path: &str) -> FxHashMap<String, Vec<u64>> {
     for (key, value) in obj {
         let arr = value.as_array().unwrap();
         let vec_ = arr
-            .into_iter()
+            .iter()
             .filter_map(|val| val.as_u64())
             .collect();
         map.insert(key.clone(), vec_);
@@ -152,10 +152,9 @@ pub fn get_map_str_map_str_f64(path: &str) -> FxHashMap<String, FxHashMap<String
         let stat_map: FxHashMap<String, f64>
             = stat.iter()
                   .filter_map(|item| {
-                match item.1.as_f64() {
-                    Some(f64_) => Some((item.0.to_string(), f64_)),
-                    None => None,
-                }
+                      item.1
+                          .as_f64()
+                          .map(|f64_| (item.0.to_string(), f64_))
             }).collect();
         map.insert(corpus.clone(), stat_map);
     }
@@ -206,6 +205,7 @@ mod tests {
     use std::hash::Hash;
     use super::*;
 
+    #[test]
     fn test_get_map_str_str() {
         let path = "./links.json";
         let map = get_map_str_str(path);
@@ -214,6 +214,7 @@ mod tests {
         }
     }
 
+    #[test]
     fn test_get_vec_str() {
         let path = "./pairs.json";
         let vec = get_vec_str(path);
@@ -222,6 +223,7 @@ mod tests {
         }
     }
 
+    #[test]
     fn test_get_map_str_vec_u64() {
         let path = "./likes.json";
         let map = get_map_str_vec_u64(path);
@@ -230,6 +232,7 @@ mod tests {
         }
     }
 
+    #[test]
     fn test_get_map_u64_vec_str() {
         let path = "./authors.json";
         let map = get_map_u64_vec_str(path);
@@ -238,6 +241,7 @@ mod tests {
         }
     }
 
+    #[test]
     fn test_get_corpus() {
         let path = "./corpora/english-1k/trigrams.json";
         let vec_ = get_corpus(path);

@@ -50,7 +50,6 @@ pub mod layout {
 
 
 pub mod stats {
-    use fxhash::FxHashMap;
     use crate::util::conv::freq;
     use crate::util::core::{Metric, Stat};
 
@@ -68,7 +67,7 @@ pub mod stats {
     }
 
     pub fn unpack(packed: &str) -> Stat {
-        let mut stats = FxHashMap::default();
+        let mut stats = Stat::default();
         let packed: Vec<char> = packed.chars().collect();
         (0..packed.len()).step_by(INTERVAL).enumerate().for_each(|(metric_num, index)| {
             let packed_freq = &packed[index..index + INTERVAL];

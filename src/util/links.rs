@@ -1,15 +1,14 @@
 use fxhash::FxHashMap;
 use std::sync::{Arc, RwLock};
+use once_cell::sync::Lazy;
 use crate::util::jsons::get_map_str_str;
-use lazy_static::lazy_static;
 
-lazy_static!(
-    static ref __LINKS: Arc<RwLock<FxHashMap<String, String>>>
-        = Arc::new(RwLock::new(get_map_str_str("./links.json")));
+static LINKS: Lazy<Arc<RwLock<FxHashMap<String, String>>>> = Lazy::new(||
+    Arc::new(RwLock::new(get_map_str_str("./links.json")))
 );
 
 pub fn get_link(layout_name: &str) -> String {
-    let links = __LINKS.read().unwrap();
+    let links = LINKS.read().unwrap();
     let exteral_link = links.get(layout_name);
     match exteral_link {
         Some(link) => format!("<{}>", link),

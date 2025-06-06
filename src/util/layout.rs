@@ -58,7 +58,7 @@ pub fn get_matrix_str(ll: &LayoutConfig) -> String {
     });
 
     match rows[3].chars().all(|c| c == ' ') {
-        true => (&rows[..3]).join("\n"),
+        true => rows[..3].join("\n"),
         false => rows.join("")
     }
 }
@@ -124,17 +124,14 @@ pub fn to_string(ll: &LayoutConfig, id: u64) -> String {
     let like_str = if likes == 1 {"like"} else {"likes"};
     let external_link = links::get_link(&ll.name);
 
+    let ll_name = ll.name.as_str();
+    let corpus_name = corpora::get_user_corpus(id).to_uppercase();
     format!("```\n\
-             {} ({}) ({} {})\n\
-             {}\n
+             {ll_name} ({author}) ({likes} {like_str})\n\
+             {matrix_str}\n
              \n\
-             {}:\n\
-             {}\
+             {corpus_name}:\n\
+             {stats_str}\
              ```\n\
-             {}\n",
-    ll.name, author, likes, like_str,
-    matrix_str,
-    corpora::get_user_corpus(id).to_uppercase(),
-    stats_str,
-    external_link)
+             {external_link}\n")
 }

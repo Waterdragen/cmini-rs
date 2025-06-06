@@ -1,12 +1,9 @@
-use lazy_static::lazy_static;
-use tokio::time::Instant;
 use fxhash::FxHashMap;
+use once_cell::sync::Lazy;
 use crate::util::core::{Corpus, Layout, RawLayoutConfig, Metric, Stat, FingerUsage, Finger, Key};
 use crate::util::jsons::{get_table};
 
-lazy_static!(
-    static ref TABLE: [Metric; 4096] = get_table("./table.json");
-);
+static TABLE: Lazy<[Metric; 4096]> = Lazy::new(|| get_table("./table.json"));
 
 pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FingerUsage {
     let mut fingers: FxHashMap<Finger, u64> = FxHashMap::default();
@@ -19,7 +16,7 @@ pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FingerUsage {
         let finger = &ll.keys.get(&gram).unwrap().2;
         match fingers.contains_key(finger) {
             true => { *fingers.get_mut(finger).unwrap() += count; },
-            false => { fingers.insert(*finger, count.clone()); },
+            false => { fingers.insert(*finger, *count); },
         };
     }
     let total = fingers.values().sum::<u64>() as f64;
@@ -42,7 +39,6 @@ pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FingerUsage {
 
 
 pub fn trigrams(ll: &RawLayoutConfig, grams: &Corpus) -> Stat {
-    // let analyzer_start = Instant::now();
     let mut counter = Metric::new_counter();
     let fingers = &ll.keys;
     const SFR: &Metric = &Metric::Sfr;
@@ -74,7 +70,6 @@ pub fn trigrams(ll: &RawLayoutConfig, grams: &Corpus) -> Stat {
             .unwrap_or_else(|| panic!("cannot get gram type {:?}", gram_type)
             ) += count;
     });
-    // println!("analyzer::trigrams(): {:?} gram length: {}", analyzer_start.elapsed(), grams.len());
 
     Metric::normalize_counter(&counter)
 }

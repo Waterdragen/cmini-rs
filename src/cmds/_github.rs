@@ -1,6 +1,6 @@
 use crate::util::core::{Commandable, DynCommand};
 
-const LINK: &'static str = "<https://github.com/waterdragen/cmini-rs>";
+const LINK: &str = "<https://github.com/waterdragen/cmini-rs>";
 
 pub struct Command;
 

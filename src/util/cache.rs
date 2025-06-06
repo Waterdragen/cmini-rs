@@ -1,18 +1,15 @@
 use std::sync::Arc;
 use rayon::prelude::*;
 use std::time::Instant;
-use fxhash::FxHashMap;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use crate::util::jsons::{get_server_cached_stats, write_cached_stats};
 use crate::util::core::{CachedStats, Corpus, RawLayoutConfig, LayoutConfig, RawCachedStatConfig, ServerCachedStats, CachedStatConfig, Stat};
 use crate::util::{analyzer, corpora, memory};
 
-lazy_static!(
-    pub static ref CACHED_STATS: ServerCachedStats = get_server_cached_stats("./cached_stats.json");
-);
+pub static CACHED_STATS: Lazy<ServerCachedStats> = Lazy::new(|| get_server_cached_stats("./cached_stats.json"));
 
 pub fn get(name: &str, corpus: &str) -> Option<Arc<Stat>> {
-    if name == "" || corpus == "" {
+    if name.is_empty() || corpus.is_empty() {
         return None;
     }
     let name = name.to_lowercase();
@@ -65,7 +62,7 @@ fn cache_files() {
     names.par_iter().for_each(|name| {
         // let layout_start = Instant::now();
         let ll = get_layout(name);
-        let cached = get_cache(&name);
+        let cached = get_cache(name);
         if let Some(cached) = &cached {
             if cached.sum == ll.sum {
                 println!("Layout: {}", &ll.name);
@@ -73,7 +70,7 @@ fn cache_files() {
             }
         }
 
-        let mut stats: CachedStats = FxHashMap::default();
+        let mut stats: CachedStats = CachedStats::default();
 
         for corpus in corpus_names.iter() {
             println!("Layout: {}, Corpus: {}", &ll.name, corpus);
@@ -83,7 +80,7 @@ fn cache_files() {
             sum: ll.sum,
             stats,
         };
-        update(&name, Arc::new(cached));
+        update(name, Arc::new(cached));
     });
     sort();
 

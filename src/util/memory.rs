@@ -1,16 +1,14 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use fxhash::FxHashMap;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use strsim::jaro_winkler;
 
 use crate::util::jsons::{get_server_layouts, write_layouts, get_map_str_vec_u64};
 use crate::util::core::{LayoutConfig, ServerLayouts};
 
-lazy_static!(
-    pub static ref LAYOUTS: ServerLayouts = get_server_layouts("./layouts.json");
-    pub static ref LIKES: FxHashMap<String, Vec<u64>> = get_map_str_vec_u64("./likes.json");
-);
+pub static LAYOUTS: Lazy<ServerLayouts> = Lazy::new(|| get_server_layouts("./layouts.json"));
+pub static LIKES: Lazy<FxHashMap<String, Vec<u64>>> = Lazy::new(|| get_map_str_vec_u64("./likes.json"));
 
 pub fn add(ll: LayoutConfig) -> bool {
     if has_layout(&ll.name) {
@@ -20,7 +18,7 @@ pub fn add(ll: LayoutConfig) -> bool {
     true
 }
 
-pub fn get<'a>(name: &str) -> Option<LayoutConfig> {
+pub fn get(name: &str) -> Option<LayoutConfig> {
     match has_layout(name) {
         true => Some(get_layout(name)),
         false => None,
@@ -59,7 +57,7 @@ fn add_layout(ll: LayoutConfig) {
 
 fn get_layout(name: &str) -> LayoutConfig {
     let layouts = LAYOUTS.read().unwrap();
-    let layout = layouts.get(name).expect(&format!("Cannot get {name}"));
+    let layout = layouts.get(name).unwrap_or_else(|| panic!("Cannot get {name}"));
     Arc::clone(layout)
 }
 

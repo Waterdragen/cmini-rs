@@ -6,7 +6,7 @@ use std::sync::{Arc, RwLock};
 use indexmap::IndexMap;
 use fxhash::{FxBuildHasher, FxHashMap};
 use nohash_hasher::NoHashHasher;
-use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Error, Visitor};
 use strum::IntoEnumIterator;
@@ -81,7 +81,7 @@ impl RawLayoutConfig {
 
 impl Serialize for RawLayoutConfig {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        JsonLayoutConfig::from_raw(&self).serialize(serializer)
+        JsonLayoutConfig::from_raw(self).serialize(serializer)
     }
 }
 
@@ -127,51 +127,6 @@ impl Serialize for RawCachedStatConfig {
         JsonCachedStatConfig::from_raw(self).serialize(serializer)
     }
 }
-
-#[derive(PartialEq)]
-pub enum ArgType {
-    Str,
-    Vec,
-}
-
-#[derive(PartialEq)]
-pub enum KwargType {
-    Bool,
-    Vec,
-    Str,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Kwarg {
-    Bool(bool),
-    Vec(Vec<String>),
-    Str(String),
-    Default,
-}
-
-impl Kwarg {
-    pub fn as_bool(&self) -> bool {
-        match self {
-            Kwarg::Bool(b) => *b,
-            _ => panic!("{self:?} is not a bool")
-        }
-    }
-
-    pub fn as_vec(&self) -> &Vec<String> {
-        match self {
-            Kwarg::Vec(v) => v,
-            _ => panic!("{self:?} is not a vec")
-        }
-    }
-
-    pub fn as_string(&self) -> &str {
-        match self {
-            Kwarg::Str(s) => s,
-            _ => panic!("{self:?} is not a string")
-        }
-    }
-}
-
 
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]

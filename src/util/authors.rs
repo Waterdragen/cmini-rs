@@ -17,7 +17,7 @@ pub fn update(msg: &Message) {
         Some(names) => if !names.contains(user) {
             names.push(user.to_string());
         } else { changed = false },
-        None => { authors.insert(id.clone(), vec![user.to_string()]); },
+        None => { authors.insert(*id, vec![user.to_string()]); },
     }
     if changed {
         write_map_u64_vec_str("./authors.json", &authors);
@@ -34,7 +34,7 @@ pub fn get_id(name: &str) -> u64 {
             let score = jaro_winkler(name, author_name);
             if score > max_score {
                 max_score = score;
-                match_id = id.clone();
+                match_id = *id;
             }
         }
     }

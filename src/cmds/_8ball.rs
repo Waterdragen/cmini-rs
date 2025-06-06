@@ -3,7 +3,7 @@ use rand::SeedableRng;
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
 
-const RESPONSES: [&'static str; 12] = [
+const RESPONSES: [&str; 12] = [
     "Yes", "Count on it", "No doubt", "Absolutely", "Very likely",
     "Maybe", "Perhaps",
     "No", "No chance", "Unlikely", "Doubtful", "Probably not"

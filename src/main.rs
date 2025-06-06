@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 extern crate core;
 
 mod util;
@@ -15,9 +17,9 @@ use tokio::signal;
 
 use crate::util::consts::{CMINI_CHANNEL, TRIGGERS};
 
-fn split_action_args(is_dm: bool, words: &Vec<&str>) -> (String, String) {
+fn split_action_args(is_dm: bool, words: &[&str]) -> (String, String) {
     match is_dm {
-        true => (words.get(0).unwrap_or(&"").to_lowercase(), words[1..].join(" ")),
+        true => (words.first().unwrap_or(&"").to_lowercase(), words[1..].join(" ")),
         false => (words.get(1).unwrap_or(&"").to_lowercase(), words[2..].join(" "))
     }
 }
