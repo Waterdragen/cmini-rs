@@ -1,9 +1,6 @@
 use fxhash::FxHashMap;
-use once_cell::sync::Lazy;
-use crate::util::core::{Corpus, Layout, RawLayoutConfig, Metric, Stat, FingerUsage, Finger, Key};
-use crate::util::jsons::{get_table};
-
-static TABLE: Lazy<[Metric; 4096]> = Lazy::new(|| get_table("./table.json"));
+use crate::util::consts::TABLE;
+use crate::util::core::{Corpus, Finger, FingerUsage, Key, Layout, Metric, RawLayoutConfig, Stat};
 
 pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FingerUsage {
     let mut fingers: FxHashMap<Finger, u64> = FxHashMap::default();

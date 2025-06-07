@@ -1,7 +1,8 @@
-use crate::util::core::{Commandable, DynCommand};
+use crate::util::Commandable;
 use rand::SeedableRng;
 use rand::prelude::SliceRandom;
 use rand::rngs::StdRng;
+use crate::util::Message;
 
 const RESPONSES: [&str; 12] = [
     "Yes", "Count on it", "No doubt", "Absolutely", "Very likely",
@@ -12,7 +13,7 @@ const RESPONSES: [&str; 12] = [
 pub struct Command;
 
 impl Commandable for Command {
-    fn exec(&self, _: &str, _: u64) -> String {
+    fn exec(&self, _: &Message) -> String {
         let mut rng = StdRng::from_entropy();
         RESPONSES.choose(&mut rng).unwrap().to_string()
     }

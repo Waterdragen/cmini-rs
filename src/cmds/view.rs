@@ -1,16 +1,20 @@
-use crate::util::core::{Commandable, DynCommand};
-use crate::util::{layout, memory};
+use crate::util::Commandable;
+use crate::util::{layout, memory, Message};
 
 pub struct Command;
 
 impl Commandable for Command {
-    fn exec(&self, name: &str, id: u64) -> String {
+    fn exec(&self, msg: &Message) -> String {
+        let name = &msg.arg;
+        if name.is_empty() {
+            return self.help();
+        }
         let ll = memory::find(name);
-        layout::to_string(&ll, id)
+        layout::to_string(&ll, msg.id)
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "view [layout name]"
+        "view <layout name>"
     }
 
     fn desc<'a>(&self) -> &'a str {

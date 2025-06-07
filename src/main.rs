@@ -1,7 +1,5 @@
 #![allow(unused)]
 
-extern crate core;
-
 mod cmds;
 mod test;
 mod util;
@@ -70,7 +68,8 @@ impl EventHandler for Handler {
         }
 
         let words: Vec<&str> = msg.content.split_whitespace().collect();
-        let (action, args) = split_action_args(is_dm, &words);
+        let (action, arg) = split_action_args(is_dm, &words);
+        let wrap_msg = util::Message::new(arg, id, &msg);
 
         let mut cmini_channel_only = false;
         let response = match action.as_ref() {
@@ -81,11 +80,11 @@ impl EventHandler for Handler {
                 "Not yet implemented".to_owned()
             },
             "maintenance" | "1984" => {
-                cmds::maintenance::Command.exec(&args, id, Arc::clone(&MAINTENANCE_MODE))
+                cmds::maintenance::Command.exec(&wrap_msg.arg, id, Arc::clone(&MAINTENANCE_MODE))
             }
             _ => {
                 match cmds::get_cmd(&action) {
-                    Some(cmd) => { cmini_channel_only = cmd.cmini_channel_only(); cmd.exec(&args, id) },
+                    Some(cmd) => { cmini_channel_only = cmd.cmini_channel_only(); cmd.exec(&wrap_msg) },
                     None => format!("Error: {} is not an available command", &action),
                 }
             }

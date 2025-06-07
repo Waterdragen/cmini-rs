@@ -1,7 +1,6 @@
 use fxhash::FxHashMap;
 use thiserror::Error;
 use std::ops::{Deref, DerefMut};
-use std::slice::SliceIndex;
 
 #[derive(Debug, Error)]
 pub enum ParseKwargError {

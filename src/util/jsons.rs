@@ -1,10 +1,8 @@
 use std::fs::File;
 use std::io::Read;
-use std::ops::Index;
 use std::sync::{Arc, RwLock};
 use serde_json::Value;
 use fxhash::{FxHashMap};
-use serenity::futures::{TryFutureExt, TryStreamExt};
 use crate::util::core::{CachedStatConfig, FxIndexMap, JsonLayoutConfig, JsonCachedStatConfig, LayoutConfig, Metric, RawLayoutConfig, RawCachedStatConfig, RawCorpus, ServerCachedStats, ServerLayouts, Key};
 
 fn read_json(path: &str) -> Value {
@@ -193,6 +191,11 @@ pub fn write_layouts(path: &str, lls: &ServerLayouts) {
 pub fn write_map_u64_vec_str(path: &str, map: &FxHashMap<u64, Vec<String>>) {
     let file = File::create(path).unwrap();
     serde_json::to_writer_pretty(file, map).unwrap();
+}
+
+pub fn write_map_str_str(path: &str, map: &FxHashMap<String, String>) {
+    let file = File::create(path).unwrap();
+    serde_json::to_writer_pretty(file, map).unwrap()
 }
 
 pub fn write_cached_stats(path: &str, cached_stats: &ServerCachedStats) {

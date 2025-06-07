@@ -1,20 +1,18 @@
 use crate::util::Commandable;
 use crate::util::Message;
 
-const LINK: &str = "<https://github.com/waterdragen/cmini-rs>";
-
 pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, _: &Message) -> String {
-        LINK.to_string()
+        "Received :)".to_owned()
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "github"
+        "suggest <message>"
     }
 
     fn desc<'a>(&self) -> &'a str {
-        "get the link of the cmini github repository"
+        "send me a suggestion for how to improve cmini :)"
     }
 }

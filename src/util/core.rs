@@ -1,17 +1,14 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 use std::sync::{Arc, RwLock};
 
 use indexmap::IndexMap;
 use fxhash::{FxBuildHasher, FxHashMap};
-use nohash_hasher::NoHashHasher;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde::de::{Error, Visitor};
+use serde::{Deserialize, Serialize, Serializer};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-use crate::util::conv;
+use crate::util::{conv, Message};
 
 pub type Row = u8;
 pub type Col = u8;
@@ -22,7 +19,6 @@ pub type RawCorpus = Vec<(Vec<Key>, u64)>;
 pub type Corpus = Arc<RawCorpus>;
 
 pub type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
-pub type NoHashMap<K, V> = HashMap<K, V, NoHashHasher<K>>;
 pub type SyncFxMap<K, V> = Arc<RwLock<FxHashMap<K, Arc<V>>>>;
 pub type SyncIndexMap<K, V> = Arc<RwLock<FxIndexMap<K, Arc<V>>>>;
 
@@ -128,10 +124,10 @@ impl Serialize for RawCachedStatConfig {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter, IntoPrimitive, TryFromPrimitive)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter)]
 #[repr(u8)]
 pub enum Metric {
-    Sfb,
+    Sfb = 0,
     Sft,
     Sfr,
     Alt,
@@ -170,12 +166,28 @@ impl Metric {
 
     #[inline]
     pub fn pack(self) -> u8 {
-        self.into()
+        self as u8
     }
 
     #[inline]
     pub fn unpack(num: u8) -> Self {
-        Metric::try_from(num).unwrap_or_else(|_| panic!("Failed to convert to Metric. Unexpected value `{num}`"))
+        match num {
+            0 => Self::Sfb,
+            1 => Self::Sft,
+            2 => Self::Sfr,
+            3 => Self::Alt,
+            4 => Self::AltSfs,
+            5 => Self::Red,
+            6 => Self::BadRed,
+            7 => Self::RedSfs,
+            8 => Self::BadRedSfs,
+            9 => Self::InOne,
+            10 => Self::OutOne,
+            11 => Self::InRoll,
+            12 => Self::OutRoll,
+            13 => Self::Unknown,
+            _ => panic!("Failed to convert to Metric. Unexpected value `{num}`")
+        }
     }
 
     pub fn new_counter() -> FxHashMap<Metric, u64> {
@@ -194,7 +206,7 @@ impl Metric {
 }
 
 pub trait Commandable: Send + Sync {
-    fn exec(&self, args: &str, id: u64) -> String;
+    fn exec(&self, msg: &Message) -> String;
     fn usage<'a>(&self) -> &'a str;
     fn desc<'a>(&self) -> &'a str;
 
