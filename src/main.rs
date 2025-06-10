@@ -1,4 +1,8 @@
 #![allow(unused)]
+#![warn(unused_variables)]
+#![warn(unused_mut)]
+#![warn(unused_imports)]
+#![warn(unused_must_use)]
 
 mod cmds;
 mod test;
@@ -6,8 +10,8 @@ mod util;
 
 use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};
-use serenity::model::gateway::{Ready, GatewayIntents};
-use serenity::model::channel::Message;
+use serenity::model::gateway::{GatewayIntents, Ready};
+use serenity::model::channel::Message as DiscordMessage;
 use std::fs;
 use std::io::Write;
 use std::sync::{Arc, RwLock};
@@ -15,7 +19,8 @@ use once_cell::sync::Lazy;
 use tokio::time::{self, Duration};
 use tokio::signal;
 
-use crate::util::consts::{CMINI_CHANNEL, TRIGGERS, ADMINS};
+use crate::util::consts::{ADMINS, CMINI_CHANNEL, TRIGGERS};
+use crate::util::Message;
 
 static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock::new(false)));
 
@@ -45,13 +50,15 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn message(&self, ctx: Context, msg: Message) {
+    async fn message(&self, ctx: Context, msg: DiscordMessage) {
+        let msg = Message::from(&msg);
+
         // Ignore other bots and empty messages
         if msg.author.bot || msg.content.is_empty() {
             return;
         }
 
-        let id = *msg.author.id.as_u64();
+        let id = msg.id;
         if !maintenance_check(id) {
             return;
         }
@@ -62,17 +69,16 @@ impl EventHandler for Handler {
         // Restricted command?
         let in_cmini_channel = msg.channel_id == CMINI_CHANNEL;
 
-        let first_word = msg.content.split_whitespace().next().unwrap_or_default();
-        if !is_dm && !TRIGGERS.contains(&first_word) {
+        let trigger = msg.trigger;
+        if !is_dm && !TRIGGERS.contains(&trigger) {
             return;
         }
 
-        let words: Vec<&str> = msg.content.split_whitespace().collect();
-        let (action, arg) = split_action_args(is_dm, &words);
-        let wrap_msg = util::Message::new(arg, id, &msg);
+        dbg!(&msg);
+        let action = msg.action;
 
         let mut cmini_channel_only = false;
-        let response = match action.as_ref() {
+        let response = match action {
             "" => {
                 "Try `!cmini help`".to_owned()
             }
@@ -80,11 +86,14 @@ impl EventHandler for Handler {
                 "Not yet implemented".to_owned()
             },
             "maintenance" | "1984" => {
-                cmds::maintenance::Command.exec(&wrap_msg.arg, id, Arc::clone(&MAINTENANCE_MODE))
+                cmds::maintenance::Command.exec(msg.arg, id, Arc::clone(&MAINTENANCE_MODE))
             }
             _ => {
-                match cmds::get_cmd(&action) {
-                    Some(cmd) => { cmini_channel_only = cmd.cmini_channel_only(); cmd.exec(&wrap_msg) },
+                match cmds::get_cmd(action) {
+                    Some(cmd) => {
+                        cmini_channel_only = cmd.cmini_channel_only();
+                        cmd.try_exec(&msg)
+                    },
                     None => format!("Error: {} is not an available command", &action),
                 }
             }

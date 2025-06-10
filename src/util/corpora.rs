@@ -48,7 +48,6 @@ pub fn set_user_corpus(id: u64, corpus_name: &str) -> Result<(), ()> {
     let _write = CORPORA.write().unwrap();
     let corpus_name = corpus_name.to_lowercase();
 
-    let pattern = "corpora/*";
     let corpora = list_corpora();
     if !corpora.contains(&corpus_name) {
         return Err(())

@@ -25,8 +25,8 @@ fn read_json_checked(path: &str) -> Result<Value, String> {
     let _ = file.read_to_string(&mut contents)
                 .map_err(|_| "Failed to read file".to_owned())?;
 
-    serde_json::from_str(&contents)
-        .map_err(|_| format!("Failed to parse JSON {}", path))?
+    serde_json::from_str::<Value>(&contents)
+        .map_err(|e| e.to_string())
 }
 
 pub fn get_map_str_str(path: &str) -> FxHashMap<String, String> {
@@ -77,10 +77,7 @@ pub fn get_map_str_u64(path: &str) -> FxHashMap<String, u64> {
 }
 
 pub fn get_server_layouts(path: &str) -> ServerLayouts {
-    let json = match read_json_checked(path) {
-        Ok(json) => json,
-        Err(_) => return Arc::new(RwLock::new(FxIndexMap::default())),
-    };
+    let json = read_json_checked(path).unwrap_or_else(|e| panic!("Failed to parse server layouts. Cause: {e}"));
     let raw_layouts: FxIndexMap<String, JsonLayoutConfig> = serde_json::from_value(json).expect("Failed to parse layout.json");
     let layouts: FxIndexMap<String, LayoutConfig> = raw_layouts
         .into_iter()

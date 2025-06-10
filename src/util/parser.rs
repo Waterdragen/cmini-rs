@@ -216,7 +216,6 @@ mod test {
         ]);
         let kwargs = get_kwargs("", &cmd_kwargs).unwrap();
         assert_eq!(kwargs.arg, "");
-        dbg!(&kwargs);
         let kwargs = get_kwargs("hello vec --vec 1 2 3", &cmd_kwargs).unwrap();
         assert_eq!(kwargs.arg, "hello vec");
         assert_eq!(kwargs["vec"].unwrap_vec(), Some(&*vec![str!("1"), str!("2"), str!("3")]));

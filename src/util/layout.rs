@@ -1,20 +1,23 @@
-use regex::Regex;
 use crate::util::{analyzer, authors, corpora, links, memory};
 use crate::util::core::{FingerUsage, LayoutConfig, Metric, Stat};
+
+fn is_char_allowed_in_name(c: char) -> bool {
+    matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' |
+                '_' | '\'' | '-' | '(' | ')' | ':' | '~')
+}
 
 pub fn check_name(name: &str) -> Result<(), String> {
     let first_char = name.chars().next();
     if let Some(first_char) = first_char {
         if first_char == '_' {
-            return Err(String::from("Error: names cannot start with an underscore"));
+            return Err("Error: names cannot start with an underscore".to_owned());
         }
     }
     if name.len() < 3 {
-        return Err(String::from("Error: names must be at least 3 characters long"));
+        return Err("Error: names must be at least 3 characters long".to_owned());
     }
-    let re = Regex::new(r"^[a-zA-Z0-9_'\-():~]+$").unwrap();
     for c in name.chars() {
-        if !re.is_match(&c.to_string()) {
+        if !is_char_allowed_in_name(c) {
             return Err(format!("names cannot contain `{c}`"));
         }
     }
@@ -59,26 +62,29 @@ pub fn get_matrix_str(ll: &LayoutConfig) -> String {
 
     match rows[3].chars().all(|c| c == ' ') {
         true => rows[..3].join("\n"),
-        false => rows.join("")
+        false => rows.join("\n")
     }
 }
 
 pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
-    const LH: &u16 = &10;
-    const RH: &u16 = &11;
+    use Metric as M;
+    const LH: u16 = 10;
+    const RH: u16 = 11;
 
     // get percentage of metric
-    let get = |metric: &Metric| -> f64 {
-        stats.get(metric).unwrap() * 100.0
+    let get = |metric: M| -> f64 {
+        stats.get(&metric).unwrap() * 100.0
     };
-    let get_hand = |hand: &u16| -> f64 {
-        finger_usage.get(hand).unwrap() * 100.0
+    let get_hand = |hand: u16| -> f64 {
+        finger_usage.get(&hand).unwrap() * 100.0
     };
 
-    let inroll = get(&Metric::InRoll);
-    let outroll = get(&Metric::OutRoll);
-    let inone = get(&Metric::InOne);
-    let outone = get(&Metric::OutOne);
+    let alt = get(M::Alt);
+
+    let inroll = get(M::InRoll);
+    let outroll = get(M::OutRoll);
+    let inone = get(M::InOne);
+    let outone = get(M::OutOne);
 
     let roll = inroll + outroll;
     let one = inone + outone;
@@ -86,27 +92,32 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
     let outrolltal = outroll + outone;
     let rolltal = roll + one;
 
-    let bad_red_sfs = get(&Metric::BadRedSfs);
-    let bad_red = get(&Metric::BadRed) + bad_red_sfs;
-    let red = get(&Metric::Red) + bad_red;
+    let sfb = get(M::Sfb) / 2.0;
 
-    let alt_sfs = get(&Metric::AltSfs);
-    let red_sfs = get(&Metric::RedSfs) + bad_red_sfs;
+    let bad_red_sfs = get(M::BadRedSfs);
+    let bad_red = get(M::BadRed) + bad_red_sfs;
+    let red = get(M::Red) + bad_red;
+
+    let alt_sfs = get(M::AltSfs);
+    let red_sfs = get(M::RedSfs) + bad_red_sfs;
     let sfs = alt_sfs + red_sfs;
 
-    let stats_strs = [
-        format!("  Alt: {:>5.2}%", get(&Metric::Alt)),
-        format!("  Rol: {:>5.2}%   (In/Out: {:>5.2}% | {:>5.2}%)", roll, inroll, outroll),
-        format!("  One: {:>5.2}%   (In/Out: {:>5.2}% | {:>5.2}%)", one, inone, outone),
-        format!("  Rtl: {:>5.2}%   (In/Out: {:>5.2}% | {:>5.2}%)", rolltal, inrolltal, outrolltal),
-        format!("  Red: {:>5.2}%   (Bad:    {:>5.2}%)", red, bad_red),
-        String::new(),
-        format!("  SFB: {:>5.2}%", get(&Metric::Sfb)),
-        format!("  SFS: {:>5.2}%   (Red/Alt: {:>5.2}% | {:>5.2}%)", sfs, red_sfs, alt_sfs),
-        String::new(),
-        format!("  LH/RH: {:>5.2}% | {:>5.2}%", get_hand(LH), get_hand(RH)),
-    ];
-    stats_strs.join("\n")
+    let lh = get_hand(LH);
+    let rh = get_hand(RH);
+
+    format!(
+        "\
+  Alt: {alt:>5.2}%\n\
+  Rol: {roll:>5.2}%   (In/Out: {inroll:>5.2}% | {outroll:>5.2}%)\n\
+  One: {one:>5.2}%   (In/Out: {inone:>5.2}% | {outone:>5.2}%)\n\
+  Rtl: {rolltal:>5.2}%   (In/Out: {inrolltal:>5.2}% | {outrolltal:>5.2}%)\n\
+  Red: {red:>5.2}%   (Bad:    {bad_red:>5.2}%)\n\
+\n\
+  SFB: {sfb:>5.2}%\n\
+  SFS: {sfs:>5.2}%   (Red/Alt: {red_sfs:>5.2}% | {alt_sfs:>5.2}%)\n\
+\n\
+  LH/RH: {lh:>5.2}% | {rh:>5.2}%\n\
+    ")
 }
 
 pub fn to_string(ll: &LayoutConfig, id: u64) -> String {

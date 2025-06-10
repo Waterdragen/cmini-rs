@@ -8,7 +8,7 @@ impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
         let cmd_name = &msg.arg;
         if !cmd_name.is_empty() {
-            let cmd = match COMMANDS.get(cmd_name) {
+            let cmd = match COMMANDS.get(*cmd_name) {
                 Some(cmd) => cmd,
                 None => return format!("Unknown command {cmd_name}"),
             };

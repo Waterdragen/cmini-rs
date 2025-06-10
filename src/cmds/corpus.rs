@@ -1,5 +1,5 @@
 use crate::util::{Commandable, Message};
-use crate::util::corpora::{get_user_corpus, set_user_corpus, list_corpora};
+use crate::util::corpora::{set_user_corpus, list_corpora};
 
 pub struct Command;
 

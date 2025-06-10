@@ -19,3 +19,7 @@ pub static ADMINS: Lazy<FxHashSet<u64>> = Lazy::new(|| FxHashSet::from_iter([
 ]));
 
 pub static TABLE: Lazy<[Metric; 4096]> = Lazy::new(|| get_table("./table.json"));
+
+pub const FMAP_STANDARD: [u16; 10] = [0, 1, 2, 3, 3, 6, 6, 7, 8, 9];
+pub const FMAP_ANGLE: [u16; 10] = [1, 2, 3, 3, 3, 6, 6, 7, 8, 9];
+pub const FREE_CHAR: char = '~';

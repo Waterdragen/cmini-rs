@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::{Arc, RwLock};
@@ -9,6 +8,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 use crate::util::{conv, Message};
+use crate::util::consts::ADMINS;
 
 pub type Row = u8;
 pub type Col = u8;
@@ -68,9 +68,20 @@ impl RawLayoutConfig {
         RawLayoutConfig {
             name: name.to_string(),
             user: json_layout.user,
-            board: json_layout.board.clone(),
+            board: json_layout.board,
             keys: conv::layout::unpack(&json_layout.keys),
             sum: conv::hash_keys(&json_layout.keys),
+        }
+    }
+    pub fn new(name: String, user: u64, board: String, keys: Layout) -> Self {
+        let packed = conv::layout::pack(&keys);
+        let sum = conv::hash_keys(&packed);
+        RawLayoutConfig {
+            name,
+            user,
+            board,
+            keys,
+            sum,
         }
     }
 }
@@ -226,7 +237,15 @@ pub trait Commandable: Send + Sync {
         false
     }
 
-    fn mod_only(&self) -> bool {
+    fn mods_only(&self) -> bool {
         false
+    }
+
+    fn try_exec(&self, msg: &Message) -> String {
+        if !self.mods_only() || ADMINS.contains(&msg.id) {
+            self.exec(msg)
+        } else {
+            "Unauthorized".to_owned()
+        }
     }
 }

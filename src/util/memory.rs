@@ -89,7 +89,7 @@ fn best_match(base_name: &str) -> String {
 
         if score > max_score {
             max_score = score;
-            closest = base_name.to_string();
+            closest = name.to_string();
         }
     }
     closest
