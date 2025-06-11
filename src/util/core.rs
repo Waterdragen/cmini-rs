@@ -1,36 +1,40 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
+use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 
-use indexmap::IndexMap;
+use crate::util::consts::ADMINS;
+use crate::util::{conv, Message};
 use fxhash::{FxBuildHasher, FxHashMap};
-use serde::{Deserialize, Serialize, Serializer};
+use indexmap::IndexMap;
+use serde::de::{MapAccess, Visitor};
+use serde::ser::SerializeMap;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-use crate::util::{conv, Message};
-use crate::util::consts::ADMINS;
 
 pub type Row = u8;
 pub type Col = u8;
 pub type Finger = u16;
 pub type Key = char;
 pub type Position = (Row, Col, Finger);
-pub type RawCorpus = Vec<(Vec<Key>, u64)>;
-pub type Corpus = Arc<RawCorpus>;
 
 pub type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
 pub type SyncFxMap<K, V> = Arc<RwLock<FxHashMap<K, Arc<V>>>>;
 pub type SyncIndexMap<K, V> = Arc<RwLock<FxIndexMap<K, Arc<V>>>>;
 
 pub type Layout = FxHashMap<Key, Position>;
-pub type LayoutConfig = Arc<RawLayoutConfig>;
 pub type Stat = FxHashMap<Metric, f64>;
 pub type FingerUsage = FxHashMap<Finger, f64>;
 pub type CachedStats = FxHashMap<String, Arc<Stat>>;
 pub type CachedStatConfig = Arc<RawCachedStatConfig>;
 
-pub type ServerCorpora = SyncFxMap<String, RawCorpus>;
-pub type ServerLayouts = SyncIndexMap<String, RawLayoutConfig>;
+pub type RawCorpus<Gram> = [(Gram, u64)];
+pub type Corpus<const N: usize> = RawCorpus<[Key; N]>;
+pub type WordCorpus = RawCorpus<Vec<Key>>;
+pub type RawServerCorpora<Gram> = SyncFxMap<String, RawCorpus<Gram>>;
+pub type ServerCorpora<const N: usize> = SyncFxMap<String, Corpus<N>>;
+pub type ServerWordCorpora = SyncFxMap<String, WordCorpus>;
 pub type ServerCachedStats = SyncIndexMap<String, RawCachedStatConfig>;
 
 // Trait: Commandable
@@ -38,24 +42,67 @@ pub type ServerCachedStats = SyncIndexMap<String, RawCachedStatConfig>;
 // Instance Smart Pointer: DynCommand
 pub type DynCommand = Box<dyn Commandable>;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[repr(transparent)]
+#[derive(Serialize)]
+pub struct ServerLayouts(SyncIndexMap<String, LayoutConfig>);
+
+impl Deref for ServerLayouts {
+    type Target = SyncIndexMap<String, LayoutConfig>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<'de> Deserialize<'de> for ServerLayouts {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+        deserializer.deserialize_map(ServerLayoutsVisitor)
+    }
+}
+
+struct ServerLayoutsVisitor;
+
+impl<'de> Visitor<'de> for ServerLayoutsVisitor {
+    type Value = ServerLayouts;
+
+    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
+        write!(formatter, "struct ServerLayouts")
+    }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+    where
+        A: MapAccess<'de>,
+    {
+        let mut map_inner = FxIndexMap::with_capacity_and_hasher(
+            map.size_hint().unwrap_or(0),
+            FxBuildHasher::default()
+        );
+        while let Some((key, ll)) = map.next_entry::<String, JsonLayoutConfig>()? {
+            let name = key.clone();
+            let layout_config = LayoutConfig {
+                name: key,
+                user: ll.user,
+                board: ll.board.clone(),
+                keys: conv::layout::unpack(&ll.keys),
+                sum: conv::hash_keys(&ll.keys),
+            };
+            map_inner.insert(name, Arc::new(layout_config));
+        }
+        Ok(ServerLayouts(Arc::new(RwLock::new(map_inner))))
+    }
+}
+
+#[derive(Debug, Deserialize)]
 pub struct JsonLayoutConfig {
     pub user: u64,
     pub board: String,
     pub keys: String,
 }
 
-impl JsonLayoutConfig {
-    pub fn from_raw(layout_config: &RawLayoutConfig) -> Self {
-        JsonLayoutConfig {
-            user: layout_config.user,
-            board: layout_config.board.clone(),
-            keys: conv::layout::pack(&layout_config.keys),
-        }
-    }
-}
-
-pub struct RawLayoutConfig {
+pub struct LayoutConfig {
     pub name: String,
     pub user: u64,
     pub board: String,
@@ -63,20 +110,11 @@ pub struct RawLayoutConfig {
     pub sum: u64,
 }
 
-impl RawLayoutConfig {
-    pub fn from_json(name: &str, json_layout: JsonLayoutConfig) -> Self {
-        RawLayoutConfig {
-            name: name.to_string(),
-            user: json_layout.user,
-            board: json_layout.board,
-            keys: conv::layout::unpack(&json_layout.keys),
-            sum: conv::hash_keys(&json_layout.keys),
-        }
-    }
+impl LayoutConfig {
     pub fn new(name: String, user: u64, board: String, keys: Layout) -> Self {
         let packed = conv::layout::pack(&keys);
         let sum = conv::hash_keys(&packed);
-        RawLayoutConfig {
+        LayoutConfig {
             name,
             user,
             board,
@@ -86,9 +124,13 @@ impl RawLayoutConfig {
     }
 }
 
-impl Serialize for RawLayoutConfig {
+impl Serialize for LayoutConfig {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        JsonLayoutConfig::from_raw(self).serialize(serializer)
+        let mut map = serializer.serialize_map(Some(3))?;
+        map.serialize_entry("user", &self.user)?;
+        map.serialize_entry("board", &self.board)?;
+        map.serialize_entry("keys", &conv::layout::pack(&self.keys))?;
+        map.end()
     }
 }
 

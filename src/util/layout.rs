@@ -121,9 +121,10 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
 }
 
 pub fn to_string(ll: &LayoutConfig, id: u64) -> String {
-    let author = authors::get_name(ll.user);
-    let monograms = corpora::ngrams(1, id);
-    let trigrams = corpora::ngrams(3, id);
+    let author_reader = authors::AUTHORS.read().unwrap();
+    let author = author_reader.get_name(ll.user).unwrap_or("Unknown");
+    let monograms = corpora::ngrams::<1>(id);
+    let trigrams = corpora::ngrams::<3>(id);
 
     let matrix_str = get_matrix_str(ll);
 

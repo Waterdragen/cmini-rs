@@ -1,10 +1,10 @@
+use crate::util::jsons::read_json;
 use fxhash::FxHashMap;
-use std::sync::{Arc, RwLock};
 use once_cell::sync::Lazy;
-use crate::util::jsons::get_map_str_str;
+use std::sync::{Arc, RwLock};
 
-static LINKS: Lazy<Arc<RwLock<FxHashMap<String, String>>>> = Lazy::new(||
-    Arc::new(RwLock::new(get_map_str_str("./links.json")))
+pub(super) static LINKS: Lazy<Arc<RwLock<FxHashMap<String, String>>>> = Lazy::new(||
+    Arc::new(RwLock::new(read_json("./links.json")))
 );
 
 pub fn get_link(layout_name: &str) -> String {

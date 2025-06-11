@@ -20,7 +20,7 @@ use tokio::time::{self, Duration};
 use tokio::signal;
 
 use crate::util::consts::{ADMINS, CMINI_CHANNEL, TRIGGERS};
-use crate::util::Message;
+use crate::util::{validate_json, Message};
 
 static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock::new(false)));
 
@@ -30,20 +30,6 @@ fn maintenance_check(id: u64) -> bool {
         return ADMINS.contains(&id);
     }
     !*mode
-}
-
-fn split_action_args(is_dm: bool, words: &[&str]) -> (String, String) {
-    let (first, rest) = match is_dm {
-        true => (0, 1..),
-        false => (1, 2..),
-    };
-    (
-        words.get(first).unwrap_or(&"").to_lowercase(),
-        match words.get(rest) {
-            None => String::new(),
-            Some(s) => s.join(" "),
-        }
-    )
 }
 
 struct Handler;
@@ -115,7 +101,7 @@ impl EventHandler for Handler {
 
 fn sync_data() {
     util::cache::cache_main();
-    util::memory::sync_layouts();
+    util::memory::sync_data();
 }
 
 async fn daily_cron_job() {
@@ -149,6 +135,8 @@ async fn start_discord_bot() {
 
 #[tokio::main]
 async fn main() {
+    validate_json();
+
     let args: Vec<String> = std::env::args().collect();
     if !args.is_empty() && args.contains(&String::from("cache")) {
         util::cache::cache_main();

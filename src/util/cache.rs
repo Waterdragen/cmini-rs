@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use rayon::prelude::*;
-use std::time::Instant;
-use once_cell::sync::Lazy;
-use crate::util::jsons::{get_server_cached_stats, write_cached_stats};
-use crate::util::core::{CachedStats, Corpus, RawLayoutConfig, LayoutConfig, RawCachedStatConfig, ServerCachedStats, CachedStatConfig, Stat};
+use crate::util::core::{CachedStatConfig, CachedStats, LayoutConfig, RawCachedStatConfig, ServerCachedStats, Stat};
+use crate::util::jsons::{get_server_cached_stats, write_json};
 use crate::util::{analyzer, corpora, memory};
+use once_cell::sync::Lazy;
+use rayon::prelude::*;
+use std::sync::Arc;
+use std::time::Instant;
 
 pub static CACHED_STATS: Lazy<ServerCachedStats> = Lazy::new(|| get_server_cached_stats("./cached_stats.json"));
 
@@ -20,7 +20,7 @@ pub fn get(name: &str, corpus: &str) -> Option<Arc<Stat>> {
     Some(Arc::clone(stats))
 }
 
-fn get_layout(name: &str) -> LayoutConfig {
+fn get_layout(name: &str) -> Arc<LayoutConfig> {
     memory::get(name).unwrap()
 }
 
@@ -30,9 +30,9 @@ fn get_cache(name: &str) -> Option<CachedStatConfig> {
     Some(Arc::clone(cached_stats.get(&name)?))
 }
 
-fn cache_fill(ll: &RawLayoutConfig, data: &mut CachedStats, corpus: &str) {
+fn cache_fill(ll: &LayoutConfig, data: &mut CachedStats, corpus: &str) {
     let path = format!("./corpora/{}/trigrams.json", corpus);
-    let trigrams: Corpus = corpora::load_corpus(&path);
+    let trigrams = corpora::load_corpus(&path);
     let stats = analyzer::trigrams(ll, &trigrams);
 
     data.insert(corpus.to_string(), Arc::new(stats));
@@ -88,7 +88,7 @@ fn cache_files() {
     println!("Cpu bound elapsed: {:?}", duration);
 
     let start = Instant::now();
-    write_cached_stats("./cached_stats.json", &CACHED_STATS);
+    write_json("./cached_stats.json", &*CACHED_STATS);
     let duration = start.elapsed();
     println!("I/O bound elapsed: {:?}", duration);
 }

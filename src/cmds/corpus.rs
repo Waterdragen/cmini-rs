@@ -1,5 +1,5 @@
 use crate::util::{Commandable, Message};
-use crate::util::corpora::{set_user_corpus, list_corpora};
+use crate::util::corpora::{set_user_corpus, CORPORA};
 
 pub struct Command;
 
@@ -8,11 +8,10 @@ impl Commandable for Command {
         let arg = &msg.arg;
         if arg.is_empty() {
             let mut s = "```\nList of Corpora\n".to_owned();
-            let mut corpora = list_corpora();
-            corpora.sort();
+            let corpora = CORPORA.as_slice();
             for corpus in corpora {
                 s.push_str("- ");
-                s.push_str(&corpus);
+                s.push_str(corpus);
                 s.push('\n');
             }
             s.push_str("```");

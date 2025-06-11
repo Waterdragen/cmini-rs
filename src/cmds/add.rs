@@ -3,7 +3,7 @@ use crate::util::{layout, memory, Commandable, Message};
 use crate::util::parser::get_layout;
 use crate::util::layout::check_name;
 use crate::util::consts::{FMAP_STANDARD, FMAP_ANGLE, FREE_CHAR};
-use crate::util::core::{Layout, RawLayoutConfig};
+use crate::util::core::{Layout, LayoutConfig};
 
 pub struct Command;
 
@@ -80,7 +80,7 @@ impl Commandable for Command {
             }
         }
 
-        let data = Arc::new(RawLayoutConfig::new(name.clone(), msg.id, board, keymap));
+        let data = Arc::new(LayoutConfig::new(name.clone(), msg.id, board, keymap));
         if memory::add(data) {
             format!("Success!\n{}", layout::to_string(&memory::get(&name).unwrap(), msg.id))
         } else {

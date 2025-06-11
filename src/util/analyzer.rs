@@ -1,8 +1,8 @@
 use fxhash::FxHashMap;
 use crate::util::consts::TABLE;
-use crate::util::core::{Corpus, Finger, FingerUsage, Key, Layout, Metric, RawLayoutConfig, Stat};
+use crate::util::core::{Finger, FingerUsage, Key, Layout, Metric, LayoutConfig, Stat};
 
-pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FingerUsage {
+pub fn fingers_usage(ll: &LayoutConfig, grams: &[([Key; 1], u64)]) -> FingerUsage {
     let mut fingers: FxHashMap<Finger, u64> = FxHashMap::default();
 
     for (gram, count) in grams.iter() {
@@ -26,7 +26,7 @@ pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FingerUsage {
 
     let total = fingers.values().sum::<f64>();
     let lh_usage = fingers.iter()
-        .filter_map(|(finger, count)| { if *finger < 5 {Some(count)} else {None} })
+        .filter_map(|(finger, count)| (*finger < 5).then_some(count))
         .sum::<f64>();
 
     fingers.insert(10, lh_usage);
@@ -35,7 +35,7 @@ pub fn fingers_usage(ll: &RawLayoutConfig, grams: &Corpus) -> FingerUsage {
 }
 
 
-pub fn trigrams(ll: &RawLayoutConfig, grams: &Corpus) -> Stat {
+pub fn trigrams(ll: &LayoutConfig, grams: &[([Key; 3], u64)]) -> Stat {
     let mut counter = Metric::new_counter();
     let fingers = &ll.keys;
     const SFR: &Metric = &Metric::Sfr;
