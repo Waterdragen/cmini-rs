@@ -6,6 +6,7 @@ pub mod maintenance;
 mod suggest;
 mod corpus;
 mod add;
+mod remove;
 
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
@@ -19,6 +20,7 @@ pub static COMMANDS: Lazy<FxHashMap<String, DynCommand>> = Lazy::new(|| {
         ("gh", github::Command.init()),
         ("github", github::Command.init()),
         ("help", help::Command.init()),
+        ("remove", remove::Command.init()),
         ("suggest", suggest::Command.init()),
         ("view", view::Command.init()),
     ].into_iter().map(|(name, obj)| (name.to_string(), obj)))

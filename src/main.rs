@@ -4,6 +4,7 @@
 #![warn(unused_imports)]
 #![warn(unused_must_use)]
 
+#[deny(dead_code)]
 mod cmds;
 mod test;
 mod util;

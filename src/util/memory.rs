@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use once_cell::sync::Lazy;
 use strsim::jaro_winkler;
+use thiserror::Error;
 use crate::util::authors::AUTHORS;
 use crate::util::core::{LayoutConfig, ServerLayouts};
 use crate::util::corpora::CORPORA_PREFS;
@@ -11,6 +12,14 @@ use crate::util::links::LINKS;
 
 pub static LAYOUTS: Lazy<ServerLayouts> = Lazy::new(|| read_json("./layouts.json"));
 pub static LIKES: Lazy<Arc<RwLock<FxHashMap<String, Vec<u64>>>>> = Lazy::new(|| read_json("./likes.json"));
+
+#[derive(Debug, Error)]
+pub enum RemoveError<'a> {
+    #[error("Error: `{0}` does not exist")]
+    NotFound(&'a str),
+    #[error("Error: you don't own `{0}`")]
+    NotOwner(&'a str),
+}
 
 pub fn add(ll: Arc<LayoutConfig>) -> bool {
     if has_layout(&ll.name) {
@@ -32,11 +41,11 @@ pub fn find(name: &str) -> Arc<LayoutConfig> {
     get_layout(&closest)
 }
 
-pub fn remove(name: &str, id: u64) -> bool {
+pub fn remove(name: &str, id: u64) -> Result<(), RemoveError> {
     remove_layout(name, id, false)
 }
 
-pub fn remove_as_admin(name: &str, id: u64) -> bool {
+pub fn remove_as_admin(name: &str, id: u64) -> Result<(), RemoveError> {
     remove_layout(name, id, true)
 }
 
@@ -73,17 +82,18 @@ fn has_layout(name: &str) -> bool {
     layouts.contains_key(name)
 }
 
-fn remove_layout(name: &str, id: u64, admin: bool) -> bool {
+fn remove_layout(name: &str, id: u64, admin: bool) -> Result<(), RemoveError> {
     if !has_layout(name) {
-        return false;
+        return Err(RemoveError::NotFound(name));
     }
     let ll = get_layout(name);
-    let check = ll.user == id || admin;
-    if check {
+    if ll.user == id || admin {
         let mut layouts_mut = LAYOUTS.write().unwrap();
-        layouts_mut.swap_remove(name);
+        layouts_mut.shift_remove(name);
+        Ok(())
+    } else {
+        Err(RemoveError::NotOwner(&name))
     }
-    check
 }
 
 fn best_match(base_name: &str) -> String {
