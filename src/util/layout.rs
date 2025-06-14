@@ -7,11 +7,8 @@ fn is_char_allowed_in_name(c: char) -> bool {
 }
 
 pub fn check_name(name: &str) -> Result<(), String> {
-    let first_char = name.chars().next();
-    if let Some(first_char) = first_char {
-        if first_char == '_' {
-            return Err("Error: names cannot start with an underscore".to_owned());
-        }
+    if name.starts_with('_') {
+        return Err("Error: names cannot start with an underscore".to_owned());
     }
     if name.len() < 3 {
         return Err("Error: names must be at least 3 characters long".to_owned());
@@ -21,7 +18,6 @@ pub fn check_name(name: &str) -> Result<(), String> {
             return Err(format!("names cannot contain `{c}`"));
         }
     }
-
     Ok(())
 }
 

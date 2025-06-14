@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn test_get_corpus() {
         let path = "./corpora/english-1k/trigrams.json";
-        let vec_ = get_corpus(path);
+        let vec_ = get_corpus::<[Key; 3]>(path);
         dbg!(vec_);
     }
 }

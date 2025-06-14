@@ -1,15 +1,13 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::hash::Hash;
-use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 
 use crate::util::consts::ADMINS;
 use crate::util::{conv, Message};
 use fxhash::{FxBuildHasher, FxHashMap};
 use indexmap::IndexMap;
-use serde::de::{MapAccess, Visitor};
 use serde::ser::SerializeMap;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -41,59 +39,6 @@ pub type ServerCachedStats = SyncIndexMap<String, RawCachedStatConfig>;
 // Struct: Command
 // Instance Smart Pointer: DynCommand
 pub type DynCommand = Box<dyn Commandable>;
-
-#[repr(transparent)]
-#[derive(Serialize)]
-pub struct ServerLayouts(SyncIndexMap<String, LayoutConfig>);
-
-impl Deref for ServerLayouts {
-    type Target = SyncIndexMap<String, LayoutConfig>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<'de> Deserialize<'de> for ServerLayouts {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>
-    {
-        deserializer.deserialize_map(ServerLayoutsVisitor)
-    }
-}
-
-struct ServerLayoutsVisitor;
-
-impl<'de> Visitor<'de> for ServerLayoutsVisitor {
-    type Value = ServerLayouts;
-
-    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-        write!(formatter, "struct ServerLayouts")
-    }
-
-    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-    where
-        A: MapAccess<'de>,
-    {
-        let mut map_inner = FxIndexMap::with_capacity_and_hasher(
-            map.size_hint().unwrap_or(0),
-            FxBuildHasher::default()
-        );
-        while let Some((key, ll)) = map.next_entry::<String, JsonLayoutConfig>()? {
-            let name = key.clone();
-            let layout_config = LayoutConfig {
-                name: key,
-                user: ll.user,
-                board: ll.board.clone(),
-                keys: conv::layout::unpack(&ll.keys),
-                sum: conv::hash_keys(&ll.keys),
-            };
-            map_inner.insert(name, Arc::new(layout_config));
-        }
-        Ok(ServerLayouts(Arc::new(RwLock::new(map_inner))))
-    }
-}
 
 #[derive(Debug, Deserialize)]
 pub struct JsonLayoutConfig {
@@ -268,10 +213,11 @@ pub trait Commandable: Send + Sync {
     }
 
     fn help(&self) -> String {
-        let mut help_message = String::new();
+        let mut help_message = "```".to_owned();
         help_message.push_str(self.usage());
         help_message.push('\n');
         help_message.push_str(self.desc());
+        help_message.push_str("```");
         help_message
     }
 

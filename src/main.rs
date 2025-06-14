@@ -4,21 +4,20 @@
 #![warn(unused_imports)]
 #![warn(unused_must_use)]
 
-#[deny(dead_code)]
 mod cmds;
 mod test;
 mod util;
 
+use once_cell::sync::Lazy;
 use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};
-use serenity::model::gateway::{GatewayIntents, Ready};
 use serenity::model::channel::Message as DiscordMessage;
-use std::fs;
+use serenity::model::gateway::{GatewayIntents, Ready};
 use std::io::Write;
 use std::sync::{Arc, RwLock};
-use once_cell::sync::Lazy;
-use tokio::time::{self, Duration};
+use std::fs;
 use tokio::signal;
+use tokio::time::{self, Duration};
 
 use crate::util::consts::{ADMINS, CMINI_CHANNEL, TRIGGERS};
 use crate::util::{validate_json, Message};
@@ -61,7 +60,6 @@ impl EventHandler for Handler {
             return;
         }
 
-        dbg!(&msg);
         let action = msg.action;
 
         let mut cmini_channel_only = false;

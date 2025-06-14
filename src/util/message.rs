@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use serenity::model::channel::Message as DiscordMessage;
+use crate::util::parser::split_word;
 
 pub struct Message<'a> {
     pub msg: &'a DiscordMessage,
@@ -41,19 +42,6 @@ impl<'a> Debug for Message<'a> {
             .field("arg", &self.arg)
             .field("id", &self.id)
             .finish()
-    }
-}
-
-fn split_word<'a>(s: &mut &'a str) -> &'a str {
-    match s.split_once(char::is_whitespace) {
-        None => {
-            std::mem::take(s)
-        },
-        Some((first, rest)) => {
-            let rest = rest.trim_start();
-            *s = rest;
-            first
-        }
     }
 }
 

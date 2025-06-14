@@ -2,6 +2,19 @@ use fxhash::FxHashMap;
 use thiserror::Error;
 use std::ops::{Deref, DerefMut};
 
+pub fn split_word<'a>(s: &mut &'a str) -> &'a str {
+    match s.split_once(char::is_whitespace) {
+        None => {
+            std::mem::take(s)
+        },
+        Some((first, rest)) => {
+            let rest = rest.trim_start();
+            *s = rest;
+            first
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum ParseKwargError {
     #[error("Invalid kwarg: {0}")]

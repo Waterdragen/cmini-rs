@@ -11,6 +11,7 @@ pub mod memory;
 pub mod parser;
 mod conv;
 mod message;
+mod get;
 
 pub use message::Message;
 pub use core::Commandable;

@@ -1,17 +1,18 @@
-use std::sync::Arc;
-use crate::util::{layout, memory, Commandable, Message};
-use crate::util::parser::get_layout;
-use crate::util::layout::check_name;
-use crate::util::consts::{FMAP_STANDARD, FMAP_ANGLE, FREE_CHAR};
+use crate::util::consts::{FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR};
 use crate::util::core::{Layout, LayoutConfig};
+use crate::util::layout::check_name;
+use crate::util::memory::LAYOUTS;
+use crate::util::parser::get_layout;
+use crate::util::{layout, Commandable, Message};
 
 pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
         let (name, matrix) = get_layout(msg.arg);
-        dbg!(&name);
-        dbg!(&matrix);
+        if name.is_empty() {
+            return self.help();
+        }
         if let Err(err) = check_name(&name) {
             return err;
         }
@@ -80,9 +81,9 @@ impl Commandable for Command {
             }
         }
 
-        let data = Arc::new(LayoutConfig::new(name.clone(), msg.id, board, keymap));
-        if memory::add(data) {
-            format!("Success!\n{}", layout::to_string(&memory::get(&name).unwrap(), msg.id))
+        let data = LayoutConfig::new(name.clone(), msg.id, board, keymap);
+        if LAYOUTS.add(data) {
+            format!("Success!\n{}", layout::to_string(&LAYOUTS.get(&name), msg.id))
         } else {
             format!("Error: `{name}` already exists")
         }

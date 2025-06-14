@@ -5,6 +5,7 @@ use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use std::sync::Arc;
 use std::time::Instant;
+use crate::util::memory::LAYOUTS;
 
 pub static CACHED_STATS: Lazy<ServerCachedStats> = Lazy::new(|| get_server_cached_stats("./cached_stats.json"));
 
@@ -18,10 +19,6 @@ pub fn get(name: &str, corpus: &str) -> Option<Arc<Stat>> {
     let cached_stats = CACHED_STATS.read().unwrap();
     let stats = cached_stats.get(&name)?.stats.get(&corpus)?;
     Some(Arc::clone(stats))
-}
-
-fn get_layout(name: &str) -> Arc<LayoutConfig> {
-    memory::get(name).unwrap()
 }
 
 fn get_cache(name: &str) -> Option<CachedStatConfig> {
@@ -61,7 +58,7 @@ fn cache_files() {
 
     names.par_iter().for_each(|name| {
         // let layout_start = Instant::now();
-        let ll = get_layout(name);
+        let ll = &*LAYOUTS.get(name);
         let cached = get_cache(name);
         if let Some(cached) = &cached {
             if cached.sum == ll.sum {
@@ -74,7 +71,7 @@ fn cache_files() {
 
         for corpus in corpus_names.iter() {
             println!("Layout: {}, Corpus: {}", &ll.name, corpus);
-            cache_fill(&ll, &mut stats, corpus);
+            cache_fill(ll, &mut stats, corpus);
         }
         let cached = RawCachedStatConfig {
             sum: ll.sum,
