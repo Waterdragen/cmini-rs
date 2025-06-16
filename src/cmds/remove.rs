@@ -1,4 +1,4 @@
-use crate::util::consts::ADMINS;
+use crate::util::admins::ADMINS;
 use crate::util::memory::{LAYOUTS, RemoveError};
 use crate::util::parser::{get_kwargs, KwargType};
 use crate::util::{Commandable, Message};
@@ -16,7 +16,7 @@ pub struct Command;
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
         let name = msg.arg;
-        if !ADMINS.contains(&msg.id) {
+        if !ADMINS.contains(msg.id) {
             return match LAYOUTS.remove(name, msg.id) {
                 Ok(_) => format!("`{name}` has been removed"),
                 Err(err) => err.to_string(),
@@ -44,5 +44,9 @@ impl Commandable for Command {
 
     fn desc<'a>(&self) -> &'a str {
         "delete one of your layouts"
+    }
+
+    fn public_channel_only(&self) -> bool {
+        true
     }
 }

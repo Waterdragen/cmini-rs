@@ -1,3 +1,4 @@
+pub mod admins;
 pub mod analyzer;
 pub mod authors;
 pub mod cache;
@@ -13,10 +14,12 @@ mod conv;
 mod message;
 mod get;
 
-pub use message::Message;
 pub use core::Commandable;
+pub use message::{Message, BoundedResponse};
 
 pub fn validate_json() {
+    let count = admins::ADMINS.count();
+    assert_ne!(count, 0);
     let reader = authors::AUTHORS.read().unwrap();
     assert!(!reader.is_empty());
     let reader = cache::CACHED_STATS.read().unwrap();

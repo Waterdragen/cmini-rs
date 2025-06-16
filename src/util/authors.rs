@@ -59,21 +59,28 @@ impl Authors {
             .unwrap()  // id_to_str is always non-empty
     }
 
-    pub fn update(&mut self, id: u64, new_name: String) {
+    pub fn update(&mut self, id: u64, new_name: &str) {
+        let new_name = new_name.to_owned();
         match self.id_to_str.get_mut(&id) {
             None => {
                 // New author
-                self.id_to_str.insert(id, vec![new_name.clone()]);
+                self.id_to_str.insert(id, vec![new_name.to_owned()]);
             }
             Some(names) => if !names.contains(&new_name) {
                 // Existing author, new name
-                names.push(new_name.clone());
+                names.push(new_name.to_owned());
             } else {
                 return;
             }
         }
         // Always keep the existing name first
         self.str_to_id.entry(new_name).or_insert(id);
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &str> {
+        self.id_to_str
+            .values()
+            .map(|names| &*names[0])
     }
 }
 

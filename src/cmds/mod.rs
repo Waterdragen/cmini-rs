@@ -12,6 +12,8 @@ mod rename;
 mod like;
 mod likes;
 mod unlike;
+mod authors;
+mod admin;
 
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
@@ -21,7 +23,9 @@ pub static COMMANDS: Lazy<FxHashMap<String, DynCommand>> = Lazy::new(|| {
     FxHashMap::from_iter([
         ("8ball", _8ball::Command.init()),
         ("add", add::Command.init()),
+        ("admin", admin::Command.init()),
         ("assign", assign::Command.init()),
+        ("authors", authors::Command.init()),
         ("corpus", corpus::Command.init()),
         ("gh", github::Command.init()),
         ("github", github::Command.init()),

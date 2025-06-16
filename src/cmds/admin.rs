@@ -1,0 +1,71 @@
+use crate::util::admins::ADMINS;
+use crate::util::authors::AUTHORS;
+use crate::util::parser::split_word;
+use crate::util::{Commandable, Message};
+
+pub struct Command;
+
+impl Commandable for Command {
+    fn exec(&self, msg: &Message) -> String {
+        let id = msg.id;
+        let mut arg = msg.arg;
+        let action = split_word(&mut arg);
+        let target = arg;
+
+        if target.is_empty() {
+            return match ADMINS.list(id) {
+                Ok(admin_names) => {
+                    let mut s = "Admins:\n```".to_owned();
+                    for admin_name in &admin_names {
+                        s.push_str(admin_name);
+                        s.push('\n');
+                    }
+                    s.push_str("```");
+                    s
+                }
+                Err(err) => err.to_string(),
+            };
+        }
+
+        let target_id = id_from_name_or_str_id(target);
+        match action {
+            "add" => match ADMINS.add(id, target_id) {
+                Ok(_) => {
+                    let authors = AUTHORS.read().unwrap();
+                    let target_name = authors.get_name(target_id).unwrap();  // Checked by Admins::add
+                    format!("Added `{target_name}` to admins") },
+                Err(err) => err.to_string(),
+            },
+            "remove" => match ADMINS.remove(id, target_id) {
+                Ok(_) => {
+                    let authors = AUTHORS.read().unwrap();
+                    let target_name = authors.get_name(target_id).unwrap();  // Checked by Admins::add
+                    format!("Removed `{target_name}` from admin")
+                },
+                Err(err) => err.to_string(),
+            },
+            _ => self.help(),
+        }
+    }
+
+    fn usage<'a>(&self) -> &'a str {
+        "admin <add | remove> <name>"
+    }
+
+    fn desc<'a>(&self) -> &'a str {
+        "add or remove an admin"
+    }
+
+    fn mods_only(&self) -> bool {
+        true
+    }
+}
+
+fn id_from_name_or_str_id(target: &str) -> u64 {
+    if target.chars().all(|c| c.is_ascii_digit()) {
+        target.parse().unwrap()  // Always succeeds
+    } else {
+        let authors = AUTHORS.read().unwrap();
+        authors.get_id(target)
+    }
+}

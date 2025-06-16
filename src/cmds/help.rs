@@ -1,5 +1,7 @@
-use crate::util::Commandable;
 use crate::cmds::COMMANDS;
+use crate::util::admins::ADMINS;
+use crate::util::core::DynCommand;
+use crate::util::Commandable;
 use crate::util::Message;
 
 pub struct Command;
@@ -13,8 +15,9 @@ impl Commandable for Command {
                 None => return format!("Unknown command {cmd_name}"),
             };
 
-            let mut cmds = COMMANDS.keys().collect::<Vec<_>>();
-            cmds.sort();
+            if cmd.mods_only() && !ADMINS.contains(msg.id) {
+                return "Unauthorized".to_owned();
+            }
 
             format!(
                 "Help page for `{cmd_name}`:\
@@ -29,7 +32,13 @@ impl Commandable for Command {
             let mut s = String::from(
                 "Usage: `!cmini (command) [args]`\n\
                     ```");
-            let mut cmds = COMMANDS.keys().collect::<Vec<_>>();
+            let filter_fn: for<'a> fn((&'a String, &DynCommand)) -> Option<&'a String> = match ADMINS.contains(msg.id) {
+                true => |(name, _)| Some(name),
+                false => |(name, cmd)| (!cmd.mods_only()).then_some(name),
+            };
+            let mut cmds = COMMANDS.iter()
+                .filter_map(filter_fn)
+                .collect::<Vec<_>>();
             cmds.sort();
 
             two_column_display(&mut s, &cmds);

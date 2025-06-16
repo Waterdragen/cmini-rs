@@ -14,6 +14,7 @@ use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use strsim::jaro_winkler;
 use thiserror::Error;
+use crate::util::admins::ADMINS;
 use crate::util::get::{Get, GetMut};
 
 pub static LAYOUTS: Lazy<ServerLayouts> = Lazy::new(|| read_json("./layouts.json"));
@@ -36,6 +37,7 @@ pub fn get_like_count(name: &str) -> usize {
 }
 
 pub fn sync_data() {
+    write_json("./admins.json", &*ADMINS);
     write_json("./authors.json", &*AUTHORS);
     write_json("./corpora.json", &*CORPORA_PREFS);
     write_json("./layouts.json", &*LAYOUTS);

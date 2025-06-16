@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::{Arc, RwLock};
 
-use crate::util::consts::ADMINS;
+use crate::util::admins::ADMINS;
 use crate::util::{conv, Message};
 use fxhash::{FxBuildHasher, FxHashMap};
 use indexmap::IndexMap;
@@ -225,15 +225,21 @@ pub trait Commandable: Send + Sync {
         false
     }
 
+    fn public_channel_only(&self) -> bool {
+        false
+    }
+
     fn mods_only(&self) -> bool {
         false
     }
 
     fn try_exec(&self, msg: &Message) -> String {
-        if !self.mods_only() || ADMINS.contains(&msg.id) {
-            self.exec(msg)
-        } else {
-            "Unauthorized".to_owned()
+        if self.mods_only() && !ADMINS.contains(msg.id) {
+            return "Unauthorized".to_owned();
         }
+        if self.public_channel_only() && msg.is_private() {
+            return "Use this command in a public channel".to_owned();
+        }
+        self.exec(msg)
     }
 }

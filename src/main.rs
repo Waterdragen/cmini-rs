@@ -13,13 +13,14 @@ use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};
 use serenity::model::channel::Message as DiscordMessage;
 use serenity::model::gateway::{GatewayIntents, Ready};
+use std::fs;
 use std::io::Write;
 use std::sync::{Arc, RwLock};
-use std::fs;
 use tokio::signal;
 use tokio::time::{self, Duration};
 
-use crate::util::consts::{ADMINS, CMINI_CHANNEL, TRIGGERS};
+use crate::util::admins::ADMINS;
+use crate::util::consts::TRIGGERS;
 use crate::util::{validate_json, Message};
 
 static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock::new(false)));
@@ -27,7 +28,7 @@ static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock:
 fn maintenance_check(id: u64) -> bool {
     let mode = MAINTENANCE_MODE.read().unwrap();
     if *mode {
-        return ADMINS.contains(&id);
+        return ADMINS.contains(id);
     }
     !*mode
 }
@@ -53,7 +54,7 @@ impl EventHandler for Handler {
         let is_dm = msg.is_private();
 
         // Restricted command?
-        let in_cmini_channel = msg.channel_id == CMINI_CHANNEL;
+        let in_cmini_channel = msg.in_cmini_channel();
 
         let trigger = msg.trigger;
         if !is_dm && !TRIGGERS.contains(&trigger) {

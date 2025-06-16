@@ -4,6 +4,7 @@ use crate::util::layout::check_name;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::get_layout;
 use crate::util::{layout, Commandable, Message};
+use crate::util::authors::AUTHORS;
 
 pub struct Command;
 
@@ -83,6 +84,11 @@ impl Commandable for Command {
 
         let data = LayoutConfig::new(name.clone(), msg.id, board, keymap);
         if LAYOUTS.add(data) {
+            {
+                // Must drop or else deadlock
+                let mut authors = AUTHORS.write().unwrap();
+                authors.update(msg.id, &msg.author.name);
+            }
             format!("Success!\n{}", layout::to_string(&LAYOUTS.get(&name), msg.id))
         } else {
             format!("Error: `{name}` already exists")

@@ -49,4 +49,8 @@ impl Commandable for Command {
     fn mods_only(&self) -> bool {
         true
     }
+
+    fn public_channel_only(&self) -> bool {
+        true
+    }
 }
