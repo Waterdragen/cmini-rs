@@ -26,4 +26,4 @@ thiserror = "2.0.12"
 [dependencies.serenity]
 version = "0.11.7"
 default-features = false
-features = ["client", "gateway", "model", "rustls_backend"]
+features = ["client", "gateway", "model", "rustls_backend", "cache"]

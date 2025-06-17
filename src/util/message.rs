@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use serenity::model::channel::Message as DiscordMessage;
+use serenity::prelude::Context;
 use crate::util::consts::CMINI_CHANNEL;
 use crate::util::parser::split_word;
 
@@ -10,6 +11,7 @@ pub struct Message<'a> {
     pub action: &'a str,
     pub arg: &'a str,
     pub id: u64,
+    pub context: &'a Context,
 }
 
 impl<'a> Message<'a> {
@@ -18,8 +20,8 @@ impl<'a> Message<'a> {
     }
 }
 
-impl<'a> From<&'a DiscordMessage> for Message<'a> {
-    fn from(msg: &'a DiscordMessage) -> Self {
+impl<'a> Message<'a> {
+    pub fn from_msg_ctx(msg: &'a DiscordMessage, context: &'a Context) -> Self {
         let id = *msg.author.id.as_u64();
         let is_dm = msg.is_private();
 
@@ -37,6 +39,7 @@ impl<'a> From<&'a DiscordMessage> for Message<'a> {
             action,
             arg,
             id,
+            context,
         }
     }
 }

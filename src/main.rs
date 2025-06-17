@@ -38,7 +38,7 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: DiscordMessage) {
-        let msg = Message::from(&msg);
+        let msg = Message::from_msg_ctx(&msg, &ctx);
 
         // Ignore other bots and empty messages
         if msg.author.bot || msg.content.is_empty() {
