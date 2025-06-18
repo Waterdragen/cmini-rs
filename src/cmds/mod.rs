@@ -1,35 +1,39 @@
 mod _8ball;
+mod add;
+mod admin;
+mod alternates;
+mod assign;
+mod authors;
+mod catball;
+mod corpus;
+mod dofball;
 mod github;
 mod help;
-mod view;
-pub mod maintenance;
-mod suggest;
-mod corpus;
-mod add;
-mod remove;
-mod assign;
-mod rename;
+mod inrolls;
+mod inrolltals;
 mod like;
 mod likes;
-mod unlike;
-mod authors;
-mod admin;
-mod catball;
-mod dofball;
-mod wooperball;
-mod random;
-mod alternates;
-mod inrolls;
+mod link;
+pub mod maintenance;
 mod onehands;
-mod rolls;
-mod inrolltals;
 mod outrolltals;
+pub mod question;
+mod random;
 mod redirects;
+mod remove;
+mod rename;
+mod rolls;
 mod rolltals;
 mod sfbs;
 mod sfs;
+mod suggest;
+mod unlike;
+mod unlink;
+mod view;
+mod wooperball;
+mod woopercat;
 
-use crate::util::core::{Commandable, ContainsMetric, DynCommand};
+use crate::util::core::{Commandable, ContainsMetric};
 use crate::util::layout::top_trigrams_of_metric;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::{get_kwargs, KwargType, ParseKwargError};
@@ -37,7 +41,7 @@ use crate::util::Message;
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
 
-pub static COMMANDS: Lazy<FxHashMap<String, DynCommand>> = Lazy::new(|| {
+static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
     FxHashMap::from_iter([
         ("8ball", _8ball::Command.init()),
         ("add", add::Command.init()),
@@ -55,6 +59,7 @@ pub static COMMANDS: Lazy<FxHashMap<String, DynCommand>> = Lazy::new(|| {
         ("inrolltals", inrolltals::Command.init()),
         ("like", like::Command.init()),
         ("likes", likes::Command.init()),
+        ("link", link::Command.init()),
         ("onehands", onehands::Command.init()),
         ("outrolltals", outrolltals::Command.init()),
         ("random", random::Command.init()),
@@ -67,12 +72,21 @@ pub static COMMANDS: Lazy<FxHashMap<String, DynCommand>> = Lazy::new(|| {
         ("sfs", sfs::Command.init()),
         ("suggest", suggest::Command.init()),
         ("unlike", unlike::Command.init()),
+        ("unlink", unlink::Command.init()),
         ("wooperball", wooperball::Command.init()),
+        ("woopercat", woopercat::Command.init()),
         ("view", view::Command.init()),
     ].into_iter().map(|(name, obj)| (name.to_string(), obj)))
 });
 
-pub fn get_cmd(name: &str) -> Option<&DynCommand> {
+static OTHER_COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
+    FxHashMap::from_iter([
+        ("maintenance", maintenance::Command.init()),
+        ("question", question::Command.init()),
+    ].into_iter().map(|(name, obj)| (name.to_string(), obj)))
+});
+
+pub fn get_cmd(name: &str) -> Option<&Box<dyn Commandable>> {
     COMMANDS.get(name)
 }
 

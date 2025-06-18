@@ -17,6 +17,9 @@ impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
         let name = msg.arg;
         if !ADMINS.contains(msg.id) {
+            if name.is_empty() {
+                return self.help();
+            }
             return match LAYOUTS.remove(name, msg.id) {
                 Ok(_) => format!("`{name}` has been removed"),
                 Err(err) => err.to_string(),
@@ -26,15 +29,19 @@ impl Commandable for Command {
             Ok(kwarg) => kwarg,
             Err(err) => return err.to_string(),
         };
+        let name = &kwargs.arg;
+        if name.is_empty() {
+            return "```\nremove <layout> [--sudo]\ndelete cmini layouts```".to_owned();
+        }
         let result = match kwargs["sudo"].unwrap_bool() {
-            true => LAYOUTS.remove_as_admin(&kwargs.arg, msg.id),
-            false => LAYOUTS.remove(&kwargs.arg, msg.id),
+            true => LAYOUTS.remove_as_admin(name, msg.id, !msg.is_private()),
+            false => LAYOUTS.remove(name, msg.id),
         };
         match result {
-            Ok(_) => format!("`{}` has been removed", kwargs.arg),
-            Err(err @ RemoveError::NotFound(_)) => err.to_string(),
+            Ok(_) => format!("`{name}` has been removed"),
             Err(err @ RemoveError::NotOwner(_)) =>
-                format!("{err}\nHelp: you may remove it with `remove {} --sudo`", kwargs.arg),
+                format!("{err}\nHelp: you may remove it with `remove {name} --sudo`"),
+            Err(err) => err.to_string(),
         }
     }
 
@@ -44,9 +51,5 @@ impl Commandable for Command {
 
     fn desc<'a>(&self) -> &'a str {
         "delete one of your layouts"
-    }
-
-    fn public_channel_only(&self) -> bool {
-        true
     }
 }

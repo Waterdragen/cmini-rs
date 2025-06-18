@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 use crate::util::admins::ADMINS;
+use crate::util::{Commandable, Message};
 use crate::util::parser::get_args;
 
 pub struct Command;
@@ -29,5 +30,23 @@ impl Command {
             let mode = switch.read().unwrap();
             format!("Maintenance mode: {mode}")
         }
+    }
+}
+
+impl Commandable for Command {
+    fn exec(&self, _: &Message) -> String {
+        unimplemented!()
+    }
+
+    fn usage<'a>(&self) -> &'a str {
+        "[maintenance | 1984] [on | off]"
+    }
+
+    fn desc<'a>(&self) -> &'a str {
+        "enable or disable maintenance mode"
+    }
+
+    fn mods_only(&self) -> bool {
+        true
     }
 }

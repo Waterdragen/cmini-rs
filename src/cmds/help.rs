@@ -1,6 +1,6 @@
-use crate::cmds::COMMANDS;
+use crate::cmds::{COMMANDS, OTHER_COMMANDS};
 use crate::util::admins::ADMINS;
-use crate::util::core::DynCommand;
+use crate::util::core::{DynCommand};
 use crate::util::Commandable;
 use crate::util::Message;
 
@@ -10,8 +10,8 @@ impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
         let cmd_name = &msg.arg;
         if !cmd_name.is_empty() {
-            let cmd = match COMMANDS.get(*cmd_name) {
-                Some(cmd) => cmd,
+            let cmd: &dyn Commandable = match COMMANDS.get(*cmd_name).or_else(|| OTHER_COMMANDS.get(*cmd_name)) {
+                Some(cmd) => &**cmd,
                 None => return format!("Unknown command {cmd_name}"),
             };
 
@@ -31,12 +31,12 @@ impl Commandable for Command {
         } else {
             let mut s = String::from(
                 "Usage: `!cmini (command) [args]`\n\
-                    ```");
+                    ```\n");
             let filter_fn: for<'a> fn((&'a String, &DynCommand)) -> Option<&'a String> = match ADMINS.contains(msg.id) {
                 true => |(name, _)| Some(name),
                 false => |(name, cmd)| (!cmd.mods_only()).then_some(name),
             };
-            let mut cmds = COMMANDS.iter()
+            let mut cmds = COMMANDS.iter().chain(OTHER_COMMANDS.iter())
                 .filter_map(filter_fn)
                 .collect::<Vec<_>>();
             cmds.sort();
@@ -68,6 +68,10 @@ fn two_column_display(s: &mut String, cmds: &[&String]) {
         s.push_str(&" ".repeat(ALIGN - l_cmd.chars().count()));
         s.push_str(r_cmd);
         s.push_str(&" ".repeat(ALIGN - r_cmd.chars().count()));
+        s.push('\n');
+    }
+    if rem_count == 1 {
+        s.push_str(cmds[mid_pt - 1]);
         s.push('\n');
     }
 }

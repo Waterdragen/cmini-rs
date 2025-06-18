@@ -78,13 +78,6 @@ pub fn get_table(path: &str) -> [Metric; 4096] {
         let finger1 = *fingers.get(&finger_combo[2..4]).unwrap();
         let finger2 = *fingers.get(&finger_combo[4..6]).unwrap();
         let hash_value = (finger0 << 8) | (finger1 << 4) | finger2;
-        {
-            let s = gram_type.as_str().unwrap();
-            if matches!(s, "inoneh" | "outoneh") {
-                let gram_type = Metric::from_str(s);
-                dbg!(finger_combo, gram_type);
-            }
-        }
         let gram_type = Metric::from_str(gram_type.as_str().unwrap());
         table[usize::from(hash_value)] = gram_type;
     }

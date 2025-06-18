@@ -26,7 +26,11 @@ pub enum RemoveError<'a> {
     NotFound(&'a str),
     #[error("Error: you don't own `{0}`")]
     NotOwner(&'a str),
+    #[error("Use commands with `--sudo` in a public channel")]
+    SudoInPrivateChannel,
 }
+
+type IsInPublicChannel = bool;
 
 pub fn get_like_count(name: &str) -> usize {
     let likes = LIKES.read().unwrap();
@@ -81,12 +85,12 @@ impl ServerLayouts {
         layouts.contains_key(name)
     }
     pub fn remove<'a>(&self, name: &'a str, id: u64) -> Result<LayoutConfig, RemoveError<'a>> {
-        self.remove_impl(name, id, false)
+        self.remove_impl(name, id, None)
     }
-    pub fn remove_as_admin<'a>(&self, name: &'a str, id: u64) -> Result<LayoutConfig, RemoveError<'a>> {
-        self.remove_impl(name, id, true)
+    pub fn remove_as_admin<'a>(&self, name: &'a str, id: u64, in_public_channel: bool) -> Result<LayoutConfig, RemoveError<'a>> {
+        self.remove_impl(name, id, Some(in_public_channel))
     }
-    fn remove_impl<'a>(&self, name: &'a str, id: u64, admin: bool) -> Result<LayoutConfig, RemoveError<'a>> {
+    fn remove_impl<'a>(&self, name: &'a str, id: u64, admin: Option<IsInPublicChannel>) -> Result<LayoutConfig, RemoveError<'a>> {
         let user = {
             // Must drop or else deadlock
             let ll = self.get(name);
@@ -95,12 +99,14 @@ impl ServerLayouts {
                 Some(_) => ll.user,
             }
         };
-        if user == id || admin {
-            let mut layouts_mut = self.write().unwrap();
-            // Removal always succeed
-            Ok(layouts_mut.shift_remove(name).unwrap())
-        } else {
-            Err(RemoveError::NotOwner(name))
+        match (user == id, admin) {
+            (true, _) | (false, Some(true)) => {
+                let mut layouts_mut = self.write().unwrap();
+                // Removal always succeed
+                Ok(layouts_mut.shift_remove(name).unwrap())
+            }
+            (false, None) => Err(RemoveError::NotOwner(name)),
+            (false, Some(false)) => Err(RemoveError::SudoInPrivateChannel),
         }
     }
     pub fn best_match(&self, base_name: &str) -> String {

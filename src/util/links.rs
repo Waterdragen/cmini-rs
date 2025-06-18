@@ -3,7 +3,7 @@ use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
 use std::sync::{Arc, RwLock};
 
-pub(super) static LINKS: Lazy<Arc<RwLock<FxHashMap<String, String>>>> = Lazy::new(||
+pub static LINKS: Lazy<Arc<RwLock<FxHashMap<String, String>>>> = Lazy::new(||
     Arc::new(RwLock::new(read_json("./links.json")))
 );
 

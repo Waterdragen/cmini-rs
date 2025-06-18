@@ -74,6 +74,9 @@ impl EventHandler for Handler {
             "maintenance" | "1984" => {
                 cmds::maintenance::Command.exec(msg.arg, id, Arc::clone(&MAINTENANCE_MODE))
             }
+            "question" => {
+                cmds::question::Command.exec().await
+            }
             _ => {
                 match cmds::get_cmd(action) {
                     Some(cmd) => {

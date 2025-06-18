@@ -287,7 +287,7 @@ pub trait Commandable: Send + Sync {
     }
 
     fn help(&self) -> String {
-        let mut help_message = "```".to_owned();
+        let mut help_message = "```\n".to_owned();
         help_message.push_str(self.usage());
         help_message.push('\n');
         help_message.push_str(self.desc());

@@ -15,8 +15,8 @@ impl Commandable for Command {
         if target.is_empty() {
             return match ADMINS.list(id) {
                 Ok(admin_names) => {
-                    let mut s = "Admins:\n```".to_owned();
-                    for admin_name in &admin_names {
+                    let mut s = "Admins:\n```\n".to_owned();
+                    for admin_name in admin_names.iter() {
                         s.push_str(admin_name);
                         s.push('\n');
                     }
