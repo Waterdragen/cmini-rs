@@ -22,19 +22,19 @@ impl Commandable for Command {
                 Err(err) => err.to_string(),
             };
         }
-        let kwarg = match get_kwargs(name, &KWARGS) {
+        let kwargs = match get_kwargs(name, &KWARGS) {
             Ok(kwarg) => kwarg,
             Err(err) => return err.to_string(),
         };
-        let result = match kwarg["sudo"].unwrap_bool() {
-            true => LAYOUTS.remove_as_admin(&kwarg.arg, msg.id),
-            false => LAYOUTS.remove(&kwarg.arg, msg.id),
+        let result = match kwargs["sudo"].unwrap_bool() {
+            true => LAYOUTS.remove_as_admin(&kwargs.arg, msg.id),
+            false => LAYOUTS.remove(&kwargs.arg, msg.id),
         };
         match result {
-            Ok(_) => format!("`{}` has been removed", kwarg.arg),
+            Ok(_) => format!("`{}` has been removed", kwargs.arg),
             Err(err @ RemoveError::NotFound(_)) => err.to_string(),
             Err(err @ RemoveError::NotOwner(_)) =>
-                format!("{err}\nHelp: you may remove it with `remove {} --sudo`", kwarg.arg),
+                format!("{err}\nHelp: you may remove it with `remove {} --sudo`", kwargs.arg),
         }
     }
 

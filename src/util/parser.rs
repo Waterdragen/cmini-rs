@@ -46,6 +46,12 @@ impl Kwarg {
 }
 
 impl Kwarg {
+    /// Converts kwarg into a `bool`
+    /// - returns `false` if kwarg is unused
+    ///
+    /// # Panics
+    /// - inner type is not a bool (most likely a logic error)
+    #[track_caller]
     pub fn unwrap_bool(&self) -> bool {
         match self {
             Kwarg::Bool(b) => *b,
@@ -53,6 +59,12 @@ impl Kwarg {
         }
     }
 
+    /// Converts kwarg into `Option<&[String]>`
+    /// - returns `None` if kwarg is unused
+    ///
+    /// # Panics
+    /// - inner type is not a vec (most likely a logic error)
+    #[track_caller]
     pub fn unwrap_vec(&self) -> Option<&[String]> {
         match self {
             Kwarg::Vec(v) => Some(v.as_ref()?),
@@ -60,6 +72,12 @@ impl Kwarg {
         }
     }
 
+    /// Converts kwarg into `Option<&str>`
+    /// - returns `None` if kwarg is unused
+    ///
+    /// # Panics
+    /// - inner type is not a string (most likely a logic error)
+    #[track_caller]
     pub fn unwrap_str(&self) -> Option<&str> {
         match self {
             Kwarg::Str(s) => Some(s.as_ref()?),

@@ -46,11 +46,11 @@ impl Commandable for Command {
         "assign a layout to a new author"
     }
 
-    fn mods_only(&self) -> bool {
+    fn public_channel_only(&self) -> bool {
         true
     }
 
-    fn public_channel_only(&self) -> bool {
+    fn mods_only(&self) -> bool {
         true
     }
 }

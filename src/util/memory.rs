@@ -45,8 +45,8 @@ pub fn sync_data() {
     write_json("./links.json", &*LINKS);
 }
 
-#[repr(transparent)]
 #[derive(Serialize)]
+#[serde(transparent)]
 pub struct ServerLayouts(Arc<RwLock<FxIndexMap<String, LayoutConfig>>>);
 
 impl Deref for ServerLayouts {

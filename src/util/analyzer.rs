@@ -53,17 +53,18 @@ pub fn trigrams(ll: &LayoutConfig, grams: &[([Key; 3], u64)]) -> Stat {
             *counter.get_mut(SFR).unwrap_or_else(|| panic!("cannot get sfr")) += count;
             return;
         }
-        let finger_hash = get_finger_hash(fingers, gram0, gram1, gram2);
-        if finger_hash.is_none() {
-            *counter.get_mut(UNKNOWN).unwrap_or_else(|| panic!("cannot get unknown")) += count;
-            return;
-        }
-        let finger_hash = finger_hash.unwrap();
+        let finger_hash = match get_finger_hash(fingers, gram0, gram1, gram2) {
+            None => {
+                *counter.get_mut(UNKNOWN).unwrap_or_else(|| panic!("cannot get unknown")) += count;
+                return;
+            }
+            Some(finger_hash) => finger_hash,
+        };
 
-        let gram_type = &TABLE[usize::from(finger_hash)];
+        let gram_type = TABLE[finger_hash];
 
         *counter
-            .get_mut(gram_type)
+            .get_mut(&gram_type)
             .unwrap_or_else(|| panic!("cannot get gram type {:?}", gram_type)
             ) += count;
     });
@@ -72,9 +73,9 @@ pub fn trigrams(ll: &LayoutConfig, grams: &[([Key; 3], u64)]) -> Stat {
 }
 
 #[inline]
-fn get_finger_hash(layout: &Layout, gram0: Key, gram1: Key, gram2: Key) -> Option<Finger> {
+pub(crate) fn get_finger_hash(layout: &Layout, gram0: Key, gram1: Key, gram2: Key) -> Option<usize> {
     let finger0 = layout.get(&gram0)?.2;
     let finger1 = layout.get(&gram1)?.2;
     let finger2 = layout.get(&gram2)?.2;
-    Some((finger0 << 8) | (finger1 << 4) | finger2)
+    Some(usize::from((finger0 << 8) | (finger1 << 4) | finger2))
 }

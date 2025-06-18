@@ -17,42 +17,42 @@ pub static CORPORA: Lazy<Vec<String>> = Lazy::new(|| list_corpora());
 pub static CORPORA_PREFS: Lazy<Arc<RwLock<FxHashMap<u64, String>>>> = Lazy::new(|| read_json("./corpora.json"));
 
 pub trait BorrowCorpus: Sized + TryFrom<Vec<Key>, Error: Debug> {
-    fn borrow_corpus() -> &'static RawServerCorpora<Self>;
+    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>>;
 }
 impl BorrowCorpus for [Key; 1] {
-    fn borrow_corpus() -> &'static RawServerCorpora<Self> { &LOADED_1 }
+    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &*LOADED_1 }
 }
 impl BorrowCorpus for [Key; 2] {
-    fn borrow_corpus() -> &'static RawServerCorpora<Self> { &LOADED_2 }
+    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &*LOADED_2 }
 }
 impl BorrowCorpus for [Key; 3] {
-    fn borrow_corpus() -> &'static RawServerCorpora<Self> { &LOADED_3 }
+    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &*LOADED_3 }
 }
 impl BorrowCorpus for Vec<Key> {
-    fn borrow_corpus() -> &'static RawServerCorpora<Self> { &LOADED_WORD }
+    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &*LOADED_WORD }
 }
 
-pub fn load_corpus<Gram: BorrowCorpus + 'static>(path: &str) -> Arc<RawCorpus<Gram>> {
+pub fn load_corpus<Gram: BorrowCorpus + 'static>(path: &str) -> RawCorpus<Gram> {
     {
         let loaded = Gram::borrow_corpus().read().unwrap();
         if loaded.contains_key(path) {
-            return Arc::clone(loaded.get(path).unwrap());
+            return loaded.get(path).unwrap().arc_clone();
         }
     }
     let mut loaded_mut = Gram::borrow_corpus().write().unwrap();
-    let corpus = get_corpus(path);
+    let corpus = get_corpus::<Gram>(path);
     loaded_mut.insert(path.to_owned(), corpus);
-    Arc::clone(loaded_mut.get(path).unwrap())
+    loaded_mut.get(path).unwrap().arc_clone()
 }
 
-pub fn ngrams<const N: usize>(id: u64) -> Arc<Corpus<N>>
+pub fn ngrams<const N: usize>(id: u64) -> Corpus<N>
 where [Key; N]: BorrowCorpus {
     let user_corpus = get_user_corpus(id);
     let path = format!("./corpora/{}/{}.json", user_corpus, NGRAMS[N - 1]);
     load_corpus::<[Key; N]>(&path)
 }
 
-pub fn words(id: u64) -> Arc<WordCorpus> {
+pub fn words(id: u64) -> WordCorpus {
     let user_corpus = get_user_corpus(id);
     let path = format!("./corpora/{}/words.json", user_corpus);
     load_corpus(&path)

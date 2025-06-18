@@ -1,5 +1,7 @@
+use crate::util::analyzer::get_finger_hash;
+use crate::util::consts::TABLE;
+use crate::util::core::{ContainsMetric, FingerUsage, Key, LayoutConfig, Metric, Stat};
 use crate::util::{analyzer, authors, corpora, links, memory};
-use crate::util::core::{FingerUsage, LayoutConfig, Metric, Stat};
 
 fn is_char_allowed_in_name(c: char) -> bool {
     matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' |
@@ -142,4 +144,31 @@ pub fn to_string(ll: &LayoutConfig, id: u64) -> String {
              {stats_str}\
              ```\n\
              {external_link}\n")
+}
+
+pub fn top_trigrams_of_metric<M: ContainsMetric>(ll: &LayoutConfig, id: u64, metric: M, top_n: usize) -> Vec<([Key; 3], f64)> {
+    let trigrams = corpora::ngrams::<3>(id);
+    let fingers = &ll.keys;
+    let sum = trigrams.sum as f64;
+
+    trigrams
+        .iter()
+        .filter_map(|(gram, freq)| {
+            let gram_metric = if gram[0] == gram[1] || gram[1] == gram[2] || gram[0] == gram[2] {
+                Metric::Sfr
+            } else {
+                match get_finger_hash(fingers, gram[0], gram[1], gram[2]) {
+                    None => Metric::Unknown,
+                    Some(finger_hash) => TABLE[finger_hash],
+                }
+            };
+            match metric.contains(gram_metric) {
+                true => Some((gram.clone(), *freq as f64 / sum)),
+                false => None,
+            }
+        })
+        // We only need the first n elements,
+        // because all corpora are sorted in descending order
+        .take(top_n)
+        .collect()  // Already sorted by freq
 }

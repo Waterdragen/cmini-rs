@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::ops::{BitOr, Deref};
 use std::sync::{Arc, RwLock};
 
 use crate::util::admins::ADMINS;
@@ -18,7 +19,7 @@ pub type Key = char;
 pub type Position = (Row, Col, Finger);
 
 pub type FxIndexMap<K, V> = IndexMap<K, V, FxBuildHasher>;
-pub type SyncFxMap<K, V> = Arc<RwLock<FxHashMap<K, Arc<V>>>>;
+pub type SyncFxIndexMap<K, V> = Arc<RwLock<FxHashMap<K, Arc<V>>>>;
 pub type SyncIndexMap<K, V> = Arc<RwLock<FxIndexMap<K, Arc<V>>>>;
 
 pub type Layout = FxHashMap<Key, Position>;
@@ -27,13 +28,46 @@ pub type FingerUsage = FxHashMap<Finger, f64>;
 pub type CachedStats = FxHashMap<String, Arc<Stat>>;
 pub type CachedStatConfig = Arc<RawCachedStatConfig>;
 
-pub type RawCorpus<Gram> = [(Gram, u64)];
+// pub type RawCorpus<Gram> = [(Gram, u64)];
 pub type Corpus<const N: usize> = RawCorpus<[Key; N]>;
 pub type WordCorpus = RawCorpus<Vec<Key>>;
-pub type RawServerCorpora<Gram> = SyncFxMap<String, RawCorpus<Gram>>;
-pub type ServerCorpora<const N: usize> = SyncFxMap<String, Corpus<N>>;
-pub type ServerWordCorpora = SyncFxMap<String, WordCorpus>;
+pub type RawServerCorpora<Corpus> = Arc<RwLock<FxHashMap<String, Corpus>>>;
+pub type ServerCorpora<const N: usize> = RawServerCorpora<Corpus<N>>;
+pub type ServerWordCorpora = RawServerCorpora<WordCorpus>;
 pub type ServerCachedStats = SyncIndexMap<String, RawCachedStatConfig>;
+
+pub struct RawCorpus<Gram> {
+    inner: Arc<[(Gram, u64)]>,
+    pub sum: u64,
+}
+
+impl<Gram> RawCorpus<Gram> {
+    pub fn arc_clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+            sum: self.sum,
+        }
+    }
+}
+
+impl<Gram> Deref for RawCorpus<Gram> {
+    type Target = [(Gram, u64)];
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<Gram> FromIterator<(Gram, u64)> for RawCorpus<Gram> {
+    fn from_iter<T: IntoIterator<Item=(Gram, u64)>>(iter: T) -> Self {
+        let inner = iter.into_iter().collect::<Arc<[(Gram, u64)]>>();
+        let sum = inner.iter().map(|(_, freq)| freq).sum::<u64>();
+        Self {
+            inner,
+            sum,
+        }
+    }
+}
 
 // Trait: Commandable
 // Struct: Command
@@ -200,6 +234,46 @@ impl Metric {
         FxHashMap::from_iter(counter.iter().map(|(metric, freq)| {
             (*metric, *freq as f64 / total)
         }))
+    }
+}
+
+impl BitOr for Metric {
+    type Output = MetricUnion;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        MetricUnion(1 << self.pack() | 1 << rhs.pack())
+    }
+}
+
+#[derive(Copy, Clone)]
+#[repr(transparent)]
+pub struct MetricUnion(u32);
+
+impl BitOr<Metric> for MetricUnion {
+    type Output = Self;
+
+    fn bitor(self, metric: Metric) -> Self::Output {
+        Self(self.0 | 1 << metric.pack())
+    }
+}
+
+pub trait ContainsMetric: Copy {
+    /// - If `self` is `Metric`:
+    ///   - check if two `Metric`s are equal
+    /// - If `self` is `MetricUnion`:
+    ///   - check if it contains the `metric`
+    fn contains(self, metric: Metric) -> bool;
+}
+
+impl ContainsMetric for Metric {
+    fn contains(self, other: Metric) -> bool {
+        self == other
+    }
+}
+
+impl ContainsMetric for MetricUnion {
+    fn contains(self, metric: Metric) -> bool {
+        self.0 & 1 << metric.pack() != 0
     }
 }
 
