@@ -96,7 +96,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "add <layout> ``\u{200b}`keys`\u{200b}``"
+        "add <layout_name> ``\u{200b}`keys`\u{200b}``"
     }
 
     fn desc<'a>(&self) -> &'a str {

@@ -10,7 +10,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "rolls <layout>"
+        "rolls <layout_name>"
     }
 
     fn desc<'a>(&self) -> &'a str {

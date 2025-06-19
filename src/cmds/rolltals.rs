@@ -13,7 +13,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "rolltals <layout>"
+        "rolltals <layout_name>"
     }
 
     fn desc<'a>(&self) -> &'a str {

@@ -31,7 +31,7 @@ impl Commandable for Command {
         };
         let name = &kwargs.arg;
         if name.is_empty() {
-            return "```\nremove <layout> [--sudo]\ndelete cmini layouts```".to_owned();
+            return "```\nremove <layout_name> [--sudo]\ndelete cmini layouts```".to_owned();
         }
         let result = match kwargs["sudo"].unwrap_bool() {
             true => LAYOUTS.remove_as_admin(name, msg.id, !msg.is_private()),
@@ -46,7 +46,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "remove <layout>"
+        "remove <layout_name>"
     }
 
     fn desc<'a>(&self) -> &'a str {

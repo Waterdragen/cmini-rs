@@ -22,7 +22,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "unlike <layout>"
+        "unlike <layout_name>"
     }
 
     fn desc<'a>(&self) -> &'a str {

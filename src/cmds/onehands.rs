@@ -10,7 +10,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "onehands <layout>"
+        "onehands <layout_name>"
     }
 
     fn desc<'a>(&self) -> &'a str {

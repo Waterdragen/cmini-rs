@@ -80,6 +80,10 @@ impl ServerLayouts {
         let closest = self.best_match(name);
         Get(self.read().unwrap(), Cow::Owned(closest))
     }
+    pub fn find_mut(&self, name: &str) -> GetMut<LayoutConfig> {
+        let closest = self.best_match(name);
+        GetMut(self.write().unwrap(), Cow::Owned(closest))
+    }
     pub fn contains(&self, name: &str) -> bool {
         let layouts = self.read().unwrap();
         layouts.contains_key(name)

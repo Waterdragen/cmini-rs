@@ -13,7 +13,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "redirects <layout>"
+        "redirects <layout_name>"
     }
 
     fn desc<'a>(&self) -> &'a str {

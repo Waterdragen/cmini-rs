@@ -15,7 +15,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "view <layout name>"
+        "view <layout_name>"
     }
 
     fn desc<'a>(&self) -> &'a str {

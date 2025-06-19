@@ -39,7 +39,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "assign <layout> <author>"
+        "assign <layout_name> <author_name_or_id>"
     }
 
     fn desc<'a>(&self) -> &'a str {

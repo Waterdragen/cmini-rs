@@ -16,8 +16,8 @@ impl Commandable for Command {
         }
         if new_link.is_empty() {
             return "Error: link cannot be empty\n\n\
-                    Help: use `link <layout> <link>` to add a link\n\
-                    Help: use `unlink <layout>` to remove a link".to_owned()
+                    Help: use `link <layout_name> <link>` to add a link\n\
+                    Help: use `unlink <layout_name>` to remove a link".to_owned()
         }
         let ll = &*LAYOUTS.find(name);
         let mut links = LINKS.write().unwrap();
@@ -31,7 +31,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "link <layout> <link>"
+        "link <layout_name> <link>"
     }
 
     fn desc<'a>(&self) -> &'a str {

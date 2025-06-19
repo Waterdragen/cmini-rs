@@ -81,6 +81,7 @@ pub struct JsonLayoutConfig {
     pub keys: String,
 }
 
+#[derive(Clone)]
 pub struct LayoutConfig {
     pub name: String,
     pub user: u64,

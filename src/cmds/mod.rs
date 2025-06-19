@@ -32,6 +32,10 @@ mod unlink;
 mod view;
 mod wooperball;
 mod woopercat;
+mod angle;
+mod angle_mut;
+mod cycle;
+mod cycle_mut;
 
 use crate::util::core::{Commandable, ContainsMetric};
 use crate::util::memory::LAYOUTS;
@@ -46,10 +50,14 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("add", add::Command.init()),
         ("admin", admin::Command.init()),
         ("alternates", alternates::Command.init()),
+        ("angle", angle::Command.init()),
+        ("angle!", angle_mut::Command.init()),
         ("assign", assign::Command.init()),
         ("authors", authors::Command.init()),
         ("catball", catball::Command.init()),
         ("corpus", corpus::Command.init()),
+        ("cycle", cycle::Command.init()),
+        ("cycle!", cycle_mut::Command.init()),
         ("dofball", dofball::Command.init()),
         ("gh", github::Command.init()),
         ("github", github::Command.init()),
@@ -70,6 +78,8 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("sfbs", sfbs::Command.init()),
         ("sfs", sfs::Command.init()),
         ("suggest", suggest::Command.init()),
+        ("swap", cycle::Command.init()),
+        ("swap!", cycle_mut::Command.init()),
         ("unlike", unlike::Command.init()),
         ("unlink", unlink::Command.init()),
         ("wooperball", wooperball::Command.init()),

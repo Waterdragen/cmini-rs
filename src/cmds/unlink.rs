@@ -19,7 +19,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "unlink <layout>"
+        "unlink <layout_name>"
     }
 
     fn desc<'a>(&self) -> &'a str {
