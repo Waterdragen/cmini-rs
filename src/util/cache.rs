@@ -1,11 +1,11 @@
 use crate::util::core::{CachedStatConfig, CachedStats, LayoutConfig, RawCachedStatConfig, ServerCachedStats, Stat};
 use crate::util::jsons::{get_server_cached_stats, write_json};
-use crate::util::{analyzer, corpora, memory};
+use crate::util::memory::LAYOUTS;
+use crate::util::{corpora, memory};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use std::sync::Arc;
 use std::time::Instant;
-use crate::util::memory::LAYOUTS;
 
 pub static CACHED_STATS: Lazy<ServerCachedStats> = Lazy::new(|| get_server_cached_stats("./cached_stats.json"));
 
@@ -30,7 +30,7 @@ fn get_cache(name: &str) -> Option<CachedStatConfig> {
 fn cache_fill(ll: &LayoutConfig, data: &mut CachedStats, corpus: &str) {
     let path = format!("./corpora/{}/trigrams.json", corpus);
     let trigrams = corpora::load_corpus(&path);
-    let stats = analyzer::trigrams(ll, &trigrams);
+    let stats = ll.trigram_stats(&trigrams);
 
     data.insert(corpus.to_string(), Arc::new(stats));
 }

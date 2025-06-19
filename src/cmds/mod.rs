@@ -34,7 +34,6 @@ mod wooperball;
 mod woopercat;
 
 use crate::util::core::{Commandable, ContainsMetric};
-use crate::util::layout::top_trigrams_of_metric;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::{get_kwargs, KwargType, ParseKwargError};
 use crate::util::Message;
@@ -86,8 +85,8 @@ static OTHER_COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new
     ].into_iter().map(|(name, obj)| (name.to_string(), obj)))
 });
 
-pub fn get_cmd(name: &str) -> Option<&Box<dyn Commandable>> {
-    COMMANDS.get(name)
+pub fn get_cmd(name: &str) -> Option<&dyn Commandable> {
+    COMMANDS.get(name).map(|v| &**v)
 }
 
 static KWARGS_FOR_TOP_TRIGRAMS_OF_METRIC: Lazy<FxHashMap<String, KwargType>>
@@ -119,7 +118,7 @@ fn cmd_for_top_trigrams_of_metric<M: ContainsMetric>(msg: &Message, metric: M, m
         }
     };
     let layout_name = &ll.name;
-    let filtered_trigrams = top_trigrams_of_metric(&ll, msg.id, metric, top_n);
+    let filtered_trigrams = ll.top_trigrams_of_metric(msg.id, metric, top_n);
     let mut s = format!("```\nTop {top_n} {layout_name} {metric_name}:\n");
     for (gram, freq) in filtered_trigrams {
         let freq_percent = freq * 100.0;

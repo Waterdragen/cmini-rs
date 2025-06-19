@@ -1,10 +1,10 @@
+use crate::util::authors::AUTHORS;
 use crate::util::consts::{FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR};
 use crate::util::core::{Layout, LayoutConfig};
 use crate::util::layout::check_name;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::get_layout;
-use crate::util::{layout, Commandable, Message};
-use crate::util::authors::AUTHORS;
+use crate::util::{Commandable, Message};
 
 pub struct Command;
 
@@ -89,7 +89,7 @@ impl Commandable for Command {
                 let mut authors = AUTHORS.write().unwrap();
                 authors.update(msg.id, &msg.author.name);
             }
-            format!("Success!\n{}", layout::to_string(&LAYOUTS.get(&name), msg.id))
+            format!("Success!\n{}", LAYOUTS.get(&name).to_pretty(msg.id))
         } else {
             format!("Error: `{name}` already exists")
         }

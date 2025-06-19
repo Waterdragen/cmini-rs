@@ -20,16 +20,16 @@ pub trait BorrowCorpus: Sized + TryFrom<Vec<Key>, Error: Debug> {
     fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>>;
 }
 impl BorrowCorpus for [Key; 1] {
-    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &*LOADED_1 }
+    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &LOADED_1 }
 }
 impl BorrowCorpus for [Key; 2] {
-    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &*LOADED_2 }
+    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &LOADED_2 }
 }
 impl BorrowCorpus for [Key; 3] {
-    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &*LOADED_3 }
+    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &LOADED_3 }
 }
 impl BorrowCorpus for Vec<Key> {
-    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &*LOADED_WORD }
+    fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>> { &LOADED_WORD }
 }
 
 pub fn load_corpus<Gram: BorrowCorpus + 'static>(path: &str) -> RawCorpus<Gram> {

@@ -1,7 +1,7 @@
 use crate::util::analyzer::get_finger_hash;
 use crate::util::consts::TABLE;
 use crate::util::core::{ContainsMetric, FingerUsage, Key, LayoutConfig, Metric, Stat};
-use crate::util::{analyzer, authors, corpora, links, memory};
+use crate::util::{authors, corpora, links, memory};
 
 fn is_char_allowed_in_name(c: char) -> bool {
     matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' |
@@ -23,44 +23,101 @@ pub fn check_name(name: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub fn get_matrix_str(ll: &LayoutConfig) -> String {
-    let mut keyboard: [[char; 16]; 4]= [[' '; 16]; 4];
-    ll.keys.iter().for_each(|(key, pos)| {
-        let (row, col, _) = pos;
-        if *row > 4 || *col > 16 { return; }
-        keyboard[usize::from(*row)][usize::from(*col)] = *key;
-    });
+impl LayoutConfig {
+    pub fn matrix_str(&self) -> String {
+        let mut keyboard: [[char; 16]; 4]= [[' '; 16]; 4];
+        self.keys.iter().for_each(|(key, pos)| {
+            let (row, col, _) = pos;
+            if *row > 4 || *col > 16 { return; }
+            keyboard[usize::from(*row)][usize::from(*col)] = *key;
+        });
 
-    // maximum length possible = 2(initial) + 2 + 5 * 2 + 2 + 11 * 2
-    let mut rows: Vec<String> = std::iter::repeat_with(
-        || String::with_capacity(38))
-        .take(4)
-        .collect();
-    rows.iter_mut().for_each(|row| { row.push_str("  ") });
+        // maximum length possible = 2(initial) + 2 + 5 * 2 + 2 + 11 * 2
+        let mut rows: Vec<String> = std::iter::repeat_with(
+            || String::with_capacity(38))
+            .take(4)
+            .collect();
+        rows.iter_mut().for_each(|row| { row.push_str("  ") });
 
-    match ll.board.as_str() {
-        "angle" => { rows[2].push(' '); }
-        "stagger" => { rows[1].push(' '); rows[2].push_str("  "); }
-        _ => ()
+        match self.board.as_str() {
+            "angle" => { rows[2].push(' '); }
+            "stagger" => { rows[1].push(' '); rows[2].push_str("  "); }
+            _ => ()
+        }
+        keyboard.iter().enumerate().for_each(|(row, row_keys)| {
+            let left_hand = &row_keys[..5];
+            let right_hand = &row_keys[5..];
+
+            left_hand.iter().for_each(|key| {
+                rows[row].push(*key);
+                rows[row].push(' ');
+            });
+            rows[row].push(' ');
+            right_hand.iter().for_each(|key| {
+                rows[row].push(*key);
+                rows[row].push(' ');
+            });
+        });
+
+        match rows[3].chars().all(|c| c == ' ') {
+            true => rows[..3].join("\n"),
+            false => rows.join("\n")
+        }
     }
-    keyboard.iter().enumerate().for_each(|(row, row_keys)| {
-        let left_hand = &row_keys[..5];
-        let right_hand = &row_keys[5..];
 
-        left_hand.iter().for_each(|key| {
-            rows[row].push(*key);
-            rows[row].push(' ');
-        });
-        rows[row].push(' ');
-        right_hand.iter().for_each(|key| {
-            rows[row].push(*key);
-            rows[row].push(' ');
-        });
-    });
+    pub fn to_pretty(&self, id: u64) -> String {
+        let author_reader = authors::AUTHORS.read().unwrap();
+        let author = author_reader.get_name(self.user).unwrap_or("Unknown");
+        let monograms = corpora::ngrams::<1>(id);
+        let trigrams = corpora::ngrams::<3>(id);
 
-    match rows[3].chars().all(|c| c == ' ') {
-        true => rows[..3].join("\n"),
-        false => rows.join("\n")
+        let matrix_str = self.matrix_str();
+
+        let stats = self.trigram_stats(&trigrams);
+        let finger_usage = self.fingers_usage(&monograms);
+        let stats_str = get_stats_str(&stats, &finger_usage);
+
+        let likes = memory::get_like_count(&self.name);
+        let like_str = if likes == 1 {"like"} else {"likes"};
+        let external_link = links::get_link(&self.name);
+
+        let ll_name = self.name.as_str();
+        let corpus_name = corpora::get_user_corpus(id).to_uppercase();
+        format!("```\n\
+             {ll_name} ({author}) ({likes} {like_str})\n\
+             {matrix_str}\n
+             \n\
+             {corpus_name}:\n\
+             {stats_str}\
+             ```\n\
+             {external_link}\n")
+    }
+
+    pub fn top_trigrams_of_metric<M: ContainsMetric>(&self, id: u64, metric: M, top_n: usize) -> Vec<([Key; 3], f64)> {
+        let trigrams = corpora::ngrams::<3>(id);
+        let fingers = &self.keys;
+        let sum = trigrams.sum as f64;
+
+        trigrams
+            .iter()
+            .filter_map(|(gram, freq)| {
+                let gram_metric = if gram[0] == gram[1] || gram[1] == gram[2] || gram[0] == gram[2] {
+                    Metric::Sfr
+                } else {
+                    match get_finger_hash(fingers, gram[0], gram[1], gram[2]) {
+                        None => Metric::Unknown,
+                        Some(finger_hash) => TABLE[finger_hash],
+                    }
+                };
+                match metric.contains(gram_metric) {
+                    true => Some((*gram, *freq as f64 / sum)),
+                    false => None,
+                }
+            })
+            // We only need the first n elements,
+            // because all corpora are sorted in descending order
+            .take(top_n)
+            .collect()  // Already sorted by freq
     }
 }
 
@@ -116,59 +173,4 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
 \n\
   LH/RH: {lh:>5.2}% | {rh:>5.2}%\n\
     ")
-}
-
-pub fn to_string(ll: &LayoutConfig, id: u64) -> String {
-    let author_reader = authors::AUTHORS.read().unwrap();
-    let author = author_reader.get_name(ll.user).unwrap_or("Unknown");
-    let monograms = corpora::ngrams::<1>(id);
-    let trigrams = corpora::ngrams::<3>(id);
-
-    let matrix_str = get_matrix_str(ll);
-
-    let stats = analyzer::trigrams(ll, &trigrams);
-    let finger_usage = analyzer::fingers_usage(ll, &monograms);
-    let stats_str = get_stats_str(&stats, &finger_usage);
-
-    let likes = memory::get_like_count(&ll.name);
-    let like_str = if likes == 1 {"like"} else {"likes"};
-    let external_link = links::get_link(&ll.name);
-
-    let ll_name = ll.name.as_str();
-    let corpus_name = corpora::get_user_corpus(id).to_uppercase();
-    format!("```\n\
-             {ll_name} ({author}) ({likes} {like_str})\n\
-             {matrix_str}\n
-             \n\
-             {corpus_name}:\n\
-             {stats_str}\
-             ```\n\
-             {external_link}\n")
-}
-
-pub fn top_trigrams_of_metric<M: ContainsMetric>(ll: &LayoutConfig, id: u64, metric: M, top_n: usize) -> Vec<([Key; 3], f64)> {
-    let trigrams = corpora::ngrams::<3>(id);
-    let fingers = &ll.keys;
-    let sum = trigrams.sum as f64;
-
-    trigrams
-        .iter()
-        .filter_map(|(gram, freq)| {
-            let gram_metric = if gram[0] == gram[1] || gram[1] == gram[2] || gram[0] == gram[2] {
-                Metric::Sfr
-            } else {
-                match get_finger_hash(fingers, gram[0], gram[1], gram[2]) {
-                    None => Metric::Unknown,
-                    Some(finger_hash) => TABLE[finger_hash],
-                }
-            };
-            match metric.contains(gram_metric) {
-                true => Some((gram.clone(), *freq as f64 / sum)),
-                false => None,
-            }
-        })
-        // We only need the first n elements,
-        // because all corpora are sorted in descending order
-        .take(top_n)
-        .collect()  // Already sorted by freq
 }
