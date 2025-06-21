@@ -1,6 +1,6 @@
 use crate::util::analyzer::get_finger_hash;
 use crate::util::consts::TABLE;
-use crate::util::core::{ContainsMetric, FingerUsage, Key, LayoutConfig, Metric, Stat};
+use crate::util::core::{ContainsMetric, Finger, FingerUsage, Key, LayoutConfig, Metric, Stat};
 use crate::util::{authors, corpora, links, memory};
 
 fn is_char_allowed_in_name(c: char) -> bool {
@@ -25,14 +25,25 @@ pub fn check_name(name: &str) -> Result<(), String> {
 
 impl LayoutConfig {
     pub fn matrix_str(&self) -> String {
-        let mut keyboard: [[char; 16]; 4]= [[' '; 16]; 4];
-        self.keys.iter().for_each(|(key, pos)| {
-            let (row, col, _) = pos;
-            if *row > 4 || *col > 16 { return; }
-            keyboard[usize::from(*row)][usize::from(*col)] = *key;
+        let mut keyboard = [vec![' '; 12], vec![' '; 12], vec![' '; 12]];
+        let mut thumb_row = Vec::<(Key, Finger)>::new();
+        self.keys.iter().for_each(|(&key, &pos)| {
+            let (row, col, finger) = pos;
+            if row > 4 || col > 36 { return; }
+            if row == 3 {
+                thumb_row.push((key, finger));
+                return;
+            }
+            let (row, col) = (usize::from(row), usize::from(col));
+            while keyboard[row].len() <= col {
+                keyboard[row].reserve_exact(5);
+                for _ in 0..5 {
+                    keyboard[row].push(' ');
+                }
+            }
+            keyboard[row][col] = key;
         });
 
-        // maximum length possible = 2(initial) + 2 + 5 * 2 + 2 + 11 * 2
         let mut rows: Vec<String> = std::iter::repeat_with(
             || String::with_capacity(38))
             .take(4)
@@ -59,14 +70,29 @@ impl LayoutConfig {
             });
         });
 
-        match rows[3].chars().all(|c| c == ' ') {
-            true => rows[..3].join("\n"),
-            false => rows.join("\n")
+        if thumb_row.is_empty() {
+            return rows[..3].join("\n");
         }
+        const LT: Finger = 4;
+        let mut lt_rt_split = thumb_row.splitn(2, |(_, finger)| *finger != LT);
+        let left_thumbs = lt_rt_split.next().unwrap_or(&[]);
+        for (mut idx, (key, _)) in left_thumbs.iter().rev().enumerate() {
+            idx = 4 - idx;  // Guaranteed by add cmd: finger with columns >= 5 cannot be LT
+            rows[3].push_str(&" ".repeat(idx));
+            rows[3].push(*key);
+            rows[3].push(' ');
+        }
+        let right_thumbs = lt_rt_split.next().unwrap_or(&[]);
+        for (key, _) in right_thumbs {
+            rows[3].push(*key);
+            rows[3].push(' ');
+        }
+
+        rows.join("\n")
     }
 
     pub fn to_pretty(&self, id: u64) -> String {
-        let author_reader = authors::AUTHORS.read().unwrap();
+        let author_reader = authors::AUTHORS.read();
         let author = author_reader.get_name(self.user).unwrap_or("Unknown");
         let monograms = corpora::ngrams::<1>(id);
         let trigrams = corpora::ngrams::<3>(id);

@@ -1,13 +1,13 @@
-use std::error::Error;
-use std::fmt::Debug;
+use crate::prelude::*;
 use crate::util::core::{CachedStatConfig, FxIndexMap, JsonCachedStatConfig, Key, Metric, RawCachedStatConfig, RawCorpus, ServerCachedStats};
 use fxhash::FxHashMap;
-use serde_json::Value;
-use std::fs::File;
-use std::io::BufReader;
-use std::sync::{Arc, RwLock};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde_json::Value;
+use std::error::Error;
+use std::fmt::Debug;
+use std::fs::File;
+use std::io::BufReader;
 
 fn read_json_checked<T: DeserializeOwned>(path: &str) -> Result<T, Box<dyn Error>> {
     let file = File::open(path)?;
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn test_get_corpus() {
         let path = "./corpora/english-1k/trigrams.json";
-        let vec_ = get_corpus::<[Key; 3]>(path);
+        let vec_ = &*get_corpus::<[Key; 3]>(path);
         dbg!(vec_);
     }
 }

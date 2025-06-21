@@ -17,7 +17,7 @@ impl Commandable for Command {
         if !LAYOUTS.contains(layout_name) {
             return format!("Error: `{layout_name}` does not exist");
         }
-        let authors = AUTHORS.read().unwrap();
+        let authors = AUTHORS.read();
 
         let author_id = match author.parse::<u64>() {
             // Assign using ID

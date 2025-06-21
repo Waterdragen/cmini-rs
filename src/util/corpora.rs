@@ -1,10 +1,10 @@
-use std::fmt::Debug;
+use crate::prelude::*;
 use crate::util::core::{Corpus, Key, RawCorpus, RawServerCorpora, ServerCorpora, ServerWordCorpora, WordCorpus};
 use crate::util::jsons::{get_corpus, read_json};
 use fxhash::FxHashMap;
 use glob::glob;
 use once_cell::sync::Lazy;
-use std::sync::{Arc, RwLock};
+use std::fmt::Debug;
 
 pub const CORPUS: &str = "mt-quotes";
 pub const NGRAMS: &[&str; 3] = &["monograms", "bigrams", "trigrams"];
@@ -13,7 +13,7 @@ static LOADED_1: Lazy<ServerCorpora<1>> = Lazy::new(|| Arc::new(RwLock::new(FxHa
 static LOADED_2: Lazy<ServerCorpora<2>> = Lazy::new(|| Arc::new(RwLock::new(FxHashMap::default())));
 static LOADED_3: Lazy<ServerCorpora<3>> = Lazy::new(|| Arc::new(RwLock::new(FxHashMap::default())));
 static LOADED_WORD: Lazy<ServerWordCorpora> = Lazy::new(|| Arc::new(RwLock::new(FxHashMap::default())));
-pub static CORPORA: Lazy<Vec<String>> = Lazy::new(|| list_corpora());
+pub static CORPORA: Lazy<Arc<[String]>> = Lazy::new(|| list_corpora());
 pub static CORPORA_PREFS: Lazy<Arc<RwLock<FxHashMap<u64, String>>>> = Lazy::new(|| read_json("./corpora.json"));
 
 pub trait BorrowCorpus: Sized + TryFrom<Vec<Key>, Error: Debug> {
@@ -34,15 +34,23 @@ impl BorrowCorpus for Vec<Key> {
 
 pub fn load_corpus<Gram: BorrowCorpus + 'static>(path: &str) -> RawCorpus<Gram> {
     {
-        let loaded = Gram::borrow_corpus().read().unwrap();
-        if loaded.contains_key(path) {
-            return loaded.get(path).unwrap().arc_clone();
+        let loaded = Gram::borrow_corpus().read();
+        if let Some(corpus) = loaded.get(path) {
+            return corpus.arc_clone();
         }
     }
-    let mut loaded_mut = Gram::borrow_corpus().write().unwrap();
     let corpus = get_corpus::<Gram>(path);
-    loaded_mut.insert(path.to_owned(), corpus);
-    loaded_mut.get(path).unwrap().arc_clone()
+    let corpus_ref = corpus.arc_clone();
+    {
+        let mut loaded_mut = Gram::borrow_corpus().write();
+        loaded_mut.insert(path.to_owned(), corpus);
+    }
+    corpus_ref
+}
+
+pub fn read_corpus<Gram: BorrowCorpus + 'static>(path: &str) -> RawCorpus<Gram> {
+    let loaded = Gram::borrow_corpus().read();
+    loaded.get(path).unwrap_or_else(|| panic!("{path} not yet loaded")).arc_clone()
 }
 
 pub fn ngrams<const N: usize>(id: u64) -> Corpus<N>
@@ -59,7 +67,7 @@ pub fn words(id: u64) -> WordCorpus {
 }
 
 pub fn get_user_corpus(id: u64) -> String {
-    let prefs = CORPORA_PREFS.read().unwrap();
+    let prefs = CORPORA_PREFS.read();
     prefs.get(&id)
         .map(|s| s.as_str())
         .unwrap_or(CORPUS).to_owned()
@@ -73,7 +81,7 @@ pub fn set_user_corpus(id: u64, corpus_name: &str) -> Result<(), ()> {
         return Err(())
     }
 
-    let mut prefs = CORPORA_PREFS.write().unwrap();
+    let mut prefs = CORPORA_PREFS.write();
     prefs.insert(id, corpus_name);
     Ok(())
 }
@@ -86,7 +94,7 @@ pub fn set_user_corpus(id: u64, corpus_name: &str) -> Result<(), ()> {
 /// - Invalid path
 /// - Invalid unicode
 #[track_caller]
-fn list_corpora() -> Vec<String> {
+fn list_corpora() -> Arc<[String]> {
     let pattern = "corpora/*";
     let mut corpora = glob(pattern)
         .unwrap_or_else(|_| panic!("Invalid glob pattern"))
@@ -99,7 +107,7 @@ fn list_corpora() -> Vec<String> {
         .collect::<Result<Vec<_>, _>>()
         .unwrap_or_else(|_| panic!("Path does not exist"));
     corpora.sort();
-    corpora
+    Arc::from(corpora)
 }
 
 #[test]

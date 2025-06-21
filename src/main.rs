@@ -5,6 +5,7 @@
 #![warn(unused_must_use)]
 
 mod cmds;
+mod prelude;
 mod test;
 mod util;
 
@@ -15,10 +16,10 @@ use serenity::model::channel::Message as DiscordMessage;
 use serenity::model::gateway::{GatewayIntents, Ready};
 use std::fs;
 use std::io::Write;
-use std::sync::{Arc, RwLock};
 use tokio::signal;
 use tokio::time::{self, Duration};
 
+use crate::prelude::*;
 use crate::util::admins::ADMINS;
 use crate::util::consts::TRIGGERS;
 use crate::util::{validate_json, Message};
@@ -26,7 +27,7 @@ use crate::util::{validate_json, Message};
 static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock::new(false)));
 
 fn maintenance_check(id: u64) -> bool {
-    let mode = MAINTENANCE_MODE.read().unwrap();
+    let mode = MAINTENANCE_MODE.read();
     if *mode {
         return ADMINS.contains(id);
     }

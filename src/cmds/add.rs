@@ -1,6 +1,6 @@
 use crate::util::authors::AUTHORS;
 use crate::util::consts::{FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR};
-use crate::util::core::{Layout, LayoutConfig};
+use crate::util::core::{Finger, Layout, LayoutConfig};
 use crate::util::layout::check_name;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::get_layout;
@@ -71,11 +71,16 @@ impl Commandable for Command {
                 }
             }
         }
+        const LT: Finger = 4;
+        const RT: Finger = 5;
         if max_rows == 4 {
             if let Some(thumb_row) = rows.get(3) {
-                let finger = if spaces[3] > 8 { 4 } else { 5 };
-                for (i, ch) in thumb_row.chars().filter(|c| *c != ' ' && *c != FREE_CHAR).enumerate() {
-                    if keymap.insert(ch, (3, i as u8, finger)).is_some() {
+                for (col, ch) in thumb_row.chars()
+                    .enumerate()
+                    .filter(|(_, c)| *c != ' ' && *c != FREE_CHAR)
+                {
+                    let finger = if col < 5 { LT } else { RT };
+                    if keymap.insert(ch, (3, col as u8, finger)).is_some() {
                         return format!("Error: `{ch}` is defined twice");
                     }
                 }
@@ -86,7 +91,7 @@ impl Commandable for Command {
         if LAYOUTS.add(data) {
             {
                 // Must drop or else deadlock
-                let mut authors = AUTHORS.write().unwrap();
+                let mut authors = AUTHORS.write();
                 authors.update(msg.id, &msg.author.name);
             }
             format!("Success!\n{}", LAYOUTS.get(&name).to_pretty(msg.id))

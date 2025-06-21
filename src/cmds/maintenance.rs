@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use crate::prelude::*;
 use crate::util::admins::ADMINS;
 use crate::util::{Commandable, Message};
 use crate::util::parser::get_args;
@@ -14,12 +14,12 @@ impl Command {
         if let Some(arg) = args.first() {
             match *arg {
                 "on" | "enable" | "true" => {
-                    let mut mode = switch.write().unwrap();
+                    let mut mode = switch.write();
                     *mode = true;
                     return "Maintenance mode enabled".to_owned();
                 }
                 "off" | "disable" | "false" => {
-                    let mut mode = switch.write().unwrap();
+                    let mut mode = switch.write();
                     *mode = false;
                     return "Maintenance mode disabled".to_owned();
                 }
@@ -27,7 +27,7 @@ impl Command {
             }
         }
         {
-            let mode = switch.read().unwrap();
+            let mode = *switch.read();
             format!("Maintenance mode: {mode}")
         }
     }

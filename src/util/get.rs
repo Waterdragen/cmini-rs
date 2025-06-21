@@ -1,7 +1,7 @@
+use crate::prelude::*;
 use crate::util::core::FxIndexMap;
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
-use std::sync::{RwLockReadGuard, RwLockWriteGuard};
 
 pub struct Get<'a, V: 'a>(pub RwLockReadGuard<'a, FxIndexMap<String, V>>, pub Cow<'a, str>);
 

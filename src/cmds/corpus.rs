@@ -8,8 +8,7 @@ impl Commandable for Command {
         let arg = &msg.arg;
         if arg.is_empty() {
             let mut s = "```\nList of Corpora\n".to_owned();
-            let corpora = CORPORA.as_slice();
-            for corpus in corpora {
+            for corpus in CORPORA.iter() {
                 s.push_str("- ");
                 s.push_str(corpus);
                 s.push('\n');

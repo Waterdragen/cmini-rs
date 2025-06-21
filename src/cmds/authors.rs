@@ -9,7 +9,7 @@ impl Commandable for Command {
     fn exec(&self, _: &Message) -> String {
         let mut resp = BoundedResponse::from("Layout Creators:\n```\n".to_owned())
             .reserve(25);
-        let authors = AUTHORS.read().unwrap();
+        let authors = AUTHORS.read();
         let mut author_names = authors.iter().collect::<Vec<_>>();
         author_names.sort_unstable_by(|a, b| cmp_ascii_ignore_case(a, b));
 

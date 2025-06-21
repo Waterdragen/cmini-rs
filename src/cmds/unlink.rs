@@ -11,7 +11,7 @@ impl Commandable for Command {
             return self.help();
         }
         let ll = LAYOUTS.find(name);
-        let mut links = LINKS.write().unwrap();
+        let mut links = LINKS.write();
         match links.remove(&ll.name) {
             None => format!("Error: {name} does not have a link"),
             Some(old_link) => format!("Link removed for {name}, previous link: {old_link}"),

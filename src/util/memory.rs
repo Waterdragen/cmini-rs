@@ -1,7 +1,10 @@
+use crate::prelude::*;
+use crate::util::admins::ADMINS;
 use crate::util::authors::AUTHORS;
 use crate::util::conv;
 use crate::util::core::{FxIndexMap, JsonLayoutConfig, LayoutConfig};
 use crate::util::corpora::CORPORA_PREFS;
+use crate::util::get::{Get, GetMut};
 use crate::util::jsons::{read_json, write_json};
 use crate::util::links::LINKS;
 use fxhash::{FxBuildHasher, FxHashMap};
@@ -11,11 +14,8 @@ use serde::{Deserialize, Deserializer, Serialize};
 use std::borrow::Cow;
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
-use std::sync::{Arc, RwLock};
 use strsim::jaro_winkler;
 use thiserror::Error;
-use crate::util::admins::ADMINS;
-use crate::util::get::{Get, GetMut};
 
 pub static LAYOUTS: Lazy<ServerLayouts> = Lazy::new(|| read_json("./layouts.json"));
 pub static LIKES: Lazy<Arc<RwLock<FxHashMap<String, Vec<u64>>>>> = Lazy::new(|| read_json("./likes.json"));
@@ -33,7 +33,7 @@ pub enum RemoveError<'a> {
 type IsInPublicChannel = bool;
 
 pub fn get_like_count(name: &str) -> usize {
-    let likes = LIKES.read().unwrap();
+    let likes = LIKES.read();
     match likes.get(name) {
         Some(liked_users) => liked_users.len(),
         None => 0,
@@ -66,26 +66,26 @@ impl ServerLayouts {
         if self.contains(&ll.name) {
             return false;
         }
-        let mut layouts_mut = self.write().unwrap();
+        let mut layouts_mut = self.write();
         layouts_mut.insert(ll.name.clone(), ll);
         true
     }
     pub fn get<'a>(&'a self, name: &'a str) -> Get<'a, LayoutConfig> {
-        Get(self.read().unwrap(), Cow::Borrowed(name))
+        Get(self.read(), Cow::Borrowed(name))
     }
     pub fn get_mut<'a>(&'a self, name: &'a str) -> GetMut<'a, LayoutConfig> {
-        GetMut(self.write().unwrap(), Cow::Borrowed(name))
+        GetMut(self.write(), Cow::Borrowed(name))
     }
     pub fn find(&self, name: &str) -> Get<LayoutConfig> {
         let closest = self.best_match(name);
-        Get(self.read().unwrap(), Cow::Owned(closest))
+        Get(self.read(), Cow::Owned(closest))
     }
     pub fn find_mut(&self, name: &str) -> GetMut<LayoutConfig> {
         let closest = self.best_match(name);
-        GetMut(self.write().unwrap(), Cow::Owned(closest))
+        GetMut(self.write(), Cow::Owned(closest))
     }
     pub fn contains(&self, name: &str) -> bool {
-        let layouts = self.read().unwrap();
+        let layouts = self.read();
         layouts.contains_key(name)
     }
     pub fn remove<'a>(&self, name: &'a str, id: u64) -> Result<LayoutConfig, RemoveError<'a>> {
@@ -105,7 +105,7 @@ impl ServerLayouts {
         };
         match (user == id, admin) {
             (true, _) | (false, Some(true)) => {
-                let mut layouts_mut = self.write().unwrap();
+                let mut layouts_mut = self.write();
                 // Removal always succeed
                 Ok(layouts_mut.shift_remove(name).unwrap())
             }
@@ -114,7 +114,7 @@ impl ServerLayouts {
         }
     }
     pub fn best_match(&self, base_name: &str) -> String {
-        let layouts = self.read().unwrap();
+        let layouts = self.read();
         let mut max_score = 0.0;
         let mut closest = String::new();
 
@@ -127,6 +127,9 @@ impl ServerLayouts {
             }
         }
         closest
+    }
+    pub fn arc_clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
     }
 
 }

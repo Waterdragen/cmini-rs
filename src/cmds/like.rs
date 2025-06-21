@@ -15,7 +15,7 @@ impl Commandable for Command {
         }
         let has_liked = {
             // Must drop or else deadlock
-            let likes = LIKES.read().unwrap();
+            let likes = LIKES.read();
             match likes.get(&ll.name) {
                 None => false,
                 Some(liked_users) => liked_users.contains(&msg.id),
@@ -25,7 +25,7 @@ impl Commandable for Command {
             return "You've already liked this layout".to_owned();
         }
         {
-            let mut likes = LIKES.write().unwrap();
+            let mut likes = LIKES.write();
             let like_count = match likes.get_mut(&ll.name) {
                 None => {
                     likes.insert(ll.name.clone(), vec![msg.id]);

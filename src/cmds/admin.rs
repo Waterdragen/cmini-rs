@@ -31,14 +31,14 @@ impl Commandable for Command {
         match action {
             "add" => match ADMINS.add(id, target_id) {
                 Ok(_) => {
-                    let authors = AUTHORS.read().unwrap();
+                    let authors = AUTHORS.read();
                     let target_name = authors.get_name(target_id).unwrap();  // Checked by Admins::add
                     format!("Added `{target_name}` to admins") },
                 Err(err) => err.to_string(),
             },
             "remove" => match ADMINS.remove(id, target_id) {
                 Ok(_) => {
-                    let authors = AUTHORS.read().unwrap();
+                    let authors = AUTHORS.read();
                     let target_name = authors.get_name(target_id).unwrap();  // Checked by Admins::add
                     format!("Removed `{target_name}` from admin")
                 },
@@ -65,7 +65,7 @@ fn id_from_name_or_str_id(target: &str) -> u64 {
     if target.chars().all(|c| c.is_ascii_digit()) {
         target.parse().unwrap()  // Always succeeds
     } else {
-        let authors = AUTHORS.read().unwrap();
+        let authors = AUTHORS.read();
         authors.get_id(target)
     }
 }

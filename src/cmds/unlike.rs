@@ -8,7 +8,7 @@ impl Commandable for Command {
         let id = msg.id;
         let ll = &*LAYOUTS.find(msg.arg);
         {
-            let mut likes = LIKES.write().unwrap();
+            let mut likes = LIKES.write();
             if let Some(liked_layouts) = likes.get_mut(&ll.name) {
                 if let Some(idx) = liked_layouts
                     .iter()

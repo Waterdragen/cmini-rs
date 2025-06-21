@@ -20,20 +20,20 @@ pub use message::{Message, BoundedResponse};
 pub fn validate_json() {
     let count = admins::ADMINS.count();
     assert_ne!(count, 0);
-    let reader = authors::AUTHORS.read().unwrap();
+    let reader = authors::AUTHORS.read();
     assert!(!reader.is_empty());
-    let reader = cache::CACHED_STATS.read().unwrap();
+    let reader = cache::CACHED_STATS.read();
     assert!(!reader.is_empty());
-    let reader = corpora::CORPORA.as_slice();
+    let reader = &corpora::CORPORA;
     assert!(!reader.is_empty());
-    let reader=  corpora::CORPORA_PREFS.read().unwrap();
+    let reader=  corpora::CORPORA_PREFS.read();
     assert!(!reader.is_empty());
     let reader = consts::TABLE.as_ref();
     assert!(!reader.is_empty());
-    let reader = links::LINKS.read().unwrap();
+    let reader = links::LINKS.read();
     assert!(!reader.is_empty());
-    let reader = memory::LAYOUTS.read().unwrap();
+    let reader = memory::LAYOUTS.read();
     assert!(!reader.is_empty());
-    let reader = memory::LIKES.read().unwrap();
+    let reader = memory::LIKES.read();
     assert!(!reader.is_empty());
 }

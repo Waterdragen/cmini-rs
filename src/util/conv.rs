@@ -124,21 +124,19 @@ mod pos {
 
     #[inline]
     pub fn pack((row, col, finger): &Position) -> String {
-        let mut packed = (u16::from(*row) & 0xf) << 8;
-        packed |= (u16::from(*col) & 0xf) << 4;
-        packed |= finger & 0xf;
-        format!("{:03x}", packed)
+        let mut s = String::with_capacity(3);
+        s.push(char::from_digit(u32::from(*row), 36).unwrap());
+        s.push(char::from_digit(u32::from(*col), 36).unwrap());
+        s.push(char::from_digit(u32::from(*finger), 36).unwrap());
+        s
     }
 
     #[inline]
     pub fn unpack(packed_str: &str) -> Position {
-        let packed = u16::from_str_radix(packed_str, 16).unwrap();
-        let row = (packed >> 8 & 0xf) as u8;
-        let col = (packed >> 4 & 0xf) as u8;
-        let finger = packed & 0xf;
+        let mut chars = packed_str.chars();
+        let row = chars.next().unwrap().to_digit(36).unwrap() as u8;
+        let col = chars.next().unwrap().to_digit(36).unwrap() as u8;
+        let finger = chars.next().unwrap().to_digit(36).unwrap() as u16;
         (row, col, finger)
     }
 }
-
-
-

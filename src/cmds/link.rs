@@ -20,7 +20,7 @@ impl Commandable for Command {
                     Help: use `unlink <layout_name>` to remove a link".to_owned()
         }
         let ll = &*LAYOUTS.find(name);
-        let mut links = LINKS.write().unwrap();
+        let mut links = LINKS.write();
         match links.insert(ll.name.to_owned(), new_link.to_owned()) {
             None => format!("Link added for {}.", ll.name),
             Some(old_link) => {

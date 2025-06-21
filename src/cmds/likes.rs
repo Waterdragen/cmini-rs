@@ -8,7 +8,7 @@ impl Commandable for Command {
         let id = msg.id;
         let name = &msg.author.name;
         let mut response = format!("```\n{name}'s liked layouts:\n");
-        let likes = LIKES.read().unwrap();
+        let likes = LIKES.read();
 
         let mut liked_layouts = Vec::<&str>::new();
         for (layout, liked_users) in likes.iter() {
