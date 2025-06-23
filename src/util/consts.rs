@@ -1,4 +1,5 @@
-use crate::util::core::Metric;
+use crate::util::core::{Finger, FingerUnion, Key, Metric};
+use Finger::*;
 use crate::util::jsons::get_table;
 use once_cell::sync::Lazy;
 use serenity::model::prelude::ChannelId;
@@ -9,6 +10,8 @@ pub const TRIGGERS: [&str; 5] = ["!amini", "bmini", "!cmini", "!dvormini", "!cni
 
 pub static TABLE: Lazy<[Metric; 4096]> = Lazy::new(|| get_table("./table.json"));
 
-pub const FMAP_STANDARD: [u16; 10] = [0, 1, 2, 3, 3, 6, 6, 7, 8, 9];
-pub const FMAP_ANGLE: [u16; 10] = [1, 2, 3, 3, 3, 6, 6, 7, 8, 9];
-pub const FREE_CHAR: char = '~';
+pub const FMAP_STANDARD: [Finger; 10] = [LP, LR, LM, LI, LI, RI, RI, RM, RR, RP];
+pub const FMAP_ANGLE: [Finger; 10] = [LR, LM, LI, LI, LI, RI, RI, RM, RR, RP];
+pub const FREE_CHAR: Key = '~';
+pub static LH: Lazy<FingerUnion> = Lazy::new(|| LP | LR | LM | LI | LT);
+pub static RH: Lazy<FingerUnion> = Lazy::new(|| RP | RR | RM | RI | RT);

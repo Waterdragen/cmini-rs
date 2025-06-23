@@ -94,7 +94,7 @@ impl EventHandler for Handler {
             true => if let Ok(dm_channel) = msg.author.create_dm_channel(&ctx.http).await {
                 let _ = dm_channel.say(&ctx.http, &response).await;
             }
-            false => { let _ = msg.channel_id.say(&ctx.http, &response).await; }
+            false => { let _ = msg.reply_ping(&ctx.http, &response).await; }
         }
     }
 

@@ -1,6 +1,6 @@
-use fxhash::FxHashMap;
 use crate::util::consts::TABLE;
-use crate::util::core::{Finger, FingerUsage, Key, Layout, Metric, LayoutConfig, Stat};
+use crate::util::core::{Finger, FingerUsage, Key, Layout, LayoutConfig, Metric, Stat};
+use fxhash::FxHashMap;
 
 impl LayoutConfig {
     pub fn fingers_usage(&self, grams: &[([Key; 1], u64)]) -> FingerUsage {
@@ -11,7 +11,7 @@ impl LayoutConfig {
             if !self.keys.contains_key(&gram) {
                 continue;
             }
-            let finger = self.keys.get(&gram).unwrap().2;
+            let finger = self.keys.get(&gram).unwrap().finger;
             match fingers.contains_key(&finger) {
                 true => { *fingers.get_mut(&finger).unwrap() += count; },
                 false => { fingers.insert(finger, *count); },
@@ -19,20 +19,11 @@ impl LayoutConfig {
         }
         let total = fingers.values().sum::<u64>() as f64;
 
-        let mut fingers: FingerUsage = fingers.into_iter()
+        fingers.into_iter()
             .map(|(finger, freq)| {
                 (finger, freq as f64 / total)
             })
-            .collect();
-
-        let total = fingers.values().sum::<f64>();
-        let lh_usage = fingers.iter()
-            .filter_map(|(finger, count)| (*finger < 5).then_some(count))
-            .sum::<f64>();
-
-        fingers.insert(10, lh_usage);
-        fingers.insert(11, total - lh_usage);
-        fingers
+            .collect()
     }
     pub fn trigram_stats(&self, grams: &[([Key; 3], u64)]) -> Stat {
             let mut counter = Metric::new_counter();
@@ -74,8 +65,8 @@ impl LayoutConfig {
 
 #[inline]
 pub(crate) fn get_finger_hash(layout: &Layout, gram0: Key, gram1: Key, gram2: Key) -> Option<usize> {
-    let finger0 = layout.get(&gram0)?.2;
-    let finger1 = layout.get(&gram1)?.2;
-    let finger2 = layout.get(&gram2)?.2;
-    Some(usize::from((finger0 << 8) | (finger1 << 4) | finger2))
+    let finger0 = layout.get(&gram0)?.finger;
+    let finger1 = layout.get(&gram1)?.finger;
+    let finger2 = layout.get(&gram2)?.finger;
+    Some((finger0 << 8) | (finger1 << 4) | finger2.as_u8() as usize)
 }

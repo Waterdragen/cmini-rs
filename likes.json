@@ -44,6 +44,8 @@
     130544188818194432,
     474550534301548556
   ],
+  "aptsym": [],
+  "abc": [],
   "sthnp": [],
   "crescent": [
     657688933001330718,
@@ -57,8 +59,6 @@
     172181812259454978,
     1235943621803511901
   ],
-  "aptsym": [],
-  "abc": [],
   "Colemak-DHv": [
     514971722626367517,
     344487953076322306,
@@ -72,8 +72,12 @@
     213706767031468033
   ],
   "racket-fspeed": [],
-  "chogtest7": [],
-  "peekaboo": [],
+  "inrolly": [
+    328195824238723072
+  ],
+  "onehanded-layout-where-the-right-hand-is-the-second-layer-mirrored": [
+    335456391617839106
+  ],
   "oxey's-thumb-t": [],
   "Real": [],
   "csquare": [
@@ -84,12 +88,8 @@
     805982808878350366,
     328195824238723072
   ],
-  "inrolly": [
-    328195824238723072
-  ],
-  "onehanded-layout-where-the-right-hand-is-the-second-layer-mirrored": [
-    335456391617839106
-  ],
+  "chogtest7": [],
+  "peekaboo": [],
   "indra-dw": [
     805982808878350366
   ],

@@ -16,9 +16,9 @@ pub mod layout {
         let mut layout_packed_ordered: Vec<(String, u32)> = layout.iter().map(|(key, pos)| {
             let mut packed_keypos = String::with_capacity(4);
             packed_keypos.push(*key);
-            let packed_pos = pos::pack(pos);
+            let packed_pos = pos::pack(*pos);
             packed_keypos.push_str(&packed_pos);
-            let order = ((pos.0 as u32) << 8) + (pos.1 as u32);
+            let order = ((pos.row as u32) << 8) + (pos.col as u32);
             (packed_keypos, order)
         }).collect();
         layout_packed_ordered.sort_by(|item0, item1| {
@@ -120,23 +120,24 @@ mod freq {
 
 
 mod pos {
-    use crate::util::core::Position;
+    use crate::util::core::{Finger, Position};
 
     #[inline]
-    pub fn pack((row, col, finger): &Position) -> String {
+    pub fn pack(Position { row, col, finger }: Position) -> String {
         let mut s = String::with_capacity(3);
-        s.push(char::from_digit(u32::from(*row), 36).unwrap());
-        s.push(char::from_digit(u32::from(*col), 36).unwrap());
-        s.push(char::from_digit(u32::from(*finger), 36).unwrap());
+        s.push(char::from_digit(u32::from(row), 36).unwrap());
+        s.push(char::from_digit(u32::from(col), 36).unwrap());
+        s.push(char::from_digit(finger.as_u8().into(), 36).unwrap());
         s
     }
 
+    #[track_caller]
     #[inline]
     pub fn unpack(packed_str: &str) -> Position {
         let mut chars = packed_str.chars();
         let row = chars.next().unwrap().to_digit(36).unwrap() as u8;
         let col = chars.next().unwrap().to_digit(36).unwrap() as u8;
-        let finger = chars.next().unwrap().to_digit(36).unwrap() as u16;
-        (row, col, finger)
+        let finger = chars.next().unwrap().to_digit(36).unwrap() as u8;
+        Position::new(row, col, Finger::from_u8(finger))
     }
 }

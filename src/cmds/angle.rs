@@ -34,24 +34,23 @@ pub(super) enum AngleError {
 }
 
 pub(super) fn impl_angle(ll: &mut LayoutConfig) -> Result<(), AngleError> {
-    const LI: Finger = 3;
     if &ll.board == "mini" {
         return Err(AngleError::GotMiniLayout);
     }
     if &ll.board == "angle" {
         return Ok(());
     }
-    for key in ll.keys.values_mut() {
-        if key.0 != 2 {
+    for pos in ll.keys.values_mut() {
+        if pos.row != 2 {
             continue;
         }
-        let col = &mut key.1;
+        let col = &mut pos.col;
         if *col >= 5 {
             continue;
         }
         if *col == 0 {
             *col = 4;
-            key.2 = LI;
+            pos.finger = Finger::LI;
         } else {
             *col -= 1;
         }

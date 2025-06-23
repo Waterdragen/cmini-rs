@@ -1,4 +1,4 @@
-use crate::util::core::LayoutConfig;
+use crate::util::core::{Finger, LayoutConfig, Position};
 use crate::util::memory::LAYOUTS;
 use crate::util::{Commandable, Message};
 
@@ -27,14 +27,14 @@ impl Commandable for Command {
 pub(super) fn impl_mirror(ll: &mut LayoutConfig) {
     let is_angle = &ll.board == "angle";
 
-    for (row, col, finger) in ll.keys.values_mut() {
+    for Position { row, col, finger } in ll.keys.values_mut() {
         if *col >= 10 {
             continue;
         }
         if *row != 3 {
             *col = 9 - *col;
         }
-        *finger = 9 - *finger;
+        *finger = finger.mirror();
         if is_angle && *row == 2 {
             // We want to unangle the new right, angle the new left
             // but the columns were flipped earlier
@@ -42,8 +42,8 @@ pub(super) fn impl_mirror(ll: &mut LayoutConfig) {
             // (L) xcvbz -> (R) zbvcx -> (R) bvcxz
             // (R) nm,./ -> (L) /.,mn -> (L) .,mn/
             match *col {
-                0 => { *col = 4; *finger = 3; },
-                5 => { *col = 9; *finger = 9; },
+                0 => { *col = 4; *finger = Finger::LI; },
+                5 => { *col = 9; *finger = Finger::RP; },
                 _ => { *col -= 1; }
             }
         }

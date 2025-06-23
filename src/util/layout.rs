@@ -1,6 +1,6 @@
 use crate::util::analyzer::get_finger_hash;
-use crate::util::consts::TABLE;
-use crate::util::core::{ContainsMetric, Finger, FingerUsage, Key, LayoutConfig, Metric, Stat};
+use crate::util::consts::{LH, RH, TABLE};
+use crate::util::core::{ContainsMetric, Finger, FingerUnion, FingerUsage, Key, LayoutConfig, Metric, Position, Stat};
 use crate::util::{authors, corpora, links, memory};
 
 fn is_char_allowed_in_name(c: char) -> bool {
@@ -28,7 +28,7 @@ impl LayoutConfig {
         let mut keyboard = [vec![' '; 12], vec![' '; 12], vec![' '; 12]];
         let mut thumb_row = Vec::<(Key, Finger)>::new();
         self.keys.iter().for_each(|(&key, &pos)| {
-            let (row, col, finger) = pos;
+            let Position { row, col, finger } = pos;
             if row > 4 || col > 36 { return; }
             if row == 3 {
                 thumb_row.push((key, finger));
@@ -43,18 +43,22 @@ impl LayoutConfig {
             }
             keyboard[row][col] = key;
         });
+        let indents = match self.board.as_str() {
+            "angle" => [2, 2, 3, 3],
+            "stagger" => [2, 3, 4, 5],
+            _ => [2, 2, 2, 2],
+        };
+        let mut rows = indents.iter()
+            .take(if thumb_row.is_empty() { 3 } else { 4 })
+            .map(|&indent| {
+                let mut s = String::with_capacity(40);
+                for _ in 0..indent {
+                    s.push(' ');
+                }
+                s
+            })
+            .collect::<Vec<_>>();
 
-        let mut rows: Vec<String> = std::iter::repeat_with(
-            || String::with_capacity(38))
-            .take(4)
-            .collect();
-        rows.iter_mut().for_each(|row| { row.push_str("  ") });
-
-        match self.board.as_str() {
-            "angle" => { rows[2].push(' '); }
-            "stagger" => { rows[1].push(' '); rows[2].push_str("  "); }
-            _ => ()
-        }
         keyboard.iter().enumerate().for_each(|(row, row_keys)| {
             let left_hand = &row_keys[..5];
             let right_hand = &row_keys[5..];
@@ -73,16 +77,18 @@ impl LayoutConfig {
         if thumb_row.is_empty() {
             return rows[..3].join("\n");
         }
-        const LT: Finger = 4;
-        let mut lt_rt_split = thumb_row.splitn(2, |(_, finger)| *finger != LT);
-        let left_thumbs = lt_rt_split.next().unwrap_or(&[]);
-        for (mut idx, (key, _)) in left_thumbs.iter().rev().enumerate() {
-            idx = 4 - idx;  // Guaranteed by add cmd: finger with columns >= 5 cannot be LT
-            rows[3].push_str(&" ".repeat(idx));
-            rows[3].push(*key);
-            rows[3].push(' ');
-        }
-        let right_thumbs = lt_rt_split.next().unwrap_or(&[]);
+        let lt_rt_split = thumb_row.iter()
+            .position(|(_, finger)| *finger != Finger::LT)
+            .unwrap_or(thumb_row.len());
+        let (left_thumbs, right_thumbs) = thumb_row.split_at(lt_rt_split);  // Always succeeds: index is at most slice.len()
+        let pad_count = 5usize.checked_sub(left_thumbs.len()).unwrap();  // Never underflows: guaranteed by add command, left hand takes at most 5 thumb Keys
+        std::iter::repeat_n(' ', pad_count)
+            .chain(left_thumbs.iter().map(|(key, _)| *key))
+            .for_each(|key| {
+                rows[3].push(key);
+                rows[3].push(' ');
+            });
+        rows[3].push(' ');
         for (key, _) in right_thumbs {
             rows[3].push(*key);
             rows[3].push(' ');
@@ -111,7 +117,7 @@ impl LayoutConfig {
         let corpus_name = corpora::get_user_corpus(id).to_uppercase();
         format!("```\n\
              {ll_name} ({author}) ({likes} {like_str})\n\
-             {matrix_str}\n
+             {matrix_str}\n\
              \n\
              {corpus_name}:\n\
              {stats_str}\
@@ -149,15 +155,13 @@ impl LayoutConfig {
 
 pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
     use Metric as M;
-    const LH: u16 = 10;
-    const RH: u16 = 11;
 
     // get percentage of metric
     let get = |metric: M| -> f64 {
         stats.get(&metric).unwrap() * 100.0
     };
-    let get_hand = |hand: u16| -> f64 {
-        finger_usage.get(&hand).unwrap() * 100.0
+    let get_hand = |hand: FingerUnion| -> f64 {
+        finger_usage.sum(hand) * 100.0
     };
 
     let alt = get(M::Alt);
@@ -183,8 +187,8 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
     let red_sfs = get(M::RedSfs) + bad_red_sfs;
     let sfs = alt_sfs + red_sfs;
 
-    let lh = get_hand(LH);
-    let rh = get_hand(RH);
+    let lh = get_hand(*LH);
+    let rh = get_hand(*RH);
 
     format!(
         "\

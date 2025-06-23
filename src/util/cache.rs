@@ -30,7 +30,7 @@ fn get_cache(name: &str) -> Option<CachedStatConfig> {
 }
 
 fn cache_fill(ll: &LayoutConfig, data: &mut CachedStats, corpus: &str, path: &str) {
-    let trigrams = corpora::read_corpus(&path);
+    let trigrams = corpora::read_corpus(path);
     let stats = ll.trigram_stats(&trigrams);
 
     data.insert(corpus.to_string(), Arc::new(stats));
@@ -56,7 +56,7 @@ fn cache_files() {
         .map(|corpus| (corpus.to_owned(), format!("./corpora/{}/trigrams.json", corpus)))
         .collect::<Vec<_>>();
     for (_, path) in corpora.iter() {
-        corpora::load_corpus::<[Key; 3]>(&path);  // preload every corpus
+        corpora::load_corpus::<[Key; 3]>(path);  // preload every corpus
     }
     let counter = AtomicUsize::new(0);
     let total = names.len();

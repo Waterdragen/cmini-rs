@@ -1,5 +1,5 @@
 use crate::util::{Commandable, Message};
-use crate::util::core::LayoutConfig;
+use crate::util::core::{Finger, LayoutConfig};
 use crate::util::memory::LAYOUTS;
 
 pub struct Command;
@@ -25,22 +25,21 @@ impl Commandable for Command {
 }
 
 pub(super) fn impl_unangle(ll: &mut LayoutConfig) {
-    const LP: u16 = 0;
     if &ll.board != "angle" {
         return;
     }
     ll.board = "ortho".to_owned();
-    for key in ll.keys.values_mut() {
-        if key.0 != 2 {
+    for pos in ll.keys.values_mut() {
+        if pos.row != 2 {
             continue;
         }
-        let col = &mut key.1;
+        let col = &mut pos.col;
         if *col >= 5 {
             continue;
         }
         if *col == 4 {
             *col = 0;
-            key.2 = LP;
+            pos.finger = Finger::LP;
         } else {
             *col += 1;
         }

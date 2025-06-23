@@ -1,6 +1,6 @@
 use crate::util::authors::AUTHORS;
 use crate::util::consts::{FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR};
-use crate::util::core::{Finger, Layout, LayoutConfig};
+use crate::util::core::{Finger, Layout, LayoutConfig, Position};
 use crate::util::layout::check_name;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::get_layout;
@@ -66,21 +66,19 @@ impl Commandable for Command {
 
                 let finger = fmap[col_idx.min(9)];
 
-                if keymap.insert(ch, (row_idx as u8, col_idx as u8, finger)).is_some() {
+                if keymap.insert(ch, Position::new(row_idx as u8, col_idx as u8, finger)).is_some() {
                     return format!("Error: `{ch}` is defined twice");
                 }
             }
         }
-        const LT: Finger = 4;
-        const RT: Finger = 5;
         if max_rows == 4 {
             if let Some(thumb_row) = rows.get(3) {
                 for (col, ch) in thumb_row.chars()
                     .enumerate()
                     .filter(|(_, c)| *c != ' ' && *c != FREE_CHAR)
                 {
-                    let finger = if col < 5 { LT } else { RT };
-                    if keymap.insert(ch, (3, col as u8, finger)).is_some() {
+                    let finger = if col < 5 { Finger::LT } else { Finger::RT };
+                    if keymap.insert(ch, Position::new(3, col as u8, finger)).is_some() {
                         return format!("Error: `{ch}` is defined twice");
                     }
                 }
