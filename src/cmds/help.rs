@@ -18,16 +18,8 @@ impl Commandable for Command {
             if cmd.mods_only() && !ADMINS.contains(msg.id) {
                 return "Unauthorized".to_owned();
             }
+            format!("Help page for `{cmd_name}`: {}", cmd.help())
 
-            format!(
-                "Help page for `{cmd_name}`:\
-                 ```\n\
-                 {}\n\
-                 {}\n\
-                 ```",
-                cmd.usage(),
-                cmd.desc(),
-            )
         } else {
             let mut s = String::from(
                 "Usage: `!cmini (command) [args]`\n\

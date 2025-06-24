@@ -16,7 +16,7 @@ static LOADED_WORD: Lazy<ServerWordCorpora> = Lazy::new(|| Arc::new(RwLock::new(
 pub static CORPORA: Lazy<Arc<[String]>> = Lazy::new(|| list_corpora());
 pub static CORPORA_PREFS: Lazy<Arc<RwLock<FxHashMap<u64, String>>>> = Lazy::new(|| read_json("./corpora.json"));
 
-pub trait BorrowCorpus: Sized + TryFrom<Vec<Key>, Error: Debug> {
+pub trait BorrowCorpus: Sized + TryFrom<Vec<Key>, Error: Debug> + AsRef<[Key]> {
     fn borrow_corpus() -> &'static RawServerCorpora<RawCorpus<Self>>;
 }
 impl BorrowCorpus for [Key; 1] {
@@ -69,7 +69,7 @@ pub fn words(id: u64) -> WordCorpus {
 pub fn get_user_corpus(id: u64) -> String {
     let prefs = CORPORA_PREFS.read();
     prefs.get(&id)
-        .map(|s| s.as_str())
+        .map(String::as_str)
         .unwrap_or(CORPUS).to_owned()
 }
 

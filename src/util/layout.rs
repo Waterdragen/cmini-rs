@@ -1,6 +1,5 @@
-use crate::util::analyzer::get_finger_hash;
 use crate::util::consts::{LH, RH, TABLE};
-use crate::util::core::{ContainsMetric, Finger, FingerUnion, FingerUsage, Key, LayoutConfig, Metric, Position, Stat};
+use crate::util::core::{ContainsMetric, Finger, FingerCombo, FingerUnion, FingerUsage, Key, LayoutConfig, Metric, Position, Stat};
 use crate::util::{authors, corpora, links, memory};
 
 fn is_char_allowed_in_name(c: char) -> bool {
@@ -136,9 +135,9 @@ impl LayoutConfig {
                 let gram_metric = if gram[0] == gram[1] || gram[1] == gram[2] || gram[0] == gram[2] {
                     Metric::Sfr
                 } else {
-                    match get_finger_hash(fingers, gram[0], gram[1], gram[2]) {
+                    match FingerCombo::from_ngrams(fingers, gram) {
                         None => Metric::Unknown,
-                        Some(finger_hash) => TABLE[finger_hash],
+                        Some(finger_combo) => TABLE[finger_combo],
                     }
                 };
                 match metric.contains(gram_metric) {
@@ -158,7 +157,7 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
 
     // get percentage of metric
     let get = |metric: M| -> f64 {
-        stats.get(&metric).unwrap() * 100.0
+        stats.get(metric) * 100.0
     };
     let get_hand = |hand: FingerUnion| -> f64 {
         finger_usage.sum(hand) * 100.0
@@ -192,15 +191,14 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
 
     format!(
         "\
-  Alt: {alt:>5.2}%\n\
-  Rol: {roll:>5.2}%   (In/Out: {inroll:>5.2}% | {outroll:>5.2}%)\n\
-  One: {one:>5.2}%   (In/Out: {inone:>5.2}% | {outone:>5.2}%)\n\
-  Rtl: {rolltal:>5.2}%   (In/Out: {inrolltal:>5.2}% | {outrolltal:>5.2}%)\n\
-  Red: {red:>5.2}%   (Bad:    {bad_red:>5.2}%)\n\
-\n\
-  SFB: {sfb:>5.2}%\n\
-  SFS: {sfs:>5.2}%   (Red/Alt: {red_sfs:>5.2}% | {alt_sfs:>5.2}%)\n\
-\n\
-  LH/RH: {lh:>5.2}% | {rh:>5.2}%\n\
-    ")
+  Alt: {alt:>5.2}%
+  Rol: {roll:>5.2}%   (In/Out: {inroll:>5.2}% | {outroll:>5.2}%)
+  One: {one:>5.2}%   (In/Out: {inone:>5.2}% | {outone:>5.2}%)
+  Rtl: {rolltal:>5.2}%   (In/Out: {inrolltal:>5.2}% | {outrolltal:>5.2}%)
+  Red: {red:>5.2}%   (Bad:    {bad_red:>5.2}%)
+
+  SFB: {sfb:>5.2}%
+  SFS: {sfs:>5.2}%   (Red/Alt: {red_sfs:>5.2}% | {alt_sfs:>5.2}%)
+
+  LH/RH: {lh:>5.2}% | {rh:>5.2}%\n")
 }

@@ -1,7 +1,3 @@
-use std::fmt::Debug;
-use std::hash::Hash;
-use std::ops::{Add, BitOr, Deref, Shl};
-
 use crate::prelude::*;
 use crate::util::admins::ADMINS;
 use crate::util::consts::{LH, RH};
@@ -10,8 +6,11 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use indexmap::IndexMap;
 use serde::ser::SerializeMap;
 use serde::{Deserialize, Serialize, Serializer};
-use strum::IntoEnumIterator;
-use strum_macros::{EnumIter, IntoStaticStr};
+use std::fmt::Debug;
+use std::hash::Hash;
+use std::ops::{Add, BitOr, Deref, Index, Shl};
+use strum::{EnumCount, IntoEnumIterator};
+use strum_macros::{EnumCount, EnumIter, IntoStaticStr};
 
 pub type Row = u8;
 pub type Col = u8;
@@ -57,7 +56,7 @@ impl Finger {
         if n >= 10 {
             panic!("Error in `Finger::from_u8`: invalid finger index {n}");
         }
-        // SAFETY: All enum variants are [0..=9]u8 (less than 10)
+        // SAFETY: All enum variants have memory layout of [0..=9]u8 (less than 10)
         // SAFETY: range has been checked above
         unsafe { std::mem::transmute::<u8, Finger>(n) }
     }
@@ -139,6 +138,7 @@ impl Position {
     }
 }
 
+#[derive(Debug, Default)]
 pub struct FingerMap<T>([T; 10]);
 
 impl<T: Copy + Default> FromIterator<(Finger, T)> for FingerMap<T> {
@@ -172,8 +172,58 @@ impl<T> FingerMap<T> {
     pub fn iter(&self) -> impl Iterator<Item = (Finger, &T)> {
         Finger::iter().zip(self.0.iter())
     }
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (Finger, &mut T)> {
+        Finger::iter().zip(self.0.iter_mut())
+    }
     pub fn values(&self) -> impl Iterator<Item = &T> {
         self.0.iter()
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct FingerCombo<const N: usize> {
+    pub inner: [Finger; N],
+}
+
+impl<const N: usize> From<[Finger; N]> for FingerCombo<N> {
+    fn from(inner: [Finger; N]) -> Self {
+        Self { inner }
+    }
+}
+
+impl<const N: usize> FingerCombo<N> {
+    pub fn from_ngrams(layout: &Layout, grams: &[Key; N]) -> Option<Self> {
+        let mut inner = [Finger::LP; N];
+        for i in 0..N {
+            inner[i] = layout.get(&grams[i])?.finger;
+        }
+        Some(Self { inner })
+    }
+}
+
+impl<const N: usize> FingerCombo<N> {
+    pub fn index(self) -> usize {
+        self.inner.iter()
+            .fold(0usize, |acc, &finger| {
+                10 * acc + usize::from(finger.as_u8())
+            })
+    }
+}
+
+#[derive(Debug)]
+pub struct Table([Metric; 1000]);
+
+impl Table {
+    pub fn from_inner(inner: [Metric; 1000]) -> Self {
+        Self(inner)
+    }
+}
+
+impl Index<FingerCombo<3>> for Table {
+    type Output = Metric;
+
+    fn index(&self, finger_combo: FingerCombo<3>) -> &Self::Output {
+        &self.0[finger_combo.index()]
     }
 }
 
@@ -182,7 +232,7 @@ pub type SyncFxIndexMap<K, V> = Arc<RwLock<FxHashMap<K, Arc<V>>>>;
 pub type SyncIndexMap<K, V> = Arc<RwLock<FxIndexMap<K, Arc<V>>>>;
 
 pub type Layout = FxHashMap<Key, Position>;
-pub type Stat = FxHashMap<Metric, f64>;
+pub type Stat = MetricMap<f64>;
 pub type FingerUsage = FingerMap<f64>;
 pub type CachedStats = FxHashMap<String, Arc<Stat>>;
 pub type CachedStatConfig = Arc<RawCachedStatConfig>;
@@ -195,12 +245,18 @@ pub type ServerCorpora<const N: usize> = RawServerCorpora<Corpus<N>>;
 pub type ServerWordCorpora = RawServerCorpora<WordCorpus>;
 pub type ServerCachedStats = SyncIndexMap<String, RawCachedStatConfig>;
 
-pub struct RawCorpus<Gram> {
+pub struct RawCorpus<Gram: AsRef<[Key]>> {
     inner: Arc<[(Gram, u64)]>,
     pub sum: u64,
 }
 
-impl<Gram> RawCorpus<Gram> {
+impl<Gram: AsRef<[Key]>> RawCorpus<Gram> {
+    pub fn dyn_len_iter(&self) -> Box<dyn ClonableIterator<(&[Key], u64)> + '_> {
+        Box::new(
+            self.inner.iter()
+            .map(|item| (item.0.as_ref(), item.1))
+        )
+    }
     pub fn arc_clone(&self) -> Self {
         Self {
             inner: Arc::clone(&self.inner),
@@ -209,7 +265,7 @@ impl<Gram> RawCorpus<Gram> {
     }
 }
 
-impl<Gram> Deref for RawCorpus<Gram> {
+impl<Gram: AsRef<[Key]>> Deref for RawCorpus<Gram> {
     type Target = [(Gram, u64)];
 
     fn deref(&self) -> &Self::Target {
@@ -217,14 +273,33 @@ impl<Gram> Deref for RawCorpus<Gram> {
     }
 }
 
-impl<Gram> FromIterator<(Gram, u64)> for RawCorpus<Gram> {
+impl<Gram: AsRef<[Key]>> FromIterator<(Gram, u64)> for RawCorpus<Gram> {
     fn from_iter<T: IntoIterator<Item=(Gram, u64)>>(iter: T) -> Self {
         let inner = iter.into_iter().collect::<Arc<[(Gram, u64)]>>();
-        let sum = inner.iter().map(|(_, freq)| freq).sum::<u64>();
+        let sum = inner.iter()
+            .filter_map(|(gram, freq)|
+                gram.as_ref().iter()
+                    .all(|key| *key != ' ')
+                    .then_some(freq)
+            )
+            .sum::<u64>();
         Self {
             inner,
             sum,
         }
+    }
+}
+
+pub trait ClonableIterator<'a, Item>: Iterator<Item = Item> {
+    fn clone_iter(&self) -> Box<dyn ClonableIterator<'a, Item> + 'a>;
+}
+
+impl<'a, T, Item> ClonableIterator<'a, Item> for T
+where
+    T: Iterator<Item = Item> + Clone + 'a,
+{
+    fn clone_iter(&self) -> Box<dyn ClonableIterator<'a, Item> + 'a> {
+        Box::new(self.clone())
     }
 }
 
@@ -316,7 +391,7 @@ impl Serialize for RawCachedStatConfig {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter, EnumCount)]
 #[repr(u8)]
 pub enum Metric {
     Sfb = 0,
@@ -355,44 +430,32 @@ impl Metric {
             _ => panic!("Invalid metric {s}")
         }
     }
-
+    #[inline]
+    pub fn as_u8(self) -> u8 {
+        self as u8
+    }
+    #[inline]
+    pub fn as_usize(self) -> usize {
+        usize::from(self as u8)
+    }
     #[inline]
     pub fn pack(self) -> u8 {
         self as u8
     }
-
+    #[track_caller]
     #[inline]
     pub fn unpack(num: u8) -> Self {
-        match num {
-            0 => Self::Sfb,
-            1 => Self::Sft,
-            2 => Self::Sfr,
-            3 => Self::Alt,
-            4 => Self::AltSfs,
-            5 => Self::Red,
-            6 => Self::BadRed,
-            7 => Self::RedSfs,
-            8 => Self::BadRedSfs,
-            9 => Self::InOne,
-            10 => Self::OutOne,
-            11 => Self::InRoll,
-            12 => Self::OutRoll,
-            13 => Self::Unknown,
-            _ => panic!("Failed to convert to Metric. Unexpected value `{num}`")
+        if usize::from(num) >= Self::COUNT {
+            panic!("Failed to convert to Metric. Unexpected value `{num}`")
         }
+        // SAFETY: All enum variants have memory layout of u8 and less than Self::COUNT
+        // SAFETY: range has been checked above
+        unsafe { std::mem::transmute::<u8, Metric>(num) }
     }
 
     pub fn new_counter() -> FxHashMap<Metric, u64> {
         FxHashMap::from_iter(Metric::iter().map(|metric| {
             (metric, 0u64)
-        }))
-    }
-
-    pub fn normalize_counter(counter: &FxHashMap<Metric, u64>) -> Stat {
-        let total = counter.values().sum::<u64>() as f64;
-        debug_assert_ne!(total, 0.0);
-        FxHashMap::from_iter(counter.iter().map(|(metric, freq)| {
-            (*metric, *freq as f64 / total)
         }))
     }
 }
@@ -401,19 +464,25 @@ impl BitOr for Metric {
     type Output = MetricUnion;
 
     fn bitor(self, rhs: Self) -> Self::Output {
-        MetricUnion(1 << self.pack() | 1 << rhs.pack())
+        MetricUnion(1 << self.as_u8() | 1 << rhs.as_u8())
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 #[repr(transparent)]
-pub struct MetricUnion(u32);
+pub struct MetricUnion(pub(super) u32);
+
+impl From<Metric> for MetricUnion {
+    fn from(metric: Metric) -> Self {
+         Self(1 << metric.as_u8())
+    }
+}
 
 impl BitOr<Metric> for MetricUnion {
     type Output = Self;
 
     fn bitor(self, metric: Metric) -> Self::Output {
-        Self(self.0 | 1 << metric.pack())
+        Self(self.0 | 1 << metric.as_u8())
     }
 }
 
@@ -434,6 +503,42 @@ impl ContainsMetric for Metric {
 impl ContainsMetric for MetricUnion {
     fn contains(self, metric: Metric) -> bool {
         self.0 & 1 << metric.pack() != 0
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct MetricMap<T>([T; Metric::COUNT]);
+
+impl<T: Copy + Default> FromIterator<(Metric, T)> for MetricMap<T> {
+    fn from_iter<I: IntoIterator<Item=(Metric, T)>>(iter: I) -> Self {
+        let mut map = [T::default(); Metric::COUNT];
+        iter.into_iter()
+            .for_each(|(metric, t)| {
+                map[metric.as_usize()] = t;
+            });
+        Self(map)
+    }
+}
+
+impl<T> MetricMap<T> {
+    pub fn get(&self, metric: Metric) -> &T {
+        &self.0[metric.as_usize()]
+    }
+    pub fn get_mut(&mut self, metric: Metric) -> &mut T {
+        &mut self.0[metric.as_usize()]
+    }
+    pub fn set(&mut self, metric: Metric, value: T) {
+        self.0[metric.as_usize()] = value;
+    }
+    pub fn iter(&self) -> impl Iterator<Item = (Metric, &T)> {
+        Metric::iter()
+            .zip(self.0.iter())
+    }
+    pub fn values(&self) -> impl Iterator<Item = &T> {
+        self.0.iter()
+    }
+    pub const fn len(&self) -> usize {
+        Metric::COUNT
     }
 }
 

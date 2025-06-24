@@ -40,6 +40,11 @@ mod unangle;
 mod unangle_mut;
 mod mirror;
 mod mirror_mut;
+mod fingers;
+mod freq;
+mod modify;
+mod flip;
+mod examples;
 
 use crate::util::core::{Commandable, ContainsMetric};
 use crate::util::memory::LAYOUTS;
@@ -63,6 +68,10 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("cycle", cycle::Command.init()),
         ("cycle!", cycle_mut::Command.init()),
         ("dofball", dofball::Command.init()),
+        ("examples", examples::Command.init()),
+        ("fingers", fingers::Command.init()),
+        ("flip", flip::Command.init()),
+        ("freq", freq::Command.init()),
         ("gh", github::Command.init()),
         ("github", github::Command.init()),
         ("help", help::Command.init()),
@@ -73,6 +82,7 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("link", link::Command.init()),
         ("mirror", mirror::Command.init()),
         ("mirror!", mirror_mut::Command.init()),
+        ("mod", modify::Command.init()),
         ("onehands", onehands::Command.init()),
         ("outrolltals", outrolltals::Command.init()),
         ("random", random::Command.init()),

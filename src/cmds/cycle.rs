@@ -52,8 +52,11 @@ pub(super) fn impl_cycle(ll: &mut LayoutConfig, cycles: &[&str]) -> Result<(), C
         if len != FxHashSet::<char>::from_iter(cycle.chars()).len() {
             return Err(CycleError::DuplicateChar);
         }
-        let mut yield_char = cycle.chars().cycle().take(len + 1);
-        let prev_char = yield_char.next().unwrap();  // Cycle has at least one char, guaranteed by split_whitespace
+        let mut yield_char = cycle.chars()
+            .rev()  // counter-clockwise cycle in values is clockwise cycle in keys
+            .cycle()
+            .take(len);
+        let prev_char = yield_char.next().unwrap();  // Caller should ensure cycle is not empty
         for new_char in yield_char {
             // get_mut always succeeds, checked by contains_key
             let prev_pos = ll.keys.get_mut(&prev_char).unwrap() as *mut Position;

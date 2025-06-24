@@ -13,6 +13,7 @@ pub mod parser;
 mod conv;
 mod message;
 mod get;
+pub mod metric_alias;
 
 pub use core::Commandable;
 pub use message::{Message, BoundedResponse};
@@ -28,8 +29,7 @@ pub fn validate_json() {
     assert!(!reader.is_empty());
     let reader=  corpora::CORPORA_PREFS.read();
     assert!(!reader.is_empty());
-    let reader = consts::TABLE.as_ref();
-    assert!(!reader.is_empty());
+    let _reader = &*consts::TABLE;  // Table is never empty
     let reader = links::LINKS.read();
     assert!(!reader.is_empty());
     let reader = memory::LAYOUTS.read();

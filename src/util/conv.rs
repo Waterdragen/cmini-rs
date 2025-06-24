@@ -50,6 +50,7 @@ pub mod layout {
 
 
 pub mod stats {
+    use strum::{EnumCount, IntoEnumIterator};
     use crate::util::conv::freq;
     use crate::util::core::{Metric, Stat};
 
@@ -69,9 +70,11 @@ pub mod stats {
     pub fn unpack(packed: &str) -> Stat {
         let mut stats = Stat::default();
         let packed: Vec<char> = packed.chars().collect();
-        (0..packed.len()).step_by(INTERVAL).enumerate().for_each(|(metric_num, index)| {
+        Metric::iter()
+            .zip((0..Metric::COUNT * INTERVAL).step_by(INTERVAL))
+            .for_each(|(metric, index)| {
             let packed_freq = &packed[index..index + INTERVAL];
-            stats.insert(Metric::unpack(metric_num as u8), freq::unpack(packed_freq));
+            stats.set(metric, freq::unpack(packed_freq));
         });
         stats
     }

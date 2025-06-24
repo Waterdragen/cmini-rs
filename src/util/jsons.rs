@@ -1,13 +1,13 @@
 use crate::prelude::*;
-use crate::util::core::{CachedStatConfig, FxIndexMap, JsonCachedStatConfig, Key, Metric, RawCachedStatConfig, RawCorpus, ServerCachedStats};
+use crate::util::core::{CachedStatConfig, Finger, FingerCombo, FxIndexMap, JsonCachedStatConfig, Metric, RawCachedStatConfig, RawCorpus, ServerCachedStats, Table};
 use fxhash::FxHashMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Value;
 use std::error::Error;
-use std::fmt::Debug;
 use std::fs::File;
 use std::io::BufReader;
+use crate::util::corpora::BorrowCorpus;
 
 fn read_json_checked<T: DeserializeOwned>(path: &str) -> Result<T, Box<dyn Error>> {
     let file = File::open(path)?;
@@ -35,7 +35,7 @@ pub fn read_json<T: DeserializeOwned>(path: &str) -> T {
 /// - Fails to convert `Vec<char>` into `Gram` due to length mismatch
 #[track_caller]
 pub fn get_corpus<Gram>(path: &str) -> RawCorpus<Gram>
-where Gram: TryFrom<Vec<Key>, Error: Debug> {
+where Gram: BorrowCorpus {
     let map = read_json::<FxIndexMap<String, u64>>(path);
     map.into_iter()
         .map(|(gram, freq)| {
@@ -61,28 +61,25 @@ pub fn get_server_cached_stats(path: &str) -> ServerCachedStats {
 }
 
 #[track_caller]
-pub fn get_table(path: &str) -> [Metric; 4096] {
-    let fingers: FxHashMap<String, u16> = FxHashMap::from_iter([
-            ("LP", 0u16), ("LR", 1), ("LM", 2), ("LI", 3), ("LT", 4),
+pub fn get_table(path: &str) -> Table {
+    let fingers: FxHashMap<String, u8> = FxHashMap::from_iter([
+            ("LP", 0u8), ("LR", 1), ("LM", 2), ("LI", 3), ("LT", 4),
             ("RT", 5), ("RI", 6), ("RM", 7), ("RR", 8), ("RP", 9)
         ]
         .into_iter()
         .map(|(finger, value)| { (finger.to_string(), value) })
     );
-
-    let json = read_json::<Value>(path);
-    let mut table = [Metric::Unknown; 4096];
-    let obj = json.as_object().unwrap();
-    for (finger_combo, gram_type) in obj {
-        let finger0 = *fingers.get(&finger_combo[0..2]).unwrap();
-        let finger1 = *fingers.get(&finger_combo[2..4]).unwrap();
-        let finger2 = *fingers.get(&finger_combo[4..6]).unwrap();
-        let hash_value = (finger0 << 8) | (finger1 << 4) | finger2;
-        let gram_type = Metric::from_str(gram_type.as_str().unwrap());
-        table[usize::from(hash_value)] = gram_type;
+    let map = read_json::<FxHashMap<String, String>>(path);
+    let mut table = [Metric::Unknown; 1000];
+    for (finger_combo, gram_type) in map.iter() {
+        let finger0 = Finger::from_u8(fingers[&finger_combo[0..2]]);
+        let finger1 = Finger::from_u8(fingers[&finger_combo[2..4]]);
+        let finger2 = Finger::from_u8(fingers[&finger_combo[4..6]]);
+        let finger_combo = FingerCombo::from([finger0, finger1, finger2]);
+        let gram_type = Metric::from_str(gram_type);
+        table[finger_combo.index()] = gram_type;
     }
-
-    table
+    Table::from_inner(table)
 }
 
 fn write_json_checked<T>(path: &str, t: &T) -> Result<(), Box<dyn Error>>
@@ -104,6 +101,7 @@ pub fn write_cached_stats(path: &str, cached_stats: &ServerCachedStats) {
 
 #[cfg(test)]
 mod tests {
+    use crate::util::core::Key;
     use super::*;
 
     #[test]

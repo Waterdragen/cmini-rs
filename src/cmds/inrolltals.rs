@@ -1,11 +1,11 @@
+use crate::util::metric_alias::IN_ROLLTALS;
 use crate::util::{Commandable, Message};
-use crate::util::core::Metric;
 
 pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
-        crate::cmds::cmd_for_top_trigrams_of_metric(msg, Metric::InRoll | Metric::InOne, "inrolltals")
+        crate::cmds::cmd_for_top_trigrams_of_metric(msg, IN_ROLLTALS, "inrolltals")
             .unwrap_or_else(|| self.help())
     }
 

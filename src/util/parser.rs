@@ -227,6 +227,23 @@ fn is_kwarg(kwargs: &FxHashMap<String, KwargType>, word: &str) -> Result<bool, P
     }
 }
 
+pub fn get_pattern(pat_raw: &str) -> String {
+    let mut pat = String::with_capacity(pat_raw.len());
+    for c in pat_raw.chars() {
+        let s = match c {
+            '_' => ".",
+            '?' => r#"\?"#,
+            '.' => r#"\."#,
+            _ => {
+                pat.push(c);
+                continue;
+            }
+        };
+        pat.push_str(s);
+    }
+    pat
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
