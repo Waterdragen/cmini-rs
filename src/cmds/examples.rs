@@ -48,10 +48,10 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        todo!()
+        "examples <ngrams>"
     }
 
     fn desc<'a>(&self) -> &'a str {
-        todo!()
+        "find common examples of an ngram"
     }
 }
