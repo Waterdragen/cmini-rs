@@ -90,7 +90,7 @@ impl BoundedResponse {
         self
     }
 
-    pub fn add_len(&mut self, inc: usize) -> Result<(), ()> {
+    fn add_len(&mut self, inc: usize) -> Result<(), ()> {
         self.len += inc;
         if self.len > Self::LIMIT - self.reserved {
             Err(())
@@ -132,6 +132,62 @@ impl BoundedResponse {
     }
 
     pub fn finish(self) -> String {
+        self.inner
+    }
+}
+
+pub struct BoundedResponseVec {
+    inner: Vec<String>,
+    len: usize,
+    /// Number of characters before hard limit
+    reserved: usize,
+}
+
+impl From<Vec<String>> for BoundedResponseVec {
+    fn from(value: Vec<String>) -> Self {
+        let len = value.iter().fold(0usize, |acc, s| acc + s.chars().count());
+        Self {
+            inner: value,
+            len,
+            reserved: 0,
+        }
+    }
+}
+
+impl BoundedResponseVec {
+    const LIMIT: usize = 2000;
+
+    pub fn new() -> Self {
+        Self {
+            inner: Vec::new(),
+            len: 0,
+            reserved: 0,
+        }
+    }
+
+    pub fn reserve(mut self, reserved: usize) -> Self {
+        assert!(reserved < Self::LIMIT);
+        self.reserved = reserved;
+        self
+    }
+
+    fn add_len(&mut self, inc: usize) -> Result<(), ()> {
+        self.len += inc;
+        if self.len > Self::LIMIT - self.reserved {
+            Err(())
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn push(&mut self, string: String) -> Result<(), ()> {
+        let inc = string.chars().count();
+        self.add_len(inc)?;
+        self.inner.push(string);
+        Ok(())
+    }
+
+    pub fn finish(self) -> Vec<String> {
         self.inner
     }
 }

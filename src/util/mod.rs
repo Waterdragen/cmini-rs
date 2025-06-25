@@ -16,7 +16,7 @@ mod get;
 pub mod metric_alias;
 
 pub use core::Commandable;
-pub use message::{Message, BoundedResponse};
+pub use message::{Message, BoundedResponse, BoundedResponseVec};
 
 pub fn validate_json() {
     let count = admins::ADMINS.count();

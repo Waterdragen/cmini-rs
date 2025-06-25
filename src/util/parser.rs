@@ -234,6 +234,7 @@ pub fn get_pattern(pat_raw: &str) -> String {
             '_' => ".",
             '?' => r#"\?"#,
             '.' => r#"\."#,
+            '*' => r#"\*"#,
             _ => {
                 pat.push(c);
                 continue;

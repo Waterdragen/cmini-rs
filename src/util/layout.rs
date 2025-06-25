@@ -190,8 +190,7 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
     let rh = get_hand(*RH);
 
     format!(
-        "\
-  Alt: {alt:>5.2}%
+        "  Alt: {alt:>5.2}%
   Rol: {roll:>5.2}%   (In/Out: {inroll:>5.2}% | {outroll:>5.2}%)
   One: {one:>5.2}%   (In/Out: {inone:>5.2}% | {outone:>5.2}%)
   Rtl: {rolltal:>5.2}%   (In/Out: {inrolltal:>5.2}% | {outrolltal:>5.2}%)

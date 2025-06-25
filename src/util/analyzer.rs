@@ -62,7 +62,7 @@ impl LayoutConfig {
         // Normalize counter
         usage.iter()
             .map(|(finger, &freq)| {
-                (finger, freq as f64 / total)
+                (finger, freq / total)
             })
             .collect()
     }

@@ -45,6 +45,8 @@ mod freq;
 mod modify;
 mod flip;
 mod examples;
+mod homerow;
+mod rank;
 
 use crate::util::core::{Commandable, ContainsMetric};
 use crate::util::memory::LAYOUTS;
@@ -75,6 +77,7 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("gh", github::Command.init()),
         ("github", github::Command.init()),
         ("help", help::Command.init()),
+        ("homerow", homerow::Command.init()),
         ("inrolls", inrolls::Command.init()),
         ("inrolltals", inrolltals::Command.init()),
         ("like", like::Command.init()),
@@ -86,6 +89,7 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("onehands", onehands::Command.init()),
         ("outrolltals", outrolltals::Command.init()),
         ("random", random::Command.init()),
+        ("rank", rank::Command.init()),
         ("redirects", redirects::Command.init()),
         ("remove", remove::Command.init()),
         ("rename", rename::Command.init()),
