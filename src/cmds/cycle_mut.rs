@@ -1,7 +1,7 @@
 use crate::cmds::cycle::impl_cycle;
-use crate::util::{Commandable, Message};
 use crate::util::memory::{RemoveError, LAYOUTS};
 use crate::util::parser::split_word;
+use crate::{Commandable, Message};
 
 pub struct Command;
 

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::util::core::FxIndexMap;
+use crate::core::FxIndexMap;
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
 
@@ -45,4 +45,3 @@ impl<'a, V: 'a> DerefMut for GetMut<'a, V> {
         }
     }
 }
-

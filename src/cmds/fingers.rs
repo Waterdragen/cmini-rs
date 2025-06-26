@@ -1,11 +1,12 @@
-use crate::util::authors::AUTHORS;
-use crate::util::core::{Finger, FingerUsage, LayoutConfig, Metric};
-use crate::util::corpora::get_user_corpus;
+use crate::core::{FingerUsage, LayoutConfig, Metric};
+use crate::util::memory::AUTHORS;
+use crate::util::corpora::{self, get_user_corpus};
 use crate::util::memory::{LAYOUTS, LIKES};
 use crate::util::metric_alias::{list_metric_union_names, METRIC_NAMES};
 use crate::util::parser::split_word;
-use crate::util::{corpora, Commandable, Message};
+use crate::{Commandable, Message};
 use itertools::Itertools;
+use crate::core::Finger;
 
 pub struct Command;
 

@@ -1,6 +1,5 @@
 use crate::prelude::*;
-use crate::util::admins::ADMINS;
-use crate::util::{Commandable, Message};
+use crate::util::memory::ADMINS;
 use crate::util::parser::get_args;
 
 pub struct Command;

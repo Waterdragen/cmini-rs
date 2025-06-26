@@ -1,6 +1,6 @@
-use crate::util::consts::{LH, RH, TABLE};
-use crate::util::core::{ContainsMetric, Finger, FingerCombo, FingerUnion, FingerUsage, Key, LayoutConfig, Metric, Position, Stat};
-use crate::util::{authors, corpora, links, memory};
+use crate::consts::{COL_LIMIT, LH, RH, ROW_LIMIT, TABLE};
+use crate::core::{ContainsMetric, Finger, FingerCombo, FingerUnion, FingerUsage, Key, LayoutConfig, Metric, Position, Stat};
+use crate::util::{corpora, links, memory};
 
 fn is_char_allowed_in_name(c: char) -> bool {
     matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' |
@@ -28,7 +28,7 @@ impl LayoutConfig {
         let mut thumb_row = Vec::<(Key, Finger)>::new();
         self.keys.iter().for_each(|(&key, &pos)| {
             let Position { row, col, finger } = pos;
-            if row > 4 || col > 36 { return; }
+            if row > ROW_LIMIT || col > COL_LIMIT { return; }  // This should never happen as checked by add command and pos::unpack, but still we ignore these keys
             if row == 3 {
                 thumb_row.push((key, finger));
                 return;
@@ -97,7 +97,7 @@ impl LayoutConfig {
     }
 
     pub fn to_pretty(&self, id: u64) -> String {
-        let author_reader = authors::AUTHORS.read();
+        let author_reader = memory::AUTHORS.read();
         let author = author_reader.get_name(self.user).unwrap_or("Unknown");
         let monograms = corpora::ngrams::<1>(id);
         let trigrams = corpora::ngrams::<3>(id);

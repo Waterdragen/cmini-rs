@@ -1,4 +1,4 @@
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 use crate::util::links::LINKS;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::split_word;

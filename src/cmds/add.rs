@@ -1,10 +1,11 @@
-use crate::util::authors::AUTHORS;
-use crate::util::consts::{FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR};
-use crate::util::core::{Finger, Layout, LayoutConfig, Position};
+use crate::util::memory::AUTHORS;
+use crate::consts::{COL_LIMIT, FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR};
+use crate::core::{Layout, LayoutConfig, Position};
 use crate::util::layout::check_name;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::get_layout;
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
+use crate::core::Finger;
 
 pub struct Command;
 
@@ -53,11 +54,12 @@ impl Commandable for Command {
 
         let mut keymap: Layout = Layout::default();
         for (row_idx, row) in rows[..3].iter().enumerate() {
-            for (col_idx, ch) in row
+            let mut row_iter = row
                 .chars()
-                .filter(|c| *c != ' ' && *c != FREE_CHAR)
-                .enumerate() {
-
+                .filter(|c| *c != ' ')
+                .enumerate()
+                .filter(|(_, c)| *c != FREE_CHAR);
+            for (col_idx, ch) in row_iter.by_ref().take(usize::from(COL_LIMIT)) {
                 let fmap = if row_idx == 2 && board == "angle" {
                     &FMAP_ANGLE
                 } else {
@@ -69,6 +71,10 @@ impl Commandable for Command {
                 if keymap.insert(ch, Position::new(row_idx as u8, col_idx as u8, finger)).is_some() {
                     return format!("Error: `{ch}` is defined twice");
                 }
+            }
+            let overflow = row_iter.count();
+            if overflow > 0 {
+                return format!("Error: expected at most {COL_LIMIT} columns, got {}", usize::from(COL_LIMIT) + overflow);
             }
         }
         if max_rows == 4 {

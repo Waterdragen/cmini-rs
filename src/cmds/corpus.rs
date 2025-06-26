@@ -1,4 +1,4 @@
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 use crate::util::corpora::{set_user_corpus, CORPORA};
 
 pub struct Command;

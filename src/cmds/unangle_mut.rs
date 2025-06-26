@@ -1,5 +1,5 @@
 use crate::cmds::unangle::impl_unangle;
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 use crate::util::memory::{RemoveError, LAYOUTS};
 
 pub struct Command;

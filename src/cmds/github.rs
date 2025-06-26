@@ -1,5 +1,4 @@
-use crate::util::Commandable;
-use crate::util::Message;
+use crate::{Commandable, Message};
 
 const LINK: &str = "<https://github.com/waterdragen/cmini-rs>";
 

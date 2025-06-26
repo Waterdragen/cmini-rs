@@ -1,12 +1,10 @@
-use crate::prelude::*;
-use crate::util::authors::AUTHORS;
-use crate::util::jsons::read_json;
-use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use std::sync::Arc;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-pub static ADMINS: Lazy<Admins> = Lazy::new(|| Admins::open("admins.json"));
+use crate::prelude::RwLock;
+use crate::util::jsons::read_json;
+use crate::util::memory::AUTHORS;
 
 #[derive(Debug, Error)]
 pub enum PermissionError {

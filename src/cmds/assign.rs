@@ -1,7 +1,7 @@
-use crate::util::authors::AUTHORS;
+use crate::util::memory::AUTHORS;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::split_word;
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 
 pub struct Command;
 

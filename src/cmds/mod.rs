@@ -48,10 +48,10 @@ mod examples;
 mod homerow;
 mod rank;
 
-use crate::util::core::{Commandable, ContainsMetric};
+use crate::core::{Commandable, ContainsMetric};
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::{get_kwargs, KwargType, ParseKwargError};
-use crate::util::Message;
+use crate::Message;
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
 
@@ -121,8 +121,7 @@ pub fn get_cmd(name: &str) -> Option<&dyn Commandable> {
     COMMANDS.get(name).map(|v| &**v)
 }
 
-static KWARGS_FOR_TOP_TRIGRAMS_OF_METRIC: Lazy<FxHashMap<String, KwargType>>
-= Lazy::new(|| FxHashMap::from_iter([
+static KWARGS_FOR_TOP_TRIGRAMS_OF_METRIC: Lazy<FxHashMap<String, KwargType>> = Lazy::new(|| FxHashMap::from_iter([
     ("top".to_owned(), KwargType::Str),
 ]));
 

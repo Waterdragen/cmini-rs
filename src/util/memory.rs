@@ -1,21 +1,19 @@
+use crate::core::ServerLayouts;
+use crate::core::authors::Authors;
 use crate::prelude::*;
-use crate::util::admins::ADMINS;
-use crate::util::authors::AUTHORS;
-use crate::util::conv;
-use crate::util::core::{FxIndexMap, JsonLayoutConfig, LayoutConfig};
 use crate::util::corpora::CORPORA_PREFS;
-use crate::util::get::{Get, GetMut};
 use crate::util::jsons::{read_json, write_json};
 use crate::util::links::LINKS;
-use fxhash::{FxBuildHasher, FxHashMap};
+use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
-use serde::de::{MapAccess, Visitor};
-use serde::{Deserialize, Deserializer, Serialize};
-use std::borrow::Cow;
-use std::fmt::{Debug, Formatter};
-use std::ops::Deref;
-use strsim::jaro_winkler;
+use std::fmt::Debug;
 use thiserror::Error;
+use crate::core::admins::Admins;
+
+pub static AUTHORS: Lazy<Arc<RwLock<Authors>>> = Lazy::new(||
+    Arc::new(RwLock::new(Authors::open("./authors.json").unwrap()))
+);
+pub static ADMINS: Lazy<Admins> = Lazy::new(|| Admins::open("admins.json"));
 
 pub static LAYOUTS: Lazy<ServerLayouts> = Lazy::new(|| read_json("./layouts.json"));
 pub static LIKES: Lazy<Arc<RwLock<FxHashMap<String, Vec<u64>>>>> = Lazy::new(|| read_json("./likes.json"));
@@ -47,130 +45,4 @@ pub fn sync_data() {
     write_json("./layouts.json", &*LAYOUTS);
     write_json("./likes.json", &*LIKES);
     write_json("./links.json", &*LINKS);
-}
-
-#[derive(Serialize)]
-#[serde(transparent)]
-pub struct ServerLayouts(Arc<RwLock<FxIndexMap<String, LayoutConfig>>>);
-
-impl Deref for ServerLayouts {
-    type Target = Arc<RwLock<FxIndexMap<String, LayoutConfig>>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl ServerLayouts {
-    pub fn add(&self, ll: LayoutConfig) -> bool {
-        if self.contains(&ll.name) {
-            return false;
-        }
-        let mut layouts_mut = self.write();
-        layouts_mut.insert(ll.name.clone(), ll);
-        true
-    }
-    pub fn get<'a>(&'a self, name: &'a str) -> Get<'a, LayoutConfig> {
-        Get(self.read(), Cow::Borrowed(name))
-    }
-    pub fn get_mut<'a>(&'a self, name: &'a str) -> GetMut<'a, LayoutConfig> {
-        GetMut(self.write(), Cow::Borrowed(name))
-    }
-    pub fn find(&self, name: &str) -> Get<LayoutConfig> {
-        let closest = self.best_match(name);
-        Get(self.read(), Cow::Owned(closest))
-    }
-    pub fn find_mut(&self, name: &str) -> GetMut<LayoutConfig> {
-        let closest = self.best_match(name);
-        GetMut(self.write(), Cow::Owned(closest))
-    }
-    pub fn contains(&self, name: &str) -> bool {
-        let layouts = self.read();
-        layouts.contains_key(name)
-    }
-    pub fn remove<'a>(&self, name: &'a str, id: u64) -> Result<LayoutConfig, RemoveError<'a>> {
-        self.remove_impl(name, id, None)
-    }
-    pub fn remove_as_admin<'a>(&self, name: &'a str, id: u64, in_public_channel: bool) -> Result<LayoutConfig, RemoveError<'a>> {
-        self.remove_impl(name, id, Some(in_public_channel))
-    }
-    fn remove_impl<'a>(&self, name: &'a str, id: u64, admin: Option<IsInPublicChannel>) -> Result<LayoutConfig, RemoveError<'a>> {
-        let user = {
-            // Must drop or else deadlock
-            let ll = self.get(name);
-            match ll.checked() {
-                None => return Err(RemoveError::NotFound(name)),
-                Some(_) => ll.user,
-            }
-        };
-        match (user == id, admin) {
-            (true, _) | (false, Some(true)) => {
-                let mut layouts_mut = self.write();
-                // Removal always succeed
-                Ok(layouts_mut.shift_remove(name).unwrap())
-            }
-            (false, None) => Err(RemoveError::NotOwner(name)),
-            (false, Some(false)) => Err(RemoveError::SudoInPrivateChannel),
-        }
-    }
-    pub fn best_match(&self, base_name: &str) -> String {
-        let layouts = self.read();
-        let mut max_score = 0.0;
-        let mut closest = String::new();
-
-        for name in layouts.keys() {
-            let score = jaro_winkler(name, base_name);
-
-            if score > max_score {
-                max_score = score;
-                closest = name.to_string();
-            }
-        }
-        closest
-    }
-    pub fn arc_clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-
-}
-
-impl<'de> Deserialize<'de> for ServerLayouts {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>
-    {
-        deserializer.deserialize_map(ServerLayoutsVisitor)
-    }
-}
-
-struct ServerLayoutsVisitor;
-
-impl<'de> Visitor<'de> for ServerLayoutsVisitor {
-    type Value = ServerLayouts;
-
-    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-        write!(formatter, "struct ServerLayouts")
-    }
-
-    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-    where
-        A: MapAccess<'de>,
-    {
-        let mut map_inner = FxIndexMap::with_capacity_and_hasher(
-            map.size_hint().unwrap_or(0),
-            FxBuildHasher::default()
-        );
-        while let Some((key, ll)) = map.next_entry::<String, JsonLayoutConfig>()? {
-            let name = key.clone();
-            let layout_config = LayoutConfig {
-                name: key,
-                user: ll.user,
-                board: ll.board.clone(),
-                keys: conv::layout::unpack(&ll.keys),
-                sum: conv::hash_keys(&ll.keys),
-            };
-            map_inner.insert(name, layout_config);
-        }
-        Ok(ServerLayouts(Arc::new(RwLock::new(map_inner))))
-    }
 }

@@ -1,5 +1,5 @@
-use crate::util::{Commandable, Message};
-use crate::util::core::Metric;
+use crate::{Commandable, Message};
+use crate::core::Metric;
 
 pub struct Command;
 

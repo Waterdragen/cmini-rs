@@ -1,5 +1,5 @@
-use crate::util::corpora::get_user_corpus;
-use crate::util::{corpora, Commandable, Message};
+use crate::util::corpora::{self, get_user_corpus};
+use crate::{Commandable, Message};
 use regex::Regex;
 use crate::util::parser::get_pattern;
 

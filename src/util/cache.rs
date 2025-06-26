@@ -1,42 +1,31 @@
-use std::io::Write;
-use crate::util::core::{CachedStatConfig, CachedStats, Key, LayoutConfig, RawCachedStatConfig, ServerCachedStats, Stat};
+use crate::core::conv;
+use crate::core::{FxIndexMap, Key, LayoutConfig, CachedStat, CachedStatConfig, ServerCachedStats};
 use crate::util::corpora::{self, CORPORA};
-use crate::util::jsons::{get_server_cached_stats, write_json};
+use crate::util::jsons::{read_json, write_json};
 use crate::util::memory::LAYOUTS;
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
-use std::sync::Arc;
+use std::io::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Instant;
 
-pub static CACHED_STATS: Lazy<ServerCachedStats> = Lazy::new(|| get_server_cached_stats("./cached_stats.json"));
+pub static CACHED_STATS: Lazy<ServerCachedStats> = Lazy::new(|| read_json("./cached_stats.json"));
 
-pub fn get(name: &str, corpus: &str) -> Option<Arc<Stat>> {
-    if name.is_empty() || corpus.is_empty() {
-        return None;
-    }
-    let name = name.to_lowercase();
-    let corpus = corpus.to_lowercase();
-
-    let cached_stats = CACHED_STATS.read();
-    let stats = cached_stats.get(&name)?.stats.get(&corpus)?;
-    Some(Arc::clone(stats))
-}
-
-fn get_cache(name: &str) -> Option<CachedStatConfig> {
+fn get_cache(name: &str) -> Option<Arc<CachedStatConfig>> {
     let cached_stats = CACHED_STATS.read();
     let name = name.to_lowercase();
     Some(Arc::clone(cached_stats.get(&name)?))
 }
 
-fn cache_fill(ll: &LayoutConfig, data: &mut CachedStats, corpus: &str, path: &str) {
+fn cache_fill(ll: &LayoutConfig, data: &mut FxIndexMap<String, CachedStat>, corpus: &str, path: &str) {
     let trigrams = corpora::read_corpus(path);
     let stats = ll.trigram_stats(&trigrams);
 
-    data.insert(corpus.to_string(), Arc::new(stats));
+    data.insert(corpus.to_string(), CachedStat(stats));
 }
 
-fn update(name: String, data: CachedStatConfig) {
+fn update(name: String, data: Arc<CachedStatConfig>) {
     let mut cached_stats = CACHED_STATS.write();
     cached_stats.insert(name, data);
 }
@@ -80,13 +69,15 @@ fn cache_files() {
             }
         }
 
-        let mut stats: CachedStats = CachedStats::default();
+        let mut stats: FxIndexMap<String, CachedStat> = FxIndexMap::default();
 
         for (corpus, path) in corpora.iter() {
             // println!("Layout: {}, Corpus: {}", &ll.name, corpus);
             cache_fill(ll, &mut stats, corpus, path);
         }
-        let cached = RawCachedStatConfig {
+        let keys = conv::layout::pack(&ll.keys);
+        let cached = CachedStatConfig {
+            keys,
             sum: ll.sum,
             stats,
         };

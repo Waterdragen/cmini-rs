@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use crate::util::core::{Corpus, Key, RawCorpus, RawServerCorpora, ServerCorpora, ServerWordCorpora, WordCorpus};
+use crate::core::{Corpus, Key, RawCorpus, RawServerCorpora, ServerCorpora, ServerWordCorpora, WordCorpus};
 use crate::util::jsons::{get_corpus, read_json};
 use fxhash::FxHashMap;
 use glob::glob;

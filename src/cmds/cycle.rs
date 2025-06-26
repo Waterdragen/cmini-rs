@@ -1,7 +1,7 @@
-use crate::util::core::{LayoutConfig, Position};
+use crate::core::{LayoutConfig, Position};
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::split_word;
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 use fxhash::FxHashSet;
 use thiserror::Error;
 

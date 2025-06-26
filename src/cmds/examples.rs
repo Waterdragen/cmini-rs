@@ -1,6 +1,7 @@
 use crate::util::corpora::get_user_corpus;
 use crate::util::parser::get_pattern;
-use crate::util::{corpora, Commandable, Message};
+use crate::util::corpora;
+use crate::{Commandable, Message};
 use regex::Regex;
 
 const MOST_COMMON: usize = 10;

@@ -1,13 +1,12 @@
-use crate::prelude::*;
-use crate::util::core::{CachedStatConfig, Finger, FingerCombo, FxIndexMap, JsonCachedStatConfig, Metric, RawCachedStatConfig, RawCorpus, ServerCachedStats, Table};
+use crate::core::{FingerCombo, FxIndexMap, Metric, RawCorpus, Table};
+use crate::util::corpora::BorrowCorpus;
 use fxhash::FxHashMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use serde_json::Value;
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
-use crate::util::corpora::BorrowCorpus;
+use crate::core::Finger;
 
 fn read_json_checked<T: DeserializeOwned>(path: &str) -> Result<T, Box<dyn Error>> {
     let file = File::open(path)?;
@@ -46,21 +45,6 @@ where Gram: BorrowCorpus {
 }
 
 #[track_caller]
-pub fn get_server_cached_stats(path: &str) -> ServerCachedStats {
-    let json = match read_json_checked::<Value>(path) {
-        Ok(json) => json,
-        Err(_) => return Arc::new(RwLock::new(FxIndexMap::default())),
-    };
-    let obj = json.as_object().unwrap();
-    let raw_cached_stats: FxIndexMap<String, CachedStatConfig> = FxIndexMap::from_iter(
-        obj.iter().map(|(key, value)| {
-            let json_cached: JsonCachedStatConfig = serde_json::from_value(value.clone()).unwrap();
-            (key.clone(), Arc::new(RawCachedStatConfig::from_json(json_cached)))
-    }));
-    Arc::new(RwLock::new(raw_cached_stats))
-}
-
-#[track_caller]
 pub fn get_table(path: &str) -> Table {
     let fingers: FxHashMap<String, u8> = FxHashMap::from_iter([
             ("LP", 0u8), ("LR", 1), ("LM", 2), ("LI", 3), ("LT", 4),
@@ -93,16 +77,10 @@ pub fn write_json<T>(path: &str, t: &T) where T: ?Sized + Serialize {
     write_json_checked(path, t).unwrap()
 }
 
-#[track_caller]
-pub fn write_cached_stats(path: &str, cached_stats: &ServerCachedStats) {
-    let file = File::create(path).unwrap();
-    serde_json::to_writer_pretty(file, cached_stats).unwrap()
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::util::core::Key;
     use super::*;
+    use crate::core::Key;
 
     #[test]
     fn test_get_map_str_str() {

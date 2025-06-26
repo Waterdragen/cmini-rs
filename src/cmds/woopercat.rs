@@ -1,4 +1,4 @@
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 
 pub struct Command;
 

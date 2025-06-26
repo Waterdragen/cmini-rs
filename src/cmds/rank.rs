@@ -1,9 +1,9 @@
 use crate::util::cache::CACHED_STATS;
-use crate::util::core::{ContainsMetric, FxIndexMap, Metric as M, Metric, MetricUnion, Stat};
+use crate::core::{ContainsMetric, FxIndexMap, Metric as M, Metric, MetricUnion, Stat};
 use crate::util::corpora::get_user_corpus;
 use crate::util::metric_alias::{IN_ROLLTALS, ONEHANDS, OUT_ROLLTALS, REDIRECTS, ROLLS, ROLLTALS, SFS};
 use crate::util::parser::{get_kwargs, split_word, KwargType};
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use once_cell::sync::Lazy;

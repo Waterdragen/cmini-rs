@@ -1,7 +1,7 @@
-use crate::util::admins::ADMINS;
+use crate::util::memory::ADMINS;
 use crate::util::memory::{LAYOUTS, RemoveError};
 use crate::util::parser::{get_kwargs, KwargType};
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 use fxhash::FxHashMap;
 use once_cell::sync::Lazy;
 use std::borrow::ToOwned;

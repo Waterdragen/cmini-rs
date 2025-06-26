@@ -2,17 +2,12 @@ use std::borrow::ToOwned;
 use std::iter::IntoIterator;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
-use crate::util::core::{FxIndexMap, MetricUnion};
-use crate::util::core::Metric as M;
+use crate::core::{FxIndexMap, MetricUnion, Metric as M};
 
 const fn raw_bit(metric: M) -> u32 {
     1 << metric as u32
 }
 
-const SFB: u32 = raw_bit(M::Sfb);
-const SFT: u32 = raw_bit(M::Sft);
-const SFR: u32 = raw_bit(M::Sfr);
-const ALT: u32 = raw_bit(M::Alt);
 const ALT_SFS: u32 = raw_bit(M::AltSfs);
 const RED: u32 = raw_bit(M::Red);
 const BAD_RED: u32 = raw_bit(M::BadRed);
@@ -22,7 +17,6 @@ const IN_ONE: u32 = raw_bit(M::InOne);
 const OUT_ONE: u32 = raw_bit(M::OutOne);
 const IN_ROLL: u32 = raw_bit(M::InRoll);
 const OUT_ROLL: u32 = raw_bit(M::OutRoll);
-const UNKNOWN: u32 = raw_bit(M::Unknown);
 
 pub const SFS: MetricUnion = MetricUnion(ALT_SFS | RED_SFS | BAD_RED_SFS);
 pub const ONEHANDS: MetricUnion = MetricUnion(IN_ONE | OUT_ONE);

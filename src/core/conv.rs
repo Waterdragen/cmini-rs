@@ -9,8 +9,8 @@ pub fn hash_keys(keys: &str) -> u64 {
 }
 
 pub mod layout {
-    use crate::util::conv::pos;
-    use crate::util::core::Layout;
+    use super::pos;
+    use crate::core::Layout;
 
     pub fn pack(layout: &Layout) -> String {
         let mut layout_packed_ordered: Vec<(String, u32)> = layout.iter().map(|(key, pos)| {
@@ -48,39 +48,6 @@ pub mod layout {
     }
 }
 
-
-pub mod stats {
-    use strum::{EnumCount, IntoEnumIterator};
-    use crate::util::conv::freq;
-    use crate::util::core::{Metric, Stat};
-
-    const INTERVAL: usize = 3;
-
-    pub fn pack(stats: &Stat) -> String {
-        let mut packed: Vec<char> = Vec::new();
-        packed.resize(INTERVAL * stats.len(), ' ');
-        stats.iter()
-            .for_each(|(metric, freq)| {
-                let index = usize::from(metric.pack()) * INTERVAL;
-                packed[index..index + INTERVAL].copy_from_slice(&freq::pack(*freq));
-            });
-        packed.into_iter().collect()
-    }
-
-    pub fn unpack(packed: &str) -> Stat {
-        let mut stats = Stat::default();
-        let packed: Vec<char> = packed.chars().collect();
-        Metric::iter()
-            .zip((0..Metric::COUNT * INTERVAL).step_by(INTERVAL))
-            .for_each(|(metric, index)| {
-            let packed_freq = &packed[index..index + INTERVAL];
-            stats.set(metric, freq::unpack(packed_freq));
-        });
-        stats
-    }
-}
-
-
 mod base64 {
     #[inline]
     pub fn pack(value: u8) -> char {
@@ -101,8 +68,8 @@ mod base64 {
 }
 
 
-mod freq {
-    use crate::util::conv::base64;
+pub mod freq {
+    use super::base64;
 
     #[inline]
     pub fn pack(f: f64) -> [char; 3] {
@@ -123,14 +90,16 @@ mod freq {
 
 
 mod pos {
-    use crate::util::core::{Finger, Position};
+    use crate::consts::COL_RADIX;
+    use crate::core::Position;
+    use crate::core::Finger;
 
     #[inline]
     pub fn pack(Position { row, col, finger }: Position) -> String {
         let mut s = String::with_capacity(3);
-        s.push(char::from_digit(u32::from(row), 36).unwrap());
-        s.push(char::from_digit(u32::from(col), 36).unwrap());
-        s.push(char::from_digit(finger.as_u8().into(), 36).unwrap());
+        s.push(char::from_digit(u32::from(row), COL_RADIX).unwrap());
+        s.push(char::from_digit(u32::from(col), COL_RADIX).unwrap());
+        s.push(char::from_digit(finger.as_u8().into(), COL_RADIX).unwrap());
         s
     }
 
@@ -138,9 +107,9 @@ mod pos {
     #[inline]
     pub fn unpack(packed_str: &str) -> Position {
         let mut chars = packed_str.chars();
-        let row = chars.next().unwrap().to_digit(36).unwrap() as u8;
-        let col = chars.next().unwrap().to_digit(36).unwrap() as u8;
-        let finger = chars.next().unwrap().to_digit(36).unwrap() as u8;
+        let row = chars.next().unwrap().to_digit(COL_RADIX).unwrap() as u8;
+        let col = chars.next().unwrap().to_digit(COL_RADIX).unwrap() as u8;
+        let finger = chars.next().unwrap().to_digit(COL_RADIX).unwrap() as u8;
         Position::new(row, col, Finger::from_u8(finger))
     }
 }

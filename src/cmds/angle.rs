@@ -1,6 +1,7 @@
 use thiserror::Error;
-use crate::util::{Commandable, Message};
-use crate::util::core::{Finger, LayoutConfig};
+use crate::{Commandable, Message};
+use crate::core::LayoutConfig;
+use crate::core::Finger;
 use crate::util::memory::LAYOUTS;
 
 pub struct Command;

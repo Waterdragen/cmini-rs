@@ -1,6 +1,7 @@
-use crate::util::core::{Finger, LayoutConfig, Position};
+use crate::core::{LayoutConfig, Position};
 use crate::util::memory::LAYOUTS;
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
+use crate::core::Finger;
 
 pub struct Command;
 

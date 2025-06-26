@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use itertools::{EitherOrBoth, Itertools};
-use crate::util::{BoundedResponse, Commandable, Message};
-use crate::util::authors::AUTHORS;
+use crate::util::memory::AUTHORS;
+use crate::{BoundedResponse, Commandable, Message};
 
 pub struct Command;
 

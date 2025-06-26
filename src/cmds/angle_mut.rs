@@ -1,6 +1,6 @@
 use crate::cmds::angle::impl_angle;
 use crate::util::memory::{RemoveError, LAYOUTS};
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 
 pub struct Command;
 

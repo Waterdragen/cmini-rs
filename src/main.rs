@@ -5,6 +5,9 @@
 #![warn(unused_must_use)]
 
 mod cmds;
+pub mod consts;
+mod core;
+mod message;
 mod prelude;
 mod test;
 mod util;
@@ -19,10 +22,10 @@ use std::io::Write;
 use tokio::signal;
 use tokio::time::{self, Duration};
 
+use crate::consts::TRIGGERS;
 use crate::prelude::*;
-use crate::util::admins::ADMINS;
-use crate::util::consts::TRIGGERS;
-use crate::util::{validate_json, Message};
+use util::memory::ADMINS;
+use crate::util::validate_json;
 
 static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock::new(false)));
 

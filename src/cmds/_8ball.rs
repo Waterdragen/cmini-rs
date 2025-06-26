@@ -1,8 +1,5 @@
-use crate::util::Commandable;
-use rand::SeedableRng;
-use rand::prelude::SliceRandom;
-use rand::rngs::StdRng;
-use crate::util::Message;
+use rand::prelude::{SeedableRng, StdRng, SliceRandom};
+use crate::{Commandable, Message};
 
 const RESPONSES: [&str; 12] = [
     "Yes", "Count on it", "No doubt", "Absolutely", "Very likely",

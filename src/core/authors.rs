@@ -1,14 +1,8 @@
-use crate::util::jsons::read_json;
-use crate::prelude::*;
-use fxhash::FxHashMap;
-use once_cell::sync::Lazy;
-use serde::{Serialize, Serializer};
 use std::fmt::{Debug, Formatter};
+use fxhash::FxHashMap;
+use serde::{Serialize, Serializer};
 use strsim::jaro_winkler;
-
-pub static AUTHORS: Lazy<Arc<RwLock<Authors>>> = Lazy::new(||
-    Arc::new(RwLock::new(Authors::open("./authors.json").unwrap()))
-);
+use crate::util::jsons::read_json;
 
 pub struct Authors {
     id_to_str: FxHashMap<u64, Vec<String>>,

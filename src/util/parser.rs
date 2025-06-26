@@ -193,12 +193,6 @@ pub fn slice_kwarg(last_kwarg_type: KwargType, words: &[&str]) -> Kwarg {
     }
 }
 
-pub fn map_from_vec(v: Vec<(&str, KwargType)>) -> FxHashMap<String, KwargType> {
-    v.into_iter()
-        .map(|(key, value)| (key.to_string(), value))
-        .collect()
-}
-
 fn starts_with_kw_prefix(word: &str) -> bool {
     ["--", "—", "––"].iter().any(|prefix| word.starts_with(prefix))
 }
@@ -258,10 +252,10 @@ mod test {
 
     #[test]
     fn test_kwarg() {
-        let cmd_kwargs = map_from_vec(vec![
-            ("vec", KT::Vec),
-            ("bool", KT::Bool),
-            ("str", KT::Str),
+        let cmd_kwargs = FxHashMap::from_iter([
+            ("vec".to_owned(), KT::Vec),
+            ("bool".to_owned(), KT::Bool),
+            ("str".to_owned(), KT::Str),
         ]);
         let kwargs = get_kwargs("", &cmd_kwargs).unwrap();
         assert_eq!(kwargs.arg, "");

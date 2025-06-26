@@ -1,5 +1,5 @@
 use rand::prelude::{StdRng, SeedableRng, SliceRandom};
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 
 const CHOICES: [(&str, u8); 3] = [
     ("Heads", 49),

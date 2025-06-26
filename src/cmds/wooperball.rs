@@ -1,4 +1,4 @@
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 use rand::prelude::{SeedableRng, SliceRandom, StdRng};
 
 const CHOICES: [(&str, u8); 3] = [

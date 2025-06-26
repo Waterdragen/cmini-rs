@@ -1,5 +1,5 @@
 use crate::util::memory::LAYOUTS;
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 use rand::prelude::{IteratorRandom, SeedableRng, StdRng};
 
 pub struct Command;

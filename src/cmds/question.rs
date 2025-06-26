@@ -1,4 +1,4 @@
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 use fxhash::FxHashMap;
 
 static LINK: &str = "https://story-shack-cdn-v2.glitch.me/generators/random-question-generator";

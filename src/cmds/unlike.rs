@@ -1,5 +1,5 @@
-use crate::util::{Commandable, Message};
 use crate::util::memory::{LAYOUTS, LIKES};
+use crate::{Commandable, Message};
 
 pub struct Command;
 

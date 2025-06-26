@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use serenity::model::channel::Message as DiscordMessage;
 use serenity::prelude::Context;
-use crate::util::consts::CMINI_CHANNEL;
+use crate::consts::CMINI_CHANNEL;
 use crate::util::parser::split_word;
 
 pub struct Message<'a> {

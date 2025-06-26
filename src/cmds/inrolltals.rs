@@ -1,5 +1,5 @@
 use crate::util::metric_alias::IN_ROLLTALS;
-use crate::util::{Commandable, Message};
+use crate::{Commandable, Message};
 
 pub struct Command;
 

@@ -1,8 +1,6 @@
 use crate::cmds::{COMMANDS, OTHER_COMMANDS};
-use crate::util::admins::ADMINS;
-use crate::util::core::{DynCommand};
-use crate::util::Commandable;
-use crate::util::Message;
+use crate::util::memory::ADMINS;
+use crate::{Commandable, Message};
 
 pub struct Command;
 
@@ -24,7 +22,7 @@ impl Commandable for Command {
             let mut s = String::from(
                 "Usage: `!cmini (command) [args]`\n\
                     ```\n");
-            let filter_fn: for<'a> fn((&'a String, &DynCommand)) -> Option<&'a String> = match ADMINS.contains(msg.id) {
+            let filter_fn: for<'a> fn((&'a String, &Box<dyn Commandable>)) -> Option<&'a String> = match ADMINS.contains(msg.id) {
                 true => |(name, _)| Some(name),
                 false => |(name, cmd)| (!cmd.mods_only()).then_some(name),
             };

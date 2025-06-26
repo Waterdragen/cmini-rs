@@ -1,5 +1,5 @@
-use crate::util::consts::TABLE;
-use crate::util::core::{ContainsMetric, Corpus, FingerCombo, FingerMap, FingerUsage, Key, Layout, LayoutConfig, Metric, MetricUnion, Stat};
+use crate::consts::TABLE;
+use crate::core::{ContainsMetric, Corpus, FingerCombo, FingerMap, FingerUsage, Key, Layout, LayoutConfig, Metric, MetricUnion, Stat};
 use crate::util::metric_alias::SFS;
 
 impl LayoutConfig {
