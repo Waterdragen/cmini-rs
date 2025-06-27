@@ -38,7 +38,7 @@ where Gram: BorrowCorpus {
     let map = read_json::<FxIndexMap<String, u64>>(path);
     map.into_iter()
         .map(|(gram, freq)| {
-            let chars = gram.chars().collect::<Vec<_>>();
+            let chars = gram.to_lowercase().chars().collect::<Vec<_>>();
             (chars.try_into().unwrap(), freq)
         })
         .collect()

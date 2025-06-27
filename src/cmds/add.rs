@@ -1,5 +1,5 @@
 use crate::util::memory::AUTHORS;
-use crate::consts::{COL_LIMIT, FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR};
+use crate::consts::{COL_LIMIT, FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR, ROW_LIMIT};
 use crate::core::{Layout, LayoutConfig, Position};
 use crate::util::layout::check_name;
 use crate::util::memory::LAYOUTS;
@@ -12,6 +12,7 @@ pub struct Command;
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
         let (name, matrix) = get_layout(msg.arg);
+        let (name, matrix) = (name.to_lowercase(), matrix.to_lowercase());
         if name.is_empty() {
             return self.help();
         }
@@ -23,7 +24,10 @@ impl Commandable for Command {
         let row_count = rows.len();
 
         if row_count < 3 {
-            return format!("Expected 3 lines, got {}", row_count);
+            return format!("Error: rxpected at least 3 lines, got {}", row_count);
+        }
+        if row_count > ROW_LIMIT {
+            return format!("Error: expected at most {ROW_LIMIT} rows, got {row_count}");
         }
 
         // Calculate amount of leading whitespace for each line
@@ -32,25 +36,17 @@ impl Commandable for Command {
         })
             .collect::<Vec<_>>();
 
-        let mut max_rows = 3;
-
         let board = if spaces[0] < spaces[1] && spaces[1] < spaces[2] {
             "stagger".to_owned()
         } else if spaces[0] == spaces[1] && spaces[2] > 1 {
-            max_rows = 4;
             "mini".to_owned()
         } else if spaces[0] == spaces[1] && spaces[1] < spaces[2] {
             "angle".to_owned()
         } else if spaces[0] == spaces[1] && spaces[1] == spaces[2] {
-            max_rows = 3;
             "ortho".to_owned()
         } else {
             return "Error: board shape is undefined".to_owned();
         };
-
-        if row_count > max_rows {
-            return format!("Error: board type `{board}` supports at most {max_rows} rows, got {row_count}");
-        }
 
         let mut keymap: Layout = Layout::default();
         for (row_idx, row) in rows[..3].iter().enumerate() {
@@ -59,34 +55,33 @@ impl Commandable for Command {
                 .filter(|c| *c != ' ')
                 .enumerate()
                 .filter(|(_, c)| *c != FREE_CHAR);
-            for (col_idx, ch) in row_iter.by_ref().take(usize::from(COL_LIMIT)) {
-                let fmap = if row_idx == 2 && board == "angle" {
-                    &FMAP_ANGLE
-                } else {
-                    &FMAP_STANDARD
+            for (col_idx, ch) in row_iter.by_ref().take(COL_LIMIT) {
+                if col_idx >= COL_LIMIT {
+                    return format!("Error: expected at most {COL_LIMIT} columns, got {}", col_idx + row_iter.count());
+                }
+                let fmap = match row_idx == 2 && board == "angle" {
+                    true => &FMAP_ANGLE,
+                    false => &FMAP_STANDARD,
                 };
-
                 let finger = fmap[col_idx.min(9)];
 
                 if keymap.insert(ch, Position::new(row_idx as u8, col_idx as u8, finger)).is_some() {
                     return format!("Error: `{ch}` is defined twice");
                 }
             }
-            let overflow = row_iter.count();
-            if overflow > 0 {
-                return format!("Error: expected at most {COL_LIMIT} columns, got {}", usize::from(COL_LIMIT) + overflow);
-            }
         }
-        if max_rows == 4 {
-            if let Some(thumb_row) = rows.get(3) {
-                for (col, ch) in thumb_row.chars()
-                    .enumerate()
-                    .filter(|(_, c)| *c != ' ' && *c != FREE_CHAR)
-                {
-                    let finger = if col < 5 { Finger::LT } else { Finger::RT };
-                    if keymap.insert(ch, Position::new(3, col as u8, finger)).is_some() {
-                        return format!("Error: `{ch}` is defined twice");
-                    }
+        if let Some(thumb_row) = rows.get(3) {
+            let mut thumb_iter = thumb_row.chars()
+                .filter(|&c| c != ' ')
+                .enumerate()
+                .filter(|(_, c)| *c != FREE_CHAR);
+            for (col_idx, ch) in thumb_iter.by_ref() {
+                let finger = if col_idx < 5 { Finger::LT } else { Finger::RT };
+                if col_idx >= COL_LIMIT {
+                    return format!("Error: expected at most {COL_LIMIT} columns, got {}", col_idx + thumb_iter.count());
+                }
+                if keymap.insert(ch, Position::new(3, col_idx as u8, finger)).is_some() {
+                    return format!("Error: `{ch}` is defined twice");
                 }
             }
         }

@@ -1,6 +1,6 @@
 use std::ops::{Add, BitOr, Shl};
 use strum_macros::IntoStaticStr;
-use crate::consts::{LH, RH};
+use crate::core::finger_alias::{LH, RH};
 use crate::core::{Key, Layout};
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Copy, Clone, IntoStaticStr)]
@@ -96,7 +96,24 @@ impl BitOr<Finger> for FingerUnion {
     }
 }
 
+impl BitOr<Self> for FingerUnion {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+
+impl From<Finger> for FingerUnion {
+    fn from(finger: Finger) -> Self {
+        Self(1u16 << finger.as_u8())
+    }
+}
+
 impl FingerUnion {
+    pub const fn from_raw(raw: u16) -> Self {
+        FingerUnion(raw)
+    }
     pub fn is_left(self) -> bool {
         self.0 & LH.0 != 0
     }
@@ -145,11 +162,11 @@ impl<T> FingerMap<T> {
     pub fn iter(&self) -> impl Iterator<Item = (Finger, &T)> {
         Finger::iter().zip(self.0.iter())
     }
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (Finger, &mut T)> {
-        Finger::iter().zip(self.0.iter_mut())
-    }
     pub fn values(&self) -> impl Iterator<Item = &T> {
         self.0.iter()
+    }
+    pub fn values_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.0.iter_mut()
     }
 }
 

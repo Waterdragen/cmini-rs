@@ -78,6 +78,7 @@ fn cache_files() {
         let keys = conv::layout::pack(&ll.keys);
         let cached = CachedStatConfig {
             keys,
+            user: ll.user,
             sum: ll.sum,
             stats,
         };

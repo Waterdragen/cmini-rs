@@ -72,9 +72,6 @@ impl EventHandler for Handler {
             "" => {
                 "Try `!cmini help`".to_owned()
             }
-            "akl" => {
-                "Not yet implemented".to_owned()
-            },
             "maintenance" | "1984" => {
                 cmds::maintenance::Command.exec(msg.arg, id, Arc::clone(&MAINTENANCE_MODE))
             }
@@ -101,7 +98,8 @@ impl EventHandler for Handler {
         }
     }
 
-    async fn ready(&self, _: Context, ready: Ready) {
+    async fn ready(&self, ctx: Context, ready: Ready) {
+        println!("{:?}", &ctx.cache);
         println!("{} is connected!", ready.user.name);
     }
 }
@@ -128,14 +126,15 @@ async fn start_discord_bot() {
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT
-        | GatewayIntents::GUILD_MEMBERS;
+        | GatewayIntents::GUILD_MEMBERS
+        | GatewayIntents::GUILDS;
 
     let mut client = Client::builder(&token, intents)
         .event_handler(Handler)
         .await
         .expect("Error creating client");
 
-    if let Err(err) = client.start().await {
+    if let Err(err) = client.start_autosharded().await {
         println!("Client error: {:?}", err);
     }
 }

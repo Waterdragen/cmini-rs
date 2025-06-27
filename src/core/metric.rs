@@ -1,4 +1,4 @@
-use std::ops::BitOr;
+use std::ops::{Add, BitOr};
 use fxhash::FxHashMap;
 use strum::{EnumCount, IntoEnumIterator};
 use strum_macros::{EnumCount, EnumIter};
@@ -68,7 +68,13 @@ impl BitOr for Metric {
 
 #[derive(Copy, Clone, PartialEq)]
 #[repr(transparent)]
-pub struct MetricUnion(pub(crate) u32);
+pub struct MetricUnion(u32);
+
+impl MetricUnion {
+    pub const fn from_raw(raw: u32) -> Self {
+        MetricUnion(raw)
+    }
+}
 
 impl From<Metric> for MetricUnion {
     fn from(metric: Metric) -> Self {
@@ -128,12 +134,20 @@ impl<T> MetricMap<T> {
     pub fn set(&mut self, metric: Metric, value: T) {
         self.0[metric.as_usize()] = value;
     }
+    pub fn sum(&self, metric_union: MetricUnion) -> T where T: for<'a> Add<&'a T, Output = T> + Default {
+        Metric::iter().enumerate()
+            .filter_map(|(idx, metric)| metric_union.contains(metric).then_some(&self.0[idx]))
+            .fold(T::default(), |acc, b| acc + b)
+    }
     pub fn iter(&self) -> impl Iterator<Item = (Metric, &T)> {
         Metric::iter()
             .zip(self.0.iter())
     }
     pub fn values(&self) -> impl Iterator<Item = &T> {
         self.0.iter()
+    }
+    pub fn values_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.0.iter_mut()
     }
     pub const fn len(&self) -> usize {
         Metric::COUNT

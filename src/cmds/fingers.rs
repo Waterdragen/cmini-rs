@@ -2,7 +2,7 @@ use crate::core::{FingerUsage, LayoutConfig, Metric};
 use crate::util::memory::AUTHORS;
 use crate::util::corpora::{self, get_user_corpus};
 use crate::util::memory::{LAYOUTS, LIKES};
-use crate::util::metric_alias::{list_metric_union_names, METRIC_NAMES};
+use crate::core::metric_alias::{list_metric_union_names, METRIC_NAMES};
 use crate::util::parser::split_word;
 use crate::{Commandable, Message};
 use itertools::Itertools;
@@ -115,7 +115,7 @@ where F: FnMut(f64) -> f64 {
     if uses_thumb {
         output.push('\n');
     }
-    for (_, freq) in stats.iter_mut() {
+    for freq in stats.values_mut() {
         *freq = transform_fn(*freq);
     }
     let total = stats.values().sum::<f64>() * 100.0;

@@ -84,6 +84,14 @@ impl Kwarg {
             _ => panic!("{self:?} is not a string")
         }
     }
+
+    pub fn is_unused(&self) -> bool {
+        match self {
+            Kwarg::Bool(b) => !b,
+            Kwarg::Vec(v) => v.is_none(),
+            Kwarg::Str(s) => s.is_none(),
+        }
+    }
 }
 
 #[derive(Debug)]

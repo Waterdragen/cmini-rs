@@ -47,6 +47,10 @@ mod flip;
 mod examples;
 mod homerow;
 mod rank;
+mod filter;
+mod search;
+mod compare;
+mod akl;
 
 use crate::core::{Commandable, ContainsMetric};
 use crate::util::memory::LAYOUTS;
@@ -60,17 +64,20 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("8ball", _8ball::Command.init()),
         ("add", add::Command.init()),
         ("admin", admin::Command.init()),
+        ("akl", akl::Command.init()),
         ("alternates", alternates::Command.init()),
         ("angle", angle::Command.init()),
         ("angle!", angle_mut::Command.init()),
         ("assign", assign::Command.init()),
         ("authors", authors::Command.init()),
         ("catball", catball::Command.init()),
+        ("compare", compare::Command.init()),
         ("corpus", corpus::Command.init()),
         ("cycle", cycle::Command.init()),
         ("cycle!", cycle_mut::Command.init()),
         ("dofball", dofball::Command.init()),
         ("examples", examples::Command.init()),
+        ("filter", filter::Command.init()),
         ("fingers", fingers::Command.init()),
         ("flip", flip::Command.init()),
         ("freq", freq::Command.init()),
@@ -95,6 +102,7 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("rename", rename::Command.init()),
         ("rolls", rolls::Command.init()),
         ("rolltals", rolltals::Command.init()),
+        ("search", search::Command.init()),
         ("sfbs", sfbs::Command.init()),
         ("sfs", sfs::Command.init()),
         ("suggest", suggest::Command.init()),

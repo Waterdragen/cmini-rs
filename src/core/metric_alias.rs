@@ -18,13 +18,13 @@ const OUT_ONE: u32 = raw_bit(M::OutOne);
 const IN_ROLL: u32 = raw_bit(M::InRoll);
 const OUT_ROLL: u32 = raw_bit(M::OutRoll);
 
-pub const SFS: MetricUnion = MetricUnion(ALT_SFS | RED_SFS | BAD_RED_SFS);
-pub const ONEHANDS: MetricUnion = MetricUnion(IN_ONE | OUT_ONE);
-pub const REDIRECTS: MetricUnion = MetricUnion(RED | BAD_RED | RED_SFS | BAD_RED_SFS);
-pub const ROLLS: MetricUnion = MetricUnion(IN_ROLL | OUT_ROLL);
-pub const IN_ROLLTALS: MetricUnion = MetricUnion(IN_ROLL | IN_ONE);
-pub const OUT_ROLLTALS: MetricUnion = MetricUnion(OUT_ROLL | OUT_ONE);
-pub const ROLLTALS: MetricUnion = MetricUnion(IN_ROLL | OUT_ROLL | IN_ONE | OUT_ONE);
+pub const SFS: MetricUnion = MetricUnion::from_raw(ALT_SFS | RED_SFS | BAD_RED_SFS);
+pub const ONEHANDS: MetricUnion = MetricUnion::from_raw(IN_ONE | OUT_ONE);
+pub const REDIRECTS: MetricUnion = MetricUnion::from_raw(RED | BAD_RED | RED_SFS | BAD_RED_SFS);
+pub const ROLLS: MetricUnion = MetricUnion::from_raw(IN_ROLL | OUT_ROLL);
+pub const IN_ROLLTALS: MetricUnion = MetricUnion::from_raw(IN_ROLL | IN_ONE);
+pub const OUT_ROLLTALS: MetricUnion = MetricUnion::from_raw(OUT_ROLL | OUT_ONE);
+pub const ROLLTALS: MetricUnion = MetricUnion::from_raw(IN_ROLL | OUT_ROLL | IN_ONE | OUT_ONE);
 
 // Use IndexMap to list metric with dedup_by
 pub static METRIC_NAMES: Lazy<FxIndexMap<String, MetricUnion>> = Lazy::new(|| FxIndexMap::from_iter([

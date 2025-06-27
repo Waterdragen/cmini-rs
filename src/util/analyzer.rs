@@ -1,6 +1,6 @@
 use crate::consts::TABLE;
 use crate::core::{ContainsMetric, Corpus, FingerCombo, FingerMap, FingerUsage, Key, Layout, LayoutConfig, Metric, MetricUnion, Stat};
-use crate::util::metric_alias::SFS;
+use crate::core::metric_alias::SFS;
 
 impl LayoutConfig {
     pub fn fingers_usage(&self, monograms: &Corpus<1>) -> FingerUsage {
@@ -97,7 +97,7 @@ fn iter_trigrams<'a>(trigrams: &'a Corpus<3>, fingers: &'a Layout) -> impl Itera
             return None;
         }
         let finger_combo = match FingerCombo::from_ngrams(fingers, gram) {
-            None => return Some((None, *freq)),
+            None => return Some((None, *freq)),  // Unknown has no valid finger combo
             Some(finger_combo) => finger_combo,
         };
         if gram0 == gram1 || gram1 == gram2 || gram0 == gram2 {

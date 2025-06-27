@@ -37,7 +37,7 @@ impl Commandable for Command {
                 });
             (ll.name.to_owned(), keys.iter().join(""))
         })
-            .filter_map(filter_fn(&re, msg.arg))
+            .filter_map(homerow_filter_fn(&re, msg.arg))
             .collect::<Vec<String>>();
         let mut rng = StdRng::from_entropy();
         res.shuffle(&mut rng);
@@ -82,7 +82,7 @@ impl Commandable for Command {
     }
 }
 
-fn homerow_regex(search_str: &str) -> Result<Option<Regex>, RegexError> {
+pub(super) fn homerow_regex(search_str: &str) -> Result<Option<Regex>, RegexError> {
     if search_str.starts_with('"') && search_str.ends_with('"') {
         let byte_len = search_str.len();
         let pat_str = get_pattern(&search_str[1..byte_len - 1]);  // Always valid character boundary: starts and ends with 1-byte char ('"')
@@ -92,7 +92,7 @@ fn homerow_regex(search_str: &str) -> Result<Option<Regex>, RegexError> {
     }
 }
 
-fn filter_fn<'a>(re: &'a Option<Regex>, search_str: &'a str) -> Box<dyn Fn((String, String)) -> Option<String> + 'a> {
+pub(super) fn homerow_filter_fn<'a>(re: &'a Option<Regex>, search_str: &'a str) -> Box<dyn Fn((String, String)) -> Option<String> + 'a> {
     match re {
         None => Box::new(|(name, homerow): (String, String)| {
             search_str.chars()

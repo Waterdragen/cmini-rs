@@ -1,4 +1,4 @@
-use crate::util::metric_alias::REDIRECTS;
+use crate::core::metric_alias::REDIRECTS;
 use crate::{Commandable, Message};
 
 pub struct Command;

@@ -8,7 +8,7 @@ pub mod layout;
 pub mod links;
 pub mod memory;
 pub mod parser;
-pub mod metric_alias;
+pub mod cmp;
 
 pub fn validate_json() {
     let count = memory::ADMINS.count();

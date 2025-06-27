@@ -1,5 +1,6 @@
-use crate::consts::{COL_LIMIT, LH, RH, ROW_LIMIT, TABLE};
-use crate::core::{ContainsMetric, Finger, FingerCombo, FingerUnion, FingerUsage, Key, LayoutConfig, Metric, Position, Stat};
+use crate::consts::{COL_LIMIT, ROW_LIMIT, TABLE};
+use crate::core::finger_alias::{LH, RH};
+use crate::core::{ContainsMetric, FingerCombo, FingerUnion, FingerUsage, Key, LayoutConfig, Metric, Position, Stat};
 use crate::util::{corpora, links, memory};
 
 fn is_char_allowed_in_name(c: char) -> bool {
@@ -23,77 +24,27 @@ pub fn check_name(name: &str) -> Result<(), String> {
 }
 
 impl LayoutConfig {
-    pub fn matrix_str(&self) -> String {
-        let mut keyboard = [vec![' '; 12], vec![' '; 12], vec![' '; 12]];
-        let mut thumb_row = Vec::<(Key, Finger)>::new();
-        self.keys.iter().for_each(|(&key, &pos)| {
-            let Position { row, col, finger } = pos;
-            if row > ROW_LIMIT || col > COL_LIMIT { return; }  // This should never happen as checked by add command and pos::unpack, but still we ignore these keys
-            if row == 3 {
-                thumb_row.push((key, finger));
-                return;
-            }
+    pub fn matrix(&self) -> [[char; 36]; 4] {
+        let mut keyboard = [[' '; 36]; 4];
+        for (&key, &pos) in self.keys.iter() {
+            let Position { row, col, .. } = pos;
             let (row, col) = (usize::from(row), usize::from(col));
-            while keyboard[row].len() <= col {
-                keyboard[row].reserve_exact(5);
-                for _ in 0..5 {
-                    keyboard[row].push(' ');
-                }
-            }
+            if row > ROW_LIMIT || col > COL_LIMIT { panic!("index out of bounds"); }  // This should never happen as checked by add command and pos::unpack
             keyboard[row][col] = key;
-        });
-        let indents = match self.board.as_str() {
+        }
+        keyboard
+    }
+    fn indents(&self) -> [u8; 4] {
+        match self.board.as_str() {
             "angle" => [2, 2, 3, 3],
             "stagger" => [2, 3, 4, 5],
             _ => [2, 2, 2, 2],
-        };
-        let mut rows = indents.iter()
-            .take(if thumb_row.is_empty() { 3 } else { 4 })
-            .map(|&indent| {
-                let mut s = String::with_capacity(40);
-                for _ in 0..indent {
-                    s.push(' ');
-                }
-                s
-            })
-            .collect::<Vec<_>>();
-
-        keyboard.iter().enumerate().for_each(|(row, row_keys)| {
-            let left_hand = &row_keys[..5];
-            let right_hand = &row_keys[5..];
-
-            left_hand.iter().for_each(|key| {
-                rows[row].push(*key);
-                rows[row].push(' ');
-            });
-            rows[row].push(' ');
-            right_hand.iter().for_each(|key| {
-                rows[row].push(*key);
-                rows[row].push(' ');
-            });
-        });
-
-        if thumb_row.is_empty() {
-            return rows[..3].join("\n");
         }
-        let lt_rt_split = thumb_row.iter()
-            .position(|(_, finger)| *finger != Finger::LT)
-            .unwrap_or(thumb_row.len());
-        let (left_thumbs, right_thumbs) = thumb_row.split_at(lt_rt_split);  // Always succeeds: index is at most slice.len()
-        let pad_count = 5usize.checked_sub(left_thumbs.len()).unwrap();  // Never underflows: guaranteed by add command, left hand takes at most 5 thumb Keys
-        std::iter::repeat_n(' ', pad_count)
-            .chain(left_thumbs.iter().map(|(key, _)| *key))
-            .for_each(|key| {
-                rows[3].push(key);
-                rows[3].push(' ');
-            });
-        rows[3].push(' ');
-        for (key, _) in right_thumbs {
-            rows[3].push(*key);
-            rows[3].push(' ');
-        }
-
-        rows.join("\n")
+    }
+    pub fn matrix_str(&self) -> String {
+        let matrix = self.matrix();
+        let indents = self.indents();
+        matrix_to_str(&matrix, indents)
     }
 
     pub fn to_pretty(&self, id: u64) -> String {
@@ -116,7 +67,7 @@ impl LayoutConfig {
         let corpus_name = corpora::get_user_corpus(id).to_uppercase();
         format!("```\n\
              {ll_name} ({author}) ({likes} {like_str})\n\
-             {matrix_str}\n\
+             {matrix_str}\
              \n\
              {corpus_name}:\n\
              {stats_str}\
@@ -150,6 +101,20 @@ impl LayoutConfig {
             .take(top_n)
             .collect()  // Already sorted by freq
     }
+
+    pub fn get_common_matrix(&self, ll2: &Self) -> String {
+        let mut matrix1 = self.matrix();
+        let matrix2 = ll2.matrix();
+        matrix1.iter_mut().flatten()
+            .zip(matrix2.iter().flatten())
+            .for_each(|(char0, char1)| {
+                if char0 != char1 {
+                    *char0 = '~';
+                }
+            });
+        let indents = self.indents();
+        matrix_to_str(&matrix1, indents)
+    }
 }
 
 pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
@@ -176,7 +141,7 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
     let outrolltal = outroll + outone;
     let rolltal = roll + one;
 
-    let sfb = get(M::Sfb) / 2.0;
+    let sfb = get(M::Sfb) / 2.0 + get(M::Sft);
 
     let bad_red_sfs = get(M::BadRedSfs);
     let bad_red = get(M::BadRed) + bad_red_sfs;
@@ -186,8 +151,8 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
     let red_sfs = get(M::RedSfs) + bad_red_sfs;
     let sfs = alt_sfs + red_sfs;
 
-    let lh = get_hand(*LH);
-    let rh = get_hand(*RH);
+    let lh = get_hand(LH);
+    let rh = get_hand(RH);
 
     format!(
         "  Alt: {alt:>5.2}%
@@ -200,4 +165,26 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
   SFS: {sfs:>5.2}%   (Red/Alt: {red_sfs:>5.2}% | {alt_sfs:>5.2}%)
 
   LH/RH: {lh:>5.2}% | {rh:>5.2}%\n")
+}
+
+fn matrix_to_str(matrix: &[[char; 36]; 4], indents: [u8; 4]) -> String {
+    let mut output = String::with_capacity(250);
+    for (row_idx, (&indent, row)) in indents.iter().zip(matrix.iter()).enumerate() {
+        if row_idx == 3 && row.iter().all(|&c| c == ' ') {
+            continue;
+        }
+        (0..indent).for_each(|_| output.push(' '));
+        let mut row_iter = row.iter();
+        row_iter.by_ref().take(5).for_each(|&c| {
+            output.push(c);
+            output.push(' ');
+        });
+        output.push(' ');
+        row_iter.for_each(|&c| {
+            output.push(c);
+            output.push(' ');
+        });
+        output.push('\n');
+    }
+    output
 }

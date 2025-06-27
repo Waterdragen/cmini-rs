@@ -12,6 +12,8 @@ pub mod admins;
 pub mod authors;
 pub mod conv;
 pub mod get;
+pub mod finger_alias;
+pub mod metric_alias;
 
 pub use alias::*;
 pub use commandable::Commandable;
@@ -20,7 +22,7 @@ pub use corpus::{RawServerCorpora, ServerCorpora, ServerWordCorpora};
 pub use finger::{Finger, FingerCombo, FingerMap, FingerUnion, FingerUsage};
 pub use layout::{Layout, LayoutConfig, ServerLayouts};
 pub use metric::{ContainsMetric, Metric, MetricMap, MetricUnion};
-pub use position::{Row, Col, Key, Position};
+pub use position::{Key, Position};
 pub use stat::{CachedStat, CachedStatConfig, ServerCachedStats, Stat};
 pub use table::Table;
 

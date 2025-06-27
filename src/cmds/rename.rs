@@ -9,15 +9,15 @@ impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
         let mut arg = msg.arg;
         let old = split_word(&mut arg);
-        let new = arg;
+        let new = arg.to_lowercase();
 
-        if let Err(err) = check_name(new) {
+        if let Err(err) = check_name(&new) {
             return err;
         }
         match LAYOUTS.remove(old, msg.id) {
             Err(err) => err.to_string(),
             Ok(mut layout) => {
-                if LAYOUTS.contains(new) {
+                if LAYOUTS.contains(&new) {
                     return format!("Error: `{new}` already exists")
                 }
                 layout.name = new.to_owned();

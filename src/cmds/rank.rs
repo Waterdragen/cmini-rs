@@ -1,7 +1,7 @@
 use crate::util::cache::CACHED_STATS;
 use crate::core::{ContainsMetric, FxIndexMap, Metric as M, Metric, MetricUnion, Stat};
 use crate::util::corpora::get_user_corpus;
-use crate::util::metric_alias::{IN_ROLLTALS, ONEHANDS, OUT_ROLLTALS, REDIRECTS, ROLLS, ROLLTALS, SFS};
+use crate::core::metric_alias::{IN_ROLLTALS, ONEHANDS, OUT_ROLLTALS, REDIRECTS, ROLLS, ROLLTALS, SFS};
 use crate::util::parser::{get_kwargs, split_word, KwargType};
 use crate::{Commandable, Message};
 use fxhash::FxHashMap;
@@ -35,9 +35,9 @@ impl RankMode {
 }
 
 #[derive(Copy, Clone, PartialEq)]
-struct RankConfig {
+pub(super) struct RankConfig {
     rank_mode: RankMode,
-    reverse: bool,
+    pub(super) reverse: bool,
     percent: bool,
 }
 
@@ -78,10 +78,25 @@ impl RankConfig {
             format!("{:.3}", float)
         }
     }
+    pub(super) fn get_value(self, stat: &Stat) -> f64 {
+        match self.rank_mode {
+            RankMode::Only(metric) => {
+                *stat.get(metric)
+            }
+            RankMode::Sum(metric_union) => {
+                stat.iter()
+                    .filter_map(|(metric, freq)| metric_union.contains(metric).then_some(freq))
+                    .sum()
+            }
+            RankMode::Divide(metric_numer, metric_denom) => {
+                stat.get(metric_numer) / stat.get(metric_denom)
+            }
+        }
+    }
 }
 
 // Use IndexMap to list metric with dedup_by
-static RANK_CONFIGS: Lazy<FxIndexMap<String, RankConfig>> = Lazy::new (|| FxIndexMap::from_iter([
+pub(super) static RANK_CONFIGS: Lazy<FxIndexMap<String, RankConfig>> = Lazy::new (|| FxIndexMap::from_iter([
     ("alt", RankConfig::only(M::Alt).reverse()),
     ("alts", RankConfig::only(M::Alt).reverse()),
     ("alternate", RankConfig::only(M::Alt).reverse()),
@@ -149,7 +164,7 @@ impl Commandable for Command {
             return self.help();
         }
         let Some(rank_config) = RANK_CONFIGS.get(metric) else {
-            return format!("Error: metric `{metric}` not supported");
+            return format!("Error: metric `{metric}` not supported\nHelp:\n{}", self.help());
         };
         let start = if start.is_empty() { 0 } else {
             match start.parse::<usize>() {
@@ -171,13 +186,12 @@ impl Commandable for Command {
         let cached_stats = CACHED_STATS.read();
         let mut res = cached_stats.iter()
             .filter_map(|(name, stats)| {
-                let stats = stats.stats
-                    .get(&corpus_name)
-                    .unwrap();  // Intentionally not using `?`
-                                // corpora in cached stat should contain all corpora from get_user_corpus
-                let freq = rank_config.rank_mode.get_value(stats);
-                // FIXME: implement is_partial field for cached, then check is partial
-                (freq.is_finite() && freq > 0.001).then_some((name, freq))
+                if !stats.is_total_layout() {
+                    return None;  // Only for layouts that has a to z
+                }
+                let stats = stats.stats.get(&corpus_name)?;
+                let freq = rank_config.get_value(stats);
+                freq.is_finite().then_some((name, freq))
             })
             .collect::<Vec<_>>();
         res.sort_unstable_by(match should_rev {
@@ -200,7 +214,7 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "rank <metric>"
+        "rank <metric> [--min | --max]"
     }
 
     fn desc<'a>(&self) -> &'a str {

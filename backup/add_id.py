@@ -7,10 +7,12 @@ def main():
         cached_stats = json.load(f)
         
     for name, stat in cached_stats.items():
-        keys = layouts[name]["keys"]
+        user = layouts[name]["user"]
         sum_ = stat.pop("sum")
         stat_ = stat.pop("stats")
+        keys = stat.pop("keys")
         stat["keys"] = keys
+        stat["user"] = user
         stat["sum"] = sum_
         stat["stats"] = stat_
     

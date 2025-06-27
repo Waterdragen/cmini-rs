@@ -97,9 +97,9 @@ mod pos {
     #[inline]
     pub fn pack(Position { row, col, finger }: Position) -> String {
         let mut s = String::with_capacity(3);
-        s.push(char::from_digit(u32::from(row), COL_RADIX).unwrap());
+        s.push(char::from_digit(u32::from(row), 4).unwrap());
         s.push(char::from_digit(u32::from(col), COL_RADIX).unwrap());
-        s.push(char::from_digit(finger.as_u8().into(), COL_RADIX).unwrap());
+        s.push(char::from_digit(finger.as_u8().into(), 10).unwrap());
         s
     }
 
@@ -107,9 +107,9 @@ mod pos {
     #[inline]
     pub fn unpack(packed_str: &str) -> Position {
         let mut chars = packed_str.chars();
-        let row = chars.next().unwrap().to_digit(COL_RADIX).unwrap() as u8;
+        let row = chars.next().unwrap().to_digit(4).unwrap() as u8;
         let col = chars.next().unwrap().to_digit(COL_RADIX).unwrap() as u8;
-        let finger = chars.next().unwrap().to_digit(COL_RADIX).unwrap() as u8;
+        let finger = chars.next().unwrap().to_digit(10).unwrap() as u8;
         Position::new(row, col, Finger::from_u8(finger))
     }
 }
