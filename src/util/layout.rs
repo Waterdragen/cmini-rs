@@ -26,8 +26,7 @@ pub fn check_name(name: &str) -> Result<(), String> {
 impl LayoutConfig {
     pub fn matrix(&self) -> [[char; 36]; 4] {
         let mut keyboard = [[' '; 36]; 4];
-        for (&key, &pos) in self.keys.iter() {
-            let Position { row, col, .. } = pos;
+        for (&key, &Position { row, col, .. }) in self.keys.iter() {
             let (row, col) = (usize::from(row), usize::from(col));
             if row > ROW_LIMIT || col > COL_LIMIT { panic!("index out of bounds"); }  // This should never happen as checked by add command and pos::unpack
             keyboard[row][col] = key;
@@ -41,32 +40,48 @@ impl LayoutConfig {
             _ => [2, 2, 2, 2],
         }
     }
+    pub fn finger_matrix(&self) -> [[char; 36]; 4] {
+        let mut keyboard = [[' '; 36]; 4];
+        for &Position { row, col, finger } in self.keys.values() {
+            let (row, col) = (usize::from(row), usize::from(col));
+            if row > ROW_LIMIT || col > COL_LIMIT { panic!("index out of bounds"); }  // This should never happen as checked by add command and pos::unpack
+            keyboard[row][col] = finger.as_digit_char();
+        }
+        keyboard
+    }
     pub fn matrix_str(&self) -> String {
         let matrix = self.matrix();
         let indents = self.indents();
         matrix_to_str(&matrix, indents)
     }
-
-    pub fn to_pretty(&self, id: u64) -> String {
+    pub fn finger_matrix_str(&self) -> String {
+        let finger_matrix = self.finger_matrix();
+        let indents = self.indents();
+        matrix_to_str(&finger_matrix, indents)
+    }
+    pub fn header(&self) -> String {
+        let ll_name = &self.name;
         let author_reader = memory::AUTHORS.read();
         let author = author_reader.get_name(self.user).unwrap_or("Unknown");
+        let likes = memory::get_like_count(&self.name);
+        let like_str = if likes == 1 {"like"} else {"likes"};
+        format!("{ll_name} ({author}) ({likes} {like_str})")
+    }
+
+    pub fn to_pretty(&self, id: u64) -> String {
+        let header = self.header();
+        let matrix_str = self.matrix_str();
+        let corpus_name = corpora::get_user_corpus(id).to_uppercase();
+
         let monograms = corpora::ngrams::<1>(id);
         let trigrams = corpora::ngrams::<3>(id);
-
-        let matrix_str = self.matrix_str();
 
         let stats = self.trigram_stats(&trigrams);
         let finger_usage = self.fingers_usage(&monograms);
         let stats_str = get_stats_str(&stats, &finger_usage);
-
-        let likes = memory::get_like_count(&self.name);
-        let like_str = if likes == 1 {"like"} else {"likes"};
         let external_link = links::get_link(&self.name);
-
-        let ll_name = self.name.as_str();
-        let corpus_name = corpora::get_user_corpus(id).to_uppercase();
         format!("```\n\
-             {ll_name} ({author}) ({likes} {like_str})\n\
+             {header}\n\
              {matrix_str}\
              \n\
              {corpus_name}:\n\
@@ -122,7 +137,7 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
 
     // get percentage of metric
     let get = |metric: M| -> f64 {
-        stats.get(metric) * 100.0
+        stats[metric] * 100.0
     };
     let get_hand = |hand: FingerUnion| -> f64 {
         finger_usage.sum(hand) * 100.0

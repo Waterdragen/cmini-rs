@@ -3,6 +3,7 @@ use crate::util::parser::get_pattern;
 use crate::util::corpora;
 use crate::{Commandable, Message};
 use regex::Regex;
+use crate::consts::ZERO_WIDTH_SPACE;
 
 const MOST_COMMON: usize = 10;
 
@@ -29,7 +30,7 @@ impl Commandable for Command {
             .enumerate()
             .for_each(|(index, (word, freq))| {
                 if index < MOST_COMMON {
-                    let word = word.replace('`', "​`");
+                    let word = word.replace('`', &format!("{ZERO_WIDTH_SPACE}`"));
                     let freq_str = format!("({freq})");
                     examples.push_str(&format!("{word:<15} {freq_str:>6}\n"));
                 }

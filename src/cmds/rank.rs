@@ -1,8 +1,8 @@
-use crate::util::cache::CACHED_STATS;
-use crate::core::{ContainsMetric, FxIndexMap, Metric as M, Metric, MetricUnion, Stat};
-use crate::util::corpora::get_user_corpus;
 use crate::core::metric_alias::{IN_ROLLTALS, ONEHANDS, OUT_ROLLTALS, REDIRECTS, ROLLS, ROLLTALS, SFS};
-use crate::util::parser::{get_kwargs, split_word, KwargType};
+use crate::core::{ContainsMetric, FxIndexMap, Metric as M, Metric, MetricUnion, Stat};
+use crate::util::cache::CACHED_STATS;
+use crate::util::corpora::get_user_corpus;
+use crate::util::parser::{get_kwargs, split_words, KwargType};
 use crate::{Commandable, Message};
 use fxhash::FxHashMap;
 use itertools::Itertools;
@@ -14,24 +14,6 @@ enum RankMode {
     Only(Metric),
     Sum(MetricUnion),
     Divide(Metric, Metric),
-}
-
-impl RankMode {
-    fn get_value(self, stat: &Stat) -> f64 {
-        match self {
-            RankMode::Only(metric) => {
-                *stat.get(metric)
-            }
-            RankMode::Sum(metric_union) => {
-                stat.iter()
-                    .filter_map(|(metric, freq)| metric_union.contains(metric).then_some(freq))
-                    .sum()
-            }
-            RankMode::Divide(metric_numer, metric_denom) => {
-                stat.get(metric_numer) / stat.get(metric_denom)
-            }
-        }
-    }
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -80,16 +62,14 @@ impl RankConfig {
     }
     pub(super) fn get_value(self, stat: &Stat) -> f64 {
         match self.rank_mode {
-            RankMode::Only(metric) => {
-                *stat.get(metric)
-            }
+            RankMode::Only(metric) => stat[metric],
             RankMode::Sum(metric_union) => {
                 stat.iter()
                     .filter_map(|(metric, freq)| metric_union.contains(metric).then_some(freq))
                     .sum()
             }
             RankMode::Divide(metric_numer, metric_denom) => {
-                stat.get(metric_numer) / stat.get(metric_denom)
+                stat[metric_numer] / stat[metric_denom]
             }
         }
     }
@@ -156,9 +136,7 @@ impl Commandable for Command {
             Ok(kwargs) => kwargs,
             Err(err) => return err.to_string(),
         };
-        let mut arg = &*kwargs.arg;
-        let metric = split_word(&mut arg);
-        let start = arg;
+        let [metric, start] = split_words(&kwargs.arg);
 
         if metric.is_empty() {
             return self.help();

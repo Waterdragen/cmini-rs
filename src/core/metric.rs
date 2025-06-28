@@ -1,4 +1,4 @@
-use std::ops::{Add, BitOr};
+use std::ops::{Add, BitOr, Index, IndexMut};
 use fxhash::FxHashMap;
 use strum::{EnumCount, IntoEnumIterator};
 use strum_macros::{EnumCount, EnumIter};
@@ -125,15 +125,6 @@ impl<T: Copy + Default> FromIterator<(Metric, T)> for MetricMap<T> {
 }
 
 impl<T> MetricMap<T> {
-    pub fn get(&self, metric: Metric) -> &T {
-        &self.0[metric.as_usize()]
-    }
-    pub fn get_mut(&mut self, metric: Metric) -> &mut T {
-        &mut self.0[metric.as_usize()]
-    }
-    pub fn set(&mut self, metric: Metric, value: T) {
-        self.0[metric.as_usize()] = value;
-    }
     pub fn sum(&self, metric_union: MetricUnion) -> T where T: for<'a> Add<&'a T, Output = T> + Default {
         Metric::iter().enumerate()
             .filter_map(|(idx, metric)| metric_union.contains(metric).then_some(&self.0[idx]))
@@ -149,7 +140,18 @@ impl<T> MetricMap<T> {
     pub fn values_mut(&mut self) -> impl Iterator<Item = &mut T> {
         self.0.iter_mut()
     }
-    pub const fn len(&self) -> usize {
-        Metric::COUNT
+}
+
+impl<T> Index<Metric> for MetricMap<T> {
+    type Output = T;
+
+    fn index(&self, metric: Metric) -> &Self::Output {
+        &self.0[metric.as_usize()]
+    }
+}
+
+impl<T> IndexMut<Metric> for MetricMap<T> {
+    fn index_mut(&mut self, metric: Metric) -> &mut Self::Output {
+        &mut self.0[metric.as_usize()]
     }
 }

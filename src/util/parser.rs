@@ -4,15 +4,21 @@ use std::ops::{Deref, DerefMut};
 
 pub fn split_word<'a>(s: &mut &'a str) -> &'a str {
     match s.split_once(char::is_whitespace) {
-        None => {
-            std::mem::take(s)
-        },
+        None => std::mem::take(s),
         Some((first, rest)) => {
-            let rest = rest.trim_start();
-            *s = rest;
+            *s = rest.trim_start();
             first
         }
     }
+}
+
+pub fn split_words<const N: usize>(mut s: &str) -> [&str; N] {
+    let mut words = [""; N];
+    for word in words.iter_mut().take(N - 1) {
+        *word = split_word(&mut s);
+    }
+    words[N - 1] = s;
+    words
 }
 
 #[derive(Debug, Error)]

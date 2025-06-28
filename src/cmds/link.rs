@@ -1,16 +1,13 @@
-use crate::{Commandable, Message};
 use crate::util::links::LINKS;
 use crate::util::memory::LAYOUTS;
-use crate::util::parser::split_word;
+use crate::util::parser::split_words;
+use crate::{Commandable, Message};
 
 pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
-        let mut arg = msg.arg;
-        let name = split_word(&mut arg);
-        let new_link = arg;
-
+        let [name, new_link] = split_words(msg.arg);
         if name.is_empty() {
             return self.help();
         }

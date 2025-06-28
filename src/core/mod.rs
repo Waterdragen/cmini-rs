@@ -22,7 +22,7 @@ pub use corpus::{RawServerCorpora, ServerCorpora, ServerWordCorpora};
 pub use finger::{Finger, FingerCombo, FingerMap, FingerUnion, FingerUsage};
 pub use layout::{Layout, LayoutConfig, ServerLayouts};
 pub use metric::{ContainsMetric, Metric, MetricMap, MetricUnion};
-pub use position::{Key, Position};
+pub use position::{Key, Position, Row, Col};
 pub use stat::{CachedStat, CachedStatConfig, ServerCachedStats, Stat};
 pub use table::Table;
 

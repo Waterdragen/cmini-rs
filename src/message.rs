@@ -3,7 +3,7 @@ use std::ops::Deref;
 use serenity::model::channel::Message as DiscordMessage;
 use serenity::prelude::Context;
 use crate::consts::CMINI_CHANNEL;
-use crate::util::parser::split_word;
+use crate::util::parser::{split_word, split_words};
 
 pub struct Message<'a> {
     pub msg: &'a DiscordMessage,
@@ -30,8 +30,7 @@ impl<'a> Message<'a> {
         if !is_dm {
             trigger = split_word(&mut rest);
         }
-        let action = split_word(&mut rest);
-        let arg = rest;
+        let [action, arg] = split_words(rest);
 
         Self {
             msg,
@@ -118,18 +117,18 @@ impl BoundedResponse {
         Ok(())
     }
 
-    pub fn try_remove_line(&mut self) -> usize {
-        if let Some(suffix) = self.inner.rsplit('\n').next() {
-            let freed = suffix.chars().count() + 1;
-            for _ in 0..freed {
-                self.inner.pop();  // Pop suffix + newline character
-            }
-            self.len -= freed;
-            freed
-        } else {
-            0
-        }
-    }
+    // pub fn try_remove_line(&mut self) -> usize {
+    //     if let Some(suffix) = self.inner.rsplit('\n').next() {
+    //         let freed = suffix.chars().count() + 1;
+    //         for _ in 0..freed {
+    //             self.inner.pop();  // Pop suffix + newline character
+    //         }
+    //         self.len -= freed;
+    //         freed
+    //     } else {
+    //         0
+    //     }
+    // }
 
     pub fn finish(self) -> String {
         self.inner

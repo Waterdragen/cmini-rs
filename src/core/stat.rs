@@ -44,7 +44,7 @@ impl<'de> Deserialize<'de> for CachedStat {
         Metric::iter().zip(chars.windows(3).step_by(3))
             .for_each(|(metric, packed)| {
                 let freq = conv::freq::unpack(packed);
-                stats.set(metric, freq);
+                stats[metric] = freq;
             });
         Ok(CachedStat(stats))
     }
@@ -59,7 +59,7 @@ pub struct CachedStatConfig {
 }
 
 impl CachedStatConfig {
-    pub fn iter_packed_key<'a>(&'a self) -> impl Iterator<Item = [char; 4]> + 'a {
+    pub fn iter_packed_key(&self) -> impl Iterator<Item = [char; 4]> + '_ {
         self.keys.chars()
             .batching(|it|
                 Some([it.next()?, it.next()?, it.next()?, it.next()?])
@@ -71,7 +71,7 @@ impl CachedStatConfig {
 
         for packed_key in self.iter_packed_key() {
             let [key, row, _col, finger] = packed_key;
-            if matches!(key, 'a'..='z') {
+            if key.is_ascii_lowercase() {
                 a_to_z_map[key as usize - 'a' as usize] = true;
             }
             if let Some(row) = row.to_digit(3) {

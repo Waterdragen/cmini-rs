@@ -1,6 +1,6 @@
 use crate::core::{LayoutConfig, Position};
 use crate::util::memory::LAYOUTS;
-use crate::util::parser::split_word;
+use crate::util::parser::split_words;
 use crate::{Commandable, Message};
 use fxhash::FxHashSet;
 use thiserror::Error;
@@ -9,9 +9,8 @@ pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
-        let mut arg = msg.arg;
-        let name = split_word(&mut arg);
-        let cycles = arg.split_whitespace().collect::<Vec<_>>();
+        let [name, cycles] = split_words(msg.arg);
+        let cycles = cycles.split_whitespace().collect::<Vec<_>>();
 
         if name.is_empty() {
             return self.help();

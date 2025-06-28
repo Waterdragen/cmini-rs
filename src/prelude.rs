@@ -1,9 +1,10 @@
-pub use std::sync::{Arc, RwLockReadGuard, RwLockWriteGuard};
-use std::sync::RwLock as StdRwLock;
+pub use std::sync::{Arc, RwLock as StdRwLock, Mutex as StdMutex};
 use serde::{Deserialize, Serialize};
+use std::sync::{RwLockReadGuard, RwLockWriteGuard, MutexGuard};
 
 #[derive(Serialize, Deserialize)]
 #[serde(transparent)]
+/// Wrapper around [`RwLock`](StdRwLock) that doesn't require `.unwrap()`
 pub struct RwLock<T>(StdRwLock<T>);
 
 impl<T> RwLock<T> {
@@ -15,6 +16,19 @@ impl<T> RwLock<T> {
     }
     pub fn write(&self) -> RwLockWriteGuard<T> {
         self.0.write().unwrap()
+    }
+}
+
+#[repr(transparent)]
+/// Wrapper around [`Mutex`](StdMutex) that doesn't require `.unwrap()`
+pub struct Mutex<T>(StdMutex<T>);
+
+impl<T> Mutex<T> {
+    pub fn new(t: T) -> Self {
+        Self(StdMutex::new(t))
+    }
+    pub fn lock(&self) -> MutexGuard<T> {
+        self.0.lock().unwrap()
     }
 }
 

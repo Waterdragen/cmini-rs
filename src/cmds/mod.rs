@@ -51,6 +51,12 @@ mod filter;
 mod search;
 mod compare;
 mod akl;
+mod alt;
+mod fingermap;
+mod list;
+mod gen;
+mod xkb;
+mod pairings;
 
 use crate::core::{Commandable, ContainsMetric};
 use crate::util::memory::LAYOUTS;
@@ -65,6 +71,7 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("add", add::Command.init()),
         ("admin", admin::Command.init()),
         ("akl", akl::Command.init()),
+        ("alt", alt::Command.init()),
         ("alternates", alternates::Command.init()),
         ("angle", angle::Command.init()),
         ("angle!", angle_mut::Command.init()),
@@ -78,9 +85,11 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("dofball", dofball::Command.init()),
         ("examples", examples::Command.init()),
         ("filter", filter::Command.init()),
+        ("fingermap", fingermap::Command.init()),
         ("fingers", fingers::Command.init()),
         ("flip", flip::Command.init()),
         ("freq", freq::Command.init()),
+        ("gen", gen::Command.init()),
         ("gh", github::Command.init()),
         ("github", github::Command.init()),
         ("help", help::Command.init()),
@@ -90,11 +99,13 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("like", like::Command.init()),
         ("likes", likes::Command.init()),
         ("link", link::Command.init()),
+        ("list", list::Command.init()),
         ("mirror", mirror::Command.init()),
         ("mirror!", mirror_mut::Command.init()),
         ("mod", modify::Command.init()),
         ("onehands", onehands::Command.init()),
         ("outrolltals", outrolltals::Command.init()),
+        ("pairings", pairings::Command.init()),
         ("random", random::Command.init()),
         ("rank", rank::Command.init()),
         ("redirects", redirects::Command.init()),
@@ -115,6 +126,7 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("wooperball", wooperball::Command.init()),
         ("woopercat", woopercat::Command.init()),
         ("view", view::Command.init()),
+        ("xkb", xkb::Command.init()),
     ].into_iter().map(|(name, obj)| (name.to_string(), obj)))
 });
 

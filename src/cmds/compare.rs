@@ -1,18 +1,15 @@
 use crate::core::Commandable;
 use crate::message::Message;
-use crate::util::{corpora, layout};
 use crate::util::corpora::get_user_corpus;
 use crate::util::memory::LAYOUTS;
-use crate::util::parser::split_word;
+use crate::util::parser::split_words;
+use crate::util::{corpora, layout};
 
 pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
-        let mut arg = msg.arg;
-        let new_ll = split_word(&mut arg);
-        let old_ll = arg;
-
+        let [new_ll, old_ll] = split_words(msg.arg);
         if new_ll.is_empty() {
             return self.help();
         }

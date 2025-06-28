@@ -1,21 +1,20 @@
-use crate::core::{FingerUsage, LayoutConfig, Metric};
-use crate::util::memory::AUTHORS;
-use crate::util::corpora::{self, get_user_corpus};
-use crate::util::memory::{LAYOUTS, LIKES};
 use crate::core::metric_alias::{list_metric_union_names, METRIC_NAMES};
-use crate::util::parser::split_word;
+use crate::core::Finger;
+use crate::core::{FingerUsage, LayoutConfig, Metric};
+use crate::util::corpora::{self, get_user_corpus};
+use crate::util::memory::AUTHORS;
+use crate::util::memory::{LAYOUTS, LIKES};
+use crate::util::parser::split_words;
 use crate::{Commandable, Message};
 use itertools::Itertools;
-use crate::core::Finger;
 
 pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
         let id = msg.id;
-        let mut arg = msg.arg;
-        let layout_name = split_word(&mut arg);
-        let mut metric_name = arg.to_lowercase();
+        let [layout_name, metric_name] = split_words(msg.arg);
+        let mut metric_name = metric_name.to_lowercase();
         if layout_name.is_empty() {
             return self.help();
         }
@@ -95,16 +94,16 @@ where F: FnMut(f64) -> f64 {
     const RH: [Finger; 4] = [Finger::RI, Finger::RM, Finger::RR, Finger::RP];
     for (&lfinger, &rfinger) in LH.iter().zip(RH.iter()) {
         let lfinger_name: &str = lfinger.into();
-        let lfreq = stats.get(lfinger) * 100.0;
+        let lfreq = stats[lfinger] * 100.0;
         let rfinger_name: &str = rfinger.into();
-        let rfreq = stats.get(rfinger) * 100.0;
+        let rfreq = stats[rfinger] * 100.0;
         output.push_str(&format!("  {lfinger_name}: {lfreq:>5.2}%    {rfinger_name}: {rfreq:>5.2}%\n"));
     }
     output.push('\n');
 
     let mut uses_thumb = false;
     for thumb in [Finger::LT, Finger::RT] {
-        let freq = stats.get(thumb) * 100.0;
+        let freq = stats[thumb] * 100.0;
         if freq == 0.0 {
             continue;
         }

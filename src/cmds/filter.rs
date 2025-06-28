@@ -48,9 +48,9 @@ pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
-        let kwargs = match get_kwargs(&msg.arg, &KWARGS) {
+        let kwargs = match get_kwargs(msg.arg, &KWARGS) {
             Ok(kwargs) => kwargs,
-            Err(err) => return format!("{}\n{}", err.to_string(), self.help()),
+            Err(err) => return format!("{}\n{}", err, self.help()),
         };
 
         let column = kwargs["column"].unwrap_vec().or_else(|| kwargs["col"].unwrap_vec());

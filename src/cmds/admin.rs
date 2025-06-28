@@ -1,6 +1,5 @@
-use crate::util::memory::ADMINS;
-use crate::util::memory::AUTHORS;
-use crate::util::parser::split_word;
+use crate::util::memory::{ADMINS, AUTHORS};
+use crate::util::parser::split_words;
 use crate::{Commandable, Message};
 
 pub struct Command;
@@ -8,9 +7,7 @@ pub struct Command;
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
         let id = msg.id;
-        let mut arg = msg.arg;
-        let action = split_word(&mut arg);
-        let target = arg;
+        let [action, target] = split_words(msg.arg);
 
         if target.is_empty() {
             return match ADMINS.list(id) {

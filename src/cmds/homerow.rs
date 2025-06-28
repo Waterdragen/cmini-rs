@@ -28,10 +28,7 @@ impl Commandable for Command {
                     }
                     let col = usize::from(*col);
                     while keys.len() <= col {
-                        keys.reserve_exact(5);
-                        for _ in 0..5 {
-                            keys.push(' ');
-                        }
+                        keys.resize(keys.len() + 5, ' ');
                     }
                     keys[col] = *key;
                 });

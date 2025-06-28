@@ -99,7 +99,7 @@ mod pos {
         let mut s = String::with_capacity(3);
         s.push(char::from_digit(u32::from(row), 4).unwrap());
         s.push(char::from_digit(u32::from(col), COL_RADIX).unwrap());
-        s.push(char::from_digit(finger.as_u8().into(), 10).unwrap());
+        s.push(finger.as_digit_char());
         s
     }
 

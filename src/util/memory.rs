@@ -4,7 +4,7 @@ use crate::prelude::*;
 use crate::util::corpora::CORPORA_PREFS;
 use crate::util::jsons::{read_json, write_json};
 use crate::util::links::LINKS;
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use once_cell::sync::Lazy;
 use std::fmt::Debug;
 use thiserror::Error;
@@ -17,6 +17,16 @@ pub static ADMINS: Lazy<Admins> = Lazy::new(|| Admins::open("admins.json"));
 
 pub static LAYOUTS: Lazy<ServerLayouts> = Lazy::new(|| read_json("./layouts.json"));
 pub static LIKES: Lazy<Arc<RwLock<FxHashMap<String, Vec<u64>>>>> = Lazy::new(|| read_json("./likes.json"));
+pub static PLACES: Lazy<Vec<String>> = Lazy::new(|| read_json("./places.json"));
+pub static PAIRS: Lazy<FxHashSet<[char; 2]>> = Lazy::new(||
+    read_json::<Vec<String>>("./pairs.json")
+        .into_iter()
+        .map(|s| {
+            let mut chars = s.chars();
+            [chars.next().unwrap(), chars.next().unwrap()]
+        }).collect()
+);
+pub static DIRECT_WRITE_LOCK: Lazy<Arc<Mutex<()>>> = Lazy::new(|| Arc::new(Mutex::new(())));
 
 #[derive(Debug, Error)]
 pub enum RemoveError<'a> {
@@ -27,8 +37,6 @@ pub enum RemoveError<'a> {
     #[error("Use commands with `--sudo` in a public channel")]
     SudoInPrivateChannel,
 }
-
-type IsInPublicChannel = bool;
 
 pub fn get_like_count(name: &str) -> usize {
     let likes = LIKES.read();

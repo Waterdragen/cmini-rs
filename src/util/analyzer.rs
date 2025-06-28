@@ -12,7 +12,7 @@ impl LayoutConfig {
                 continue;
             }
             let finger = self.keys.get(&gram).unwrap().finger;
-            *usage.get_mut(finger) += count;
+            usage[finger] += count;
         }
         let total = usage.values().sum::<u64>() as f64;  // this total is zeroable
         // Try normalize counter or 0
@@ -55,7 +55,7 @@ impl LayoutConfig {
                     Some([false, false]) => &[0, 2],
                 };
                 for &finger in involved_fingers {
-                    *usage.get_mut(finger_combo.inner[finger]) += freq as f64 / involved_fingers.len() as f64;
+                    usage[finger_combo.inner[finger]] += freq as f64 / involved_fingers.len() as f64;
                 }
             });
         let total = trigrams.sum as f64;

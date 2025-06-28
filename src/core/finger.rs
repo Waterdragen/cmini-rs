@@ -1,4 +1,4 @@
-use std::ops::{Add, BitOr, Shl};
+use std::ops::{Add, BitOr, Index, IndexMut, Shl};
 use strum_macros::IntoStaticStr;
 use crate::core::finger_alias::{LH, RH};
 use crate::core::{Key, Layout};
@@ -51,6 +51,9 @@ impl Finger {
     #[inline]
     pub const fn as_u8(self) -> u8 {
         self as u8
+    }
+    pub fn as_digit_char(self) -> char {
+        char::from_digit(self as u32, 10).unwrap()  // memory layout is < 10
     }
     pub fn mirror(self) -> Self {
         // Always succeeds: 9 - [0..=9] is always within range of 0..=9
@@ -143,20 +146,11 @@ impl<T: Copy + Default> FromIterator<(Finger, T)> for FingerMap<T> {
 }
 
 impl<T> FingerMap<T> {
-    pub fn get(&self, finger: Finger) -> &T {
-        &self.0[usize::from(finger.as_u8())]
-    }
-    pub fn set(&mut self, finger: Finger, value: T) {
-        self.0[usize::from(finger.as_u8())] = value;
-    }
-    pub fn get_mut(&mut self, finger: Finger) -> &mut T {
-        &mut self.0[usize::from(finger.as_u8())]
-    }
     pub fn sum(&self, finger_union: FingerUnion) -> T where T: for<'a> Add<&'a T, Output = T> + Default {
         finger_union.iter()
             .fold(T::default(),
                   |acc, finger| {
-                      acc + self.get(finger)
+                      acc + &self[finger]
                   })
     }
     pub fn iter(&self) -> impl Iterator<Item = (Finger, &T)> {
@@ -167,6 +161,20 @@ impl<T> FingerMap<T> {
     }
     pub fn values_mut(&mut self) -> impl Iterator<Item = &mut T> {
         self.0.iter_mut()
+    }
+}
+
+impl<T> Index<Finger> for FingerMap<T> {
+    type Output = T;
+
+    fn index(&self, finger: Finger) -> &Self::Output {
+        &self.0[usize::from(finger.as_u8())]
+    }
+}
+
+impl<T> IndexMut<Finger> for FingerMap<T> {
+    fn index_mut(&mut self, finger: Finger) -> &mut Self::Output {
+        &mut self.0[usize::from(finger.as_u8())]
     }
 }
 

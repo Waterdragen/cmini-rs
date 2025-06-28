@@ -149,6 +149,15 @@ impl LayoutConfig {
             sum,
         }
     }
+    // FIXME: this method should be impl for Layout, but for now Layout is a type alias for FxHashMap
+    // FIXME: it might change to FxIndexMap in the future
+    pub fn sorted_layout(&self) -> Vec<(Key, Position)> {
+        let mut sorted = self.keys.iter()
+            .map(|(key, pos)| (*key, *pos))
+            .collect::<Vec<_>>();
+        sorted.sort_unstable_by_key(|(_, pos)| (pos.row, pos.col));
+        sorted
+    }
 }
 
 impl Serialize for LayoutConfig {

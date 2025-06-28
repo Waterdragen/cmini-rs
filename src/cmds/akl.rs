@@ -1,5 +1,4 @@
 use std::cmp::Reverse;
-use std::hash::{Hash, Hasher};
 use fxhash::FxHashMap;
 use crate::message::{BoundedResponse, Message};
 use crate::prelude::Commandable;
@@ -13,14 +12,14 @@ pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
-        dbg!(msg.guild_id);
         let guild = match msg.guild(msg.context) {
             None => return "Cannot find akl server".to_owned(),
             Some(guild) => guild,
         };
         let mut layout_roles = guild.roles.iter()
             .filter_map(|(id, role)| {
-                (role.colour == LAYOUT_ROLE_COLOR).then_some((*id, RoleWrapper::new(&role.name)))
+                (role.colour == LAYOUT_ROLE_COLOR || role.name == QWERTY)
+                    .then_some((*id, RoleWrapper::new(&role.name)))
             })
             .collect::<FxHashMap<_, _>>();
         guild.members.values()
@@ -30,9 +29,7 @@ impl Commandable for Command {
                     role.counter += 1;
                 }
             });
-        let mut layout_roles = layout_roles.into_iter()
-            .map(|(_, role)| role)
-            .collect::<Vec<_>>();
+        let mut layout_roles = layout_roles.into_values().collect::<Vec<_>>();
         layout_roles.sort_unstable_by_key(|role| Reverse(role.counter));
 
         let mut output = BoundedResponse::from("```\n\
@@ -53,32 +50,6 @@ impl Commandable for Command {
 
     fn desc<'a>(&self) -> &'a str {
         "view the akl layout role stats"
-    }
-}
-
-struct CaseInsensitiveString {
-    raw: String,
-    lower: String,
-}
-
-impl CaseInsensitiveString {
-    fn new(raw: String) -> Self {
-        let lower = raw.to_lowercase();
-        Self { raw, lower }
-    }
-}
-
-impl PartialEq for CaseInsensitiveString {
-    fn eq(&self, other: &Self) -> bool {
-        self.lower.eq(&other.lower)
-    }
-}
-
-impl Eq for CaseInsensitiveString {}
-
-impl Hash for CaseInsensitiveString {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.lower.hash(state);
     }
 }
 
