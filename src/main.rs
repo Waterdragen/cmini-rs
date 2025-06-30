@@ -3,16 +3,9 @@
 #![warn(unused_mut)]
 #![warn(unused_imports)]
 #![warn(unused_must_use)]
+#![allow(clippy::result_unit_err)]
+#![allow(clippy::type_complexity)]
 
-mod cmds;
-pub mod consts;
-mod core;
-mod message;
-mod prelude;
-mod test;
-mod util;
-
-use once_cell::sync::Lazy;
 use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};
 use serenity::model::channel::Message as DiscordMessage;
@@ -22,10 +15,11 @@ use std::io::Write;
 use tokio::signal;
 use tokio::time::{self, Duration};
 
-use crate::consts::TRIGGERS;
-use crate::prelude::*;
-use util::memory::ADMINS;
-use crate::util::validate_json;
+use cmini_rs::consts::TRIGGERS;
+use cmini_rs::prelude::*;
+use cmini_rs::cmds;
+use cmini_rs::util::memory::ADMINS;
+use cmini_rs::util::{self, validate_json};
 
 static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock::new(false)));
 

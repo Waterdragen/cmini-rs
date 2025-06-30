@@ -60,7 +60,7 @@ pub fn get_table(path: &str) -> Table {
         let finger1 = Finger::from_u8(fingers[&finger_combo[2..4]]);
         let finger2 = Finger::from_u8(fingers[&finger_combo[4..6]]);
         let finger_combo = FingerCombo::from([finger0, finger1, finger2]);
-        let gram_type = Metric::from_str(gram_type);
+        let gram_type = Metric::try_from(gram_type.as_str()).unwrap();
         table[finger_combo.index()] = gram_type;
     }
     Table::from_inner(table)

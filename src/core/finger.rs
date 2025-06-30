@@ -23,9 +23,8 @@ impl Finger {
     pub const MAX: u8 = Finger::RP.as_u8();
     const MID: u8 = Finger::RT.as_u8();
 
-    #[track_caller]
-    pub fn from_str(s: &str) -> Self {
-        match s {
+    pub fn try_from_str(s: &str) -> Result<Self, ()> {
+        Ok(match s {
             "LP" => Self::LP,
             "LR" => Self::LR,
             "LM" => Self::LM,
@@ -36,8 +35,8 @@ impl Finger {
             "RM" => Self::RM,
             "RR" => Self::RR,
             "RP" => Self::RP,
-            _ => panic!("Error in `Finger::from_str`: invalid finger {s}"),
-        }
+            _ => return Err(()),
+        })
     }
     #[track_caller]
     pub fn from_u8(n: u8) -> Self {
@@ -131,7 +130,7 @@ impl FingerUnion {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct FingerMap<T>([T; 10]);
 
 impl<T: Copy + Default> FromIterator<(Finger, T)> for FingerMap<T> {
@@ -146,6 +145,9 @@ impl<T: Copy + Default> FromIterator<(Finger, T)> for FingerMap<T> {
 }
 
 impl<T> FingerMap<T> {
+    pub const fn new(map: [T; 10]) -> Self {
+        Self(map)
+    }
     pub fn sum(&self, finger_union: FingerUnion) -> T where T: for<'a> Add<&'a T, Output = T> + Default {
         finger_union.iter()
             .fold(T::default(),
@@ -155,6 +157,9 @@ impl<T> FingerMap<T> {
     }
     pub fn iter(&self) -> impl Iterator<Item = (Finger, &T)> {
         Finger::iter().zip(self.0.iter())
+    }
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (Finger, &mut T)> {
+        Finger::iter().zip(self.0.iter_mut())
     }
     pub fn values(&self) -> impl Iterator<Item = &T> {
         self.0.iter()

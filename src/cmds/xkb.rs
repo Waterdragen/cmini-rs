@@ -1,11 +1,10 @@
-use std::borrow::Cow;
-use std::iter::{IntoIterator, Iterator};
+use crate::core::Position;
+use crate::util::memory::LAYOUTS;
+use crate::{Message, Lazy, Commandable};
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use once_cell::sync::Lazy;
-use crate::core::{Commandable, Position};
-use crate::message::Message;
-use crate::util::memory::LAYOUTS;
+use std::borrow::Cow;
+use std::iter::{IntoIterator, Iterator};
 
 static NAME_MAP: Lazy<FxHashMap<char, (&str, &str)>> = Lazy::new(|| [
     ('`', ("grave", "asciitilde")),

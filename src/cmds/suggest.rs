@@ -26,7 +26,6 @@ impl Commandable for Command {
 
 fn append_suggestion(suggestion: &str) -> Result<(), Box<dyn Error>> {
     let mut file = OpenOptions::new()
-        .write(true)
         .append(true)
         .open("./suggestions.txt")?;
     writeln!(file, "{}", suggestion.trim_end())?;

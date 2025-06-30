@@ -1,14 +1,20 @@
 use crate::consts;
 
-pub mod analyzer;
+mod commandable;
+
 pub mod cache;
 pub mod corpora;
+pub mod cmp;
 pub mod jsons;
 pub mod layout;
 pub mod links;
 pub mod memory;
+pub mod minigames;
 pub mod parser;
-pub mod cmp;
+mod admins;
+mod analyzer;
+
+pub use commandable::Commandable;
 
 pub fn validate_json() {
     let count = memory::ADMINS.count();

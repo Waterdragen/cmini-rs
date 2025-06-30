@@ -1,7 +1,7 @@
+use crate::Lazy;
 use crate::core::Finger::*;
 use crate::core::{Finger, Key, Table};
 use crate::util::jsons::get_table;
-use once_cell::sync::Lazy;
 use serenity::model::prelude::ChannelId;
 pub const CMINI_CHANNEL: ChannelId = ChannelId(1063291226243207268);
 

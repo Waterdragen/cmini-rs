@@ -1,12 +1,11 @@
-use crate::core::{Commandable, FingerUnion};
-use crate::message::Message;
+use crate::core::finger_alias::FINGER_NAMES;
+use crate::core::FingerUnion;
 use crate::prelude::BoundedResponse;
 use crate::util::cache::CACHED_STATS;
-use crate::core::finger_alias::FINGER_NAMES;
 use crate::util::parser::{get_kwargs, KwargType as KT};
+use crate::{Commandable, Lazy, Message};
 use fxhash::FxHashMap;
-use once_cell::sync::Lazy;
-use rand::prelude::{StdRng, SeedableRng, SliceRandom};
+use rand::prelude::{SeedableRng, SliceRandom, StdRng};
 use std::iter::IntoIterator;
 use strsim::jaro_winkler;
 

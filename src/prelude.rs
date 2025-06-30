@@ -33,4 +33,5 @@ impl<T> Mutex<T> {
 }
 
 pub use crate::message::{Message, BoundedResponse, BoundedResponseVec};
-pub use crate::core::Commandable;
+pub use crate::util::Commandable;
+pub use once_cell::sync::Lazy;

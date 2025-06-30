@@ -1,7 +1,10 @@
-use crate::util::corpora::{self, get_user_corpus};
-use crate::{Commandable, Message};
 use crate::core::KeyPat;
+use crate::message::Message;
+use crate::util::corpora;
+use crate::util::corpora::get_user_corpus;
 use crate::util::parser::get_args;
+use crate::Commandable;
+use itertools::Itertools;
 
 pub struct Command;
 
@@ -10,8 +13,8 @@ impl Commandable for Command {
         let id = msg.id;
         let ngrams = get_args(msg.arg)
             .iter().map(|ngrams| {
-                ngrams.chars().map(KeyPat).collect::<Vec<_>>()
-            })
+            ngrams.chars().map(KeyPat).collect::<Vec<_>>()
+        })
             .collect::<Vec<_>>();
         let Some(ngram_len) = ngrams.first().map(|first| first.len()) else {
             return self.help();
@@ -36,16 +39,31 @@ impl Commandable for Command {
         let mut subtotal = 0.0;
 
         for ngram in ngrams.iter() {
-            let freq = dyn_corpus.clone_iter()
-                .filter_map(|(keys, freq)| (ngram == keys).then_some(freq))
-                .sum::<u64>();
-            let freq_percent = freq as f64 / total * 100.0;
-            let mut ngram_str = "".to_owned();
+            let mut forward_freq = 0;
+            let mut backward_freq = 0;
+            dyn_corpus.clone_iter()
+                .for_each(|(keys, freq)| {
+                    if ngram == keys {
+                        forward_freq += freq;
+                    }
+                    if ngram.iter().zip(keys.iter().rev())
+                        .all(|(&pat, &key)| pat == key) {
+                        backward_freq += freq;
+                    }
+                });
+            let mut s = "".to_owned();
             for key in ngram {
-                ngram_str.push(key.0);
+                s.push(key.0);
             }
-            output.push_str(&format!("{ngram_str}: {freq_percent:.2}%\n"));
-            subtotal += freq_percent;
+            let s_rev = s.chars().rev().join("");
+            let forward_percent = forward_freq as f64 / total * 100.0;
+            let backward_percent = backward_freq as f64 / total * 100.0;
+            let sum_percent = forward_percent + backward_percent;
+
+            output.push_str(&format!("{s} + {s_rev}: {sum_percent:.2}%\n  \
+                                              {s}: {forward_percent:.2}%\n  \
+                                              {s_rev}: {backward_percent:.2}%\n"));
+            subtotal += sum_percent;
         }
         if subtotal == 0.0 {
             return format!("`{}` not found in corpus `{corpus_name}`", msg.arg);
@@ -55,10 +73,10 @@ impl Commandable for Command {
     }
 
     fn usage<'a>(&self) -> &'a str {
-        "freq [ngrams ...]"
+        "freqs <ngrams ...>"
     }
 
     fn desc<'a>(&self) -> &'a str {
-        "see the frequency of ngrams"
+        "see the frequencies of ngrams, including backwards"
     }
 }

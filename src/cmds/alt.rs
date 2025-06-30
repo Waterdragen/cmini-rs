@@ -1,9 +1,10 @@
 use itertools::Itertools;
-use crate::core::{Commandable, Finger, Position, Col, Key};
+use crate::core::{Finger, Position, Col, Key};
 use crate::message::Message;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::split_words;
 use crate::core::Finger::*;
+use crate::Commandable;
 
 const FINGER_MAP: [&[&[Finger]]; 4] = [
     //  q      w          e          r          t          y          u          i          o          p          [      ]      \

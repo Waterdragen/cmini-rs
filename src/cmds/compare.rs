@@ -1,4 +1,4 @@
-use crate::core::Commandable;
+use crate::Commandable;
 use crate::message::Message;
 use crate::util::corpora::get_user_corpus;
 use crate::util::memory::LAYOUTS;

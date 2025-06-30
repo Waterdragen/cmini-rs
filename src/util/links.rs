@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::util::jsons::read_json;
 use fxhash::FxHashMap;
-use once_cell::sync::Lazy;
 
 pub static LINKS: Lazy<Arc<RwLock<FxHashMap<String, String>>>> = Lazy::new(||
     Arc::new(RwLock::new(read_json("./links.json")))

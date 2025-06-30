@@ -57,13 +57,23 @@ mod list;
 mod gen;
 mod xkb;
 mod pairings;
+mod outrolls;
+mod setfingermap;
+mod names;
+mod pattern;
+mod stats;
+mod freqs;
+mod fspeed;
+mod freqd;
+mod guess;
+mod count;
 
-use crate::core::{Commandable, ContainsMetric};
+use crate::Commandable;
+use crate::core::{ContainsMetric};
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::{get_kwargs, KwargType, ParseKwargError};
-use crate::Message;
+use crate::{Message, Lazy};
 use fxhash::FxHashMap;
-use once_cell::sync::Lazy;
 
 static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
     FxHashMap::from_iter([
@@ -80,6 +90,7 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("catball", catball::Command.init()),
         ("compare", compare::Command.init()),
         ("corpus", corpus::Command.init()),
+        ("count", count::Command.init()),
         ("cycle", cycle::Command.init()),
         ("cycle!", cycle_mut::Command.init()),
         ("dofball", dofball::Command.init()),
@@ -89,9 +100,13 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("fingers", fingers::Command.init()),
         ("flip", flip::Command.init()),
         ("freq", freq::Command.init()),
+        ("freqd", freqd::Command.init()),
+        ("freqs", freqs::Command.init()),
+        ("fspeed", fspeed::Command.init()),
         ("gen", gen::Command.init()),
         ("gh", github::Command.init()),
         ("github", github::Command.init()),
+        ("guess", guess::Command.init()),
         ("help", help::Command.init()),
         ("homerow", homerow::Command.init()),
         ("inrolls", inrolls::Command.init()),
@@ -103,9 +118,12 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("mirror", mirror::Command.init()),
         ("mirror!", mirror_mut::Command.init()),
         ("mod", modify::Command.init()),
+        ("names", names::Command.init()),
         ("onehands", onehands::Command.init()),
+        ("outrolls", outrolls::Command.init()),
         ("outrolltals", outrolltals::Command.init()),
         ("pairings", pairings::Command.init()),
+        ("pattern", pattern::Command.init()),
         ("random", random::Command.init()),
         ("rank", rank::Command.init()),
         ("redirects", redirects::Command.init()),
@@ -114,8 +132,10 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("rolls", rolls::Command.init()),
         ("rolltals", rolltals::Command.init()),
         ("search", search::Command.init()),
+        ("setfingermap", setfingermap::Command.init()),
         ("sfbs", sfbs::Command.init()),
         ("sfs", sfs::Command.init()),
+        ("stats", stats::Command.init()),
         ("suggest", suggest::Command.init()),
         ("swap", cycle::Command.init()),
         ("swap!", cycle_mut::Command.init()),

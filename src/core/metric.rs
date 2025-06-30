@@ -1,47 +1,42 @@
 use std::ops::{Add, BitOr, Index, IndexMut};
 use fxhash::FxHashMap;
 use strum::{EnumCount, IntoEnumIterator};
-use strum_macros::{EnumCount, EnumIter};
+use strum_macros::{EnumCount, EnumIter, EnumString, IntoStaticStr};
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter, EnumCount)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter, EnumCount, EnumString, IntoStaticStr)]
 #[repr(u8)]
 pub enum Metric {
+    #[strum(serialize = "sfb")]
     Sfb = 0,
+    #[strum(serialize = "sft")]
     Sft,
+    #[strum(serialize = "sfr")]
     Sfr,
+    #[strum(serialize = "alt")]
     Alt,
+    #[strum(serialize = "alt-sfs")]
     AltSfs,
+    #[strum(serialize = "red")]
     Red,
+    #[strum(serialize = "bad-red")]
     BadRed,
+    #[strum(serialize = "red-sfs")]
     RedSfs,
+    #[strum(serialize = "bad-red-sfs")]
     BadRedSfs,
+    #[strum(serialize = "inoneh")]
     InOne,
+    #[strum(serialize = "outoneh")]
     OutOne,
+    #[strum(serialize = "inroll")]
     InRoll,
+    #[strum(serialize = "outroll")]
     OutRoll,
+    #[strum(serialize = "unknown")]
     Unknown,
 }
 
 impl Metric {
-    pub fn from_str(s: &str) -> Self {
-        match s {
-            "sfb" => Metric::Sfb,
-            "sft" => Metric::Sft,
-            "sfr" => Metric::Sfr,
-            "alt" => Metric::Alt,
-            "alt-sfs" => Metric::AltSfs,
-            "red" => Metric::Red,
-            "bad-red" => Metric::BadRed,
-            "red-sfs" => Metric::RedSfs,
-            "bad-red-sfs" => Metric::BadRedSfs,
-            "inoneh" => Metric::InOne,
-            "outoneh" => Metric::OutOne,
-            "inroll" => Metric::InRoll,
-            "outroll" => Metric::OutRoll,
-            "unknown" => Metric::Unknown,
-            _ => panic!("Invalid metric {s}")
-        }
-    }
     #[inline]
     pub fn as_u8(self) -> u8 {
         self as u8

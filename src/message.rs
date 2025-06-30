@@ -135,6 +135,7 @@ impl BoundedResponse {
     }
 }
 
+#[derive(Default)]
 pub struct BoundedResponseVec {
     inner: Vec<String>,
     len: usize,
@@ -155,15 +156,6 @@ impl From<Vec<String>> for BoundedResponseVec {
 
 impl BoundedResponseVec {
     const LIMIT: usize = 2000;
-
-    pub fn new() -> Self {
-        Self {
-            inner: Vec::new(),
-            len: 0,
-            reserved: 0,
-        }
-    }
-
     pub fn reserve(mut self, reserved: usize) -> Self {
         assert!(reserved < Self::LIMIT);
         self.reserved = reserved;

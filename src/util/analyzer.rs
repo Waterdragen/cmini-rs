@@ -87,7 +87,7 @@ impl LayoutConfig {
     }
 }
 
-fn iter_trigrams<'a>(trigrams: &'a Corpus<3>, fingers: &'a Layout) -> impl Iterator<Item = (Option<(FingerCombo<3>, Metric)>, u64)> + 'a {
+pub fn iter_trigrams<'a>(trigrams: &'a Corpus<3>, fingers: &'a Layout) -> impl Iterator<Item = (Option<(FingerCombo<3>, Metric)>, u64)> + 'a {
     const SPACE: Key = ' ';
     trigrams.iter().filter_map(|(gram, freq)| {
         let gram0 = gram[0];

@@ -128,7 +128,7 @@ pub fn get_layout(s: &str) -> (String, String) {
     let parts: Vec<&str> = s.split("```").collect();
 
     let name = parts.first().unwrap_or(&"").trim().to_lowercase();
-    let matrix = parts.get(1).unwrap_or(&"").trim().to_lowercase();
+    let matrix = parts.get(1).unwrap_or(&"").trim_start_matches(['\r', '\n']).to_lowercase();
 
     (name, matrix)
 }

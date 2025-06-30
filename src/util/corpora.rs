@@ -3,7 +3,6 @@ use crate::core::{Corpus, Key, RawCorpus, RawServerCorpora, ServerCorpora, Serve
 use crate::util::jsons::{get_corpus, read_json};
 use fxhash::FxHashMap;
 use glob::glob;
-use once_cell::sync::Lazy;
 use std::fmt::Debug;
 
 pub const CORPUS: &str = "mt-quotes";

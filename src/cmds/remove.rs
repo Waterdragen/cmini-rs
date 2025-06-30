@@ -1,13 +1,11 @@
 use crate::util::memory::ADMINS;
 use crate::util::memory::{LAYOUTS, RemoveError};
 use crate::util::parser::{get_kwargs, KwargType};
-use crate::{Commandable, Message};
+use crate::{Commandable, Message, Lazy};
 use fxhash::FxHashMap;
-use once_cell::sync::Lazy;
 use std::borrow::ToOwned;
 
-static KWARGS: Lazy<FxHashMap<String, KwargType>>
-= Lazy::new(|| FxHashMap::from_iter([
+static KWARGS: Lazy<FxHashMap<String, KwargType>> = Lazy::new(|| FxHashMap::from_iter([
     ("sudo".to_owned(), KwargType::Bool),
 ]));
 

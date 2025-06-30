@@ -3,7 +3,7 @@ use crate::core::{FxIndexMap, Key, LayoutConfig, CachedStat, CachedStatConfig, S
 use crate::util::corpora::{self, CORPORA};
 use crate::util::jsons::{read_json, write_json};
 use crate::util::memory::LAYOUTS;
-use once_cell::sync::Lazy;
+use crate::Lazy;
 use rayon::prelude::*;
 use std::io::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -37,10 +37,14 @@ fn sort() {
 
 fn cache_files() {
     let start = Instant::now();
-    let names = {
-        let layouts = LAYOUTS.read();
-        layouts.keys().cloned().collect::<Vec<_>>()
-    };
+    let layouts = LAYOUTS.read();
+
+    {
+        //  Remove cache if layout not in `LAYOUTS`
+        let mut cached_stats = CACHED_STATS.write();
+        cached_stats.retain(|name, _| layouts.contains_key(name));
+    }
+
     let corpora = CORPORA.iter()
         .map(|corpus| (corpus.to_owned(), format!("./corpora/{}/trigrams.json", corpus)))
         .collect::<Vec<_>>();
@@ -48,23 +52,19 @@ fn cache_files() {
         corpora::load_corpus::<[Key; 3]>(path);  // preload every corpus
     }
     let counter = AtomicUsize::new(0);
-    let total = names.len();
+    let total = layouts.len();
     print!("\n\n");
 
-    names.into_par_iter().for_each(|owned_name| {
-        let c = counter.load(Ordering::Relaxed) + 1;
-        counter.store(c, Ordering::Relaxed);
-        print!("\x1B[1A\x1B[2K({c}/{total}) Caching `{owned_name}`\n\r");
+    // Update cache to sync `LAYOUTS`
+    layouts.par_iter().for_each(|(name, ll)| {
+        let count = counter.load(Ordering::Relaxed) + 1;
+        counter.store(count, Ordering::Relaxed);
+        print!("\x1B[1A\x1B[2K({count}/{total}) Caching `{name}`\n\r");
         std::io::stdout().flush().unwrap();
 
-        let layouts = LAYOUTS.arc_clone();
-        let name = owned_name.as_str();
-        let get_ll = layouts.get(name);
-        let ll = &*get_ll;
         let cached = get_cache(name);
         if let Some(cached) = &cached {
             if cached.sum == ll.sum {
-                // println!("Layout: {}", &ll.name);
                 return;
             }
         }
@@ -72,7 +72,6 @@ fn cache_files() {
         let mut stats: FxIndexMap<String, CachedStat> = FxIndexMap::default();
 
         for (corpus, path) in corpora.iter() {
-            // println!("Layout: {}, Corpus: {}", &ll.name, corpus);
             cache_fill(ll, &mut stats, corpus, path);
         }
         let keys = conv::layout::pack(&ll.keys);
@@ -82,8 +81,7 @@ fn cache_files() {
             sum: ll.sum,
             stats,
         };
-        drop(get_ll);  // Unborrow `name` to use owned_name
-        update(owned_name, Arc::new(cached));
+        update(name.to_owned(), Arc::new(cached));
     });
     sort();
     println!();

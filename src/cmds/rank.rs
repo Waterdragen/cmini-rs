@@ -3,10 +3,9 @@ use crate::core::{ContainsMetric, FxIndexMap, Metric as M, Metric, MetricUnion, 
 use crate::util::cache::CACHED_STATS;
 use crate::util::corpora::get_user_corpus;
 use crate::util::parser::{get_kwargs, split_words, KwargType};
-use crate::{Commandable, Message};
+use crate::{Commandable, Message, Lazy};
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use once_cell::sync::Lazy;
 use std::borrow::ToOwned;
 
 #[derive(Copy, Clone, PartialEq)]

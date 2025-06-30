@@ -4,11 +4,13 @@ use crate::prelude::*;
 use crate::util::corpora::CORPORA_PREFS;
 use crate::util::jsons::{read_json, write_json};
 use crate::util::links::LINKS;
-use fxhash::{FxHashMap, FxHashSet};
-use once_cell::sync::Lazy;
+use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
 use std::fmt::Debug;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use thiserror::Error;
-use crate::core::admins::Admins;
+use crate::util::admins::Admins;
+use rphonetic::{Encoder, MatchRatingApproach};
 
 pub static AUTHORS: Lazy<Arc<RwLock<Authors>>> = Lazy::new(||
     Arc::new(RwLock::new(Authors::open("./authors.json").unwrap()))
@@ -16,7 +18,7 @@ pub static AUTHORS: Lazy<Arc<RwLock<Authors>>> = Lazy::new(||
 pub static ADMINS: Lazy<Admins> = Lazy::new(|| Admins::open("admins.json"));
 
 pub static LAYOUTS: Lazy<ServerLayouts> = Lazy::new(|| read_json("./layouts.json"));
-pub static LIKES: Lazy<Arc<RwLock<FxHashMap<String, Vec<u64>>>>> = Lazy::new(|| read_json("./likes.json"));
+pub static LIKES: Lazy<RwLock<FxHashMap<String, Vec<u64>>>> = Lazy::new(|| read_json("./likes.json"));
 pub static PLACES: Lazy<Vec<String>> = Lazy::new(|| read_json("./places.json"));
 pub static PAIRS: Lazy<FxHashSet<[char; 2]>> = Lazy::new(||
     read_json::<Vec<String>>("./pairs.json")
@@ -45,6 +47,25 @@ pub fn get_like_count(name: &str) -> usize {
         None => 0,
     }
 }
+
+pub static PHONETIC_CODE_FREQS: Lazy<FxHashMap<String, (u64, String)>> = Lazy::new(|| {
+    let mut freqs = FxHashMap::with_capacity_and_hasher(326609, FxBuildHasher::default());  // Please refer to the line count of freq.json
+    let file = BufReader::new(File::open("./freq.json").unwrap());
+    let match_rating = MatchRatingApproach;
+    file.lines()
+        .skip(1)
+        .filter_map(|s| {
+            let s = s.ok()?;
+            let mut split = s.split('"');
+            let words = [split.next()?, split.next()?, split.next()?, split.next()?];
+            let word = words[1].to_owned();
+            let code = match_rating.encode(&word);
+            let freq = words[3].parse::<u64>().ok()?;
+            Some((code, (freq, word)))
+        })
+        .for_each(|(code, freq)| { freqs.insert(code, freq); });
+    freqs
+});
 
 pub fn sync_data() {
     write_json("./admins.json", &*ADMINS);

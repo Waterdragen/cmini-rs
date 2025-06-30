@@ -24,7 +24,7 @@ impl Commandable for Command {
         let row_count = rows.len();
 
         if row_count < 3 {
-            return format!("Error: rxpected at least 3 lines, got {}", row_count);
+            return format!("Error: expected at least 3 lines, got {}", row_count);
         }
         if row_count > ROW_LIMIT {
             return format!("Error: expected at most {ROW_LIMIT} rows, got {row_count}");
@@ -38,9 +38,9 @@ impl Commandable for Command {
 
         let board = if spaces[0] < spaces[1] && spaces[1] < spaces[2] {
             "stagger".to_owned()
-        } else if spaces[0] == spaces[1] && spaces[2] > 1 {
+        } else if spaces[0] == spaces[1] && spaces[2].saturating_sub(spaces[1]) > 1 {
             "mini".to_owned()
-        } else if spaces[0] == spaces[1] && spaces[1] < spaces[2] {
+        } else if spaces[0] == spaces[1] && spaces[2].saturating_sub(spaces[1]) == 1 {
             "angle".to_owned()
         } else if spaces[0] == spaces[1] && spaces[1] == spaces[2] {
             "ortho".to_owned()

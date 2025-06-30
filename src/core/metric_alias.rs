@@ -1,8 +1,8 @@
 use std::borrow::ToOwned;
 use std::iter::IntoIterator;
 use itertools::Itertools;
-use once_cell::sync::Lazy;
 use crate::core::{FxIndexMap, MetricUnion, Metric as M};
+use crate::Lazy;
 
 const fn raw_bit(metric: M) -> u32 {
     1 << metric as u32

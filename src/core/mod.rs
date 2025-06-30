@@ -1,5 +1,4 @@
 mod alias;
-mod commandable;
 mod corpus;
 mod finger;
 mod layout;
@@ -14,15 +13,16 @@ pub mod conv;
 pub mod get;
 pub mod finger_alias;
 pub mod metric_alias;
+mod key;
 
 pub use alias::*;
-pub use commandable::Commandable;
 pub use corpus::{Corpus, RawCorpus, WordCorpus};
 pub use corpus::{RawServerCorpora, ServerCorpora, ServerWordCorpora};
 pub use finger::{Finger, FingerCombo, FingerMap, FingerUnion, FingerUsage};
+pub use key::{Key, KeyPat};
 pub use layout::{Layout, LayoutConfig, ServerLayouts};
 pub use metric::{ContainsMetric, Metric, MetricMap, MetricUnion};
-pub use position::{Key, Position, Row, Col};
+pub use position::{Position, Row, Col};
 pub use stat::{CachedStat, CachedStatConfig, ServerCachedStats, Stat};
 pub use table::Table;
 

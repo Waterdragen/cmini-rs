@@ -3,8 +3,6 @@ use crate::core::Finger;
 pub type Row = u8;
 pub type Col = u8;
 
-pub type Key = char;
-
 #[derive(Debug, Copy, Clone)]
 pub struct Position {
     pub row: Row,

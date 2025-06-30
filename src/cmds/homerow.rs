@@ -41,7 +41,7 @@ impl Commandable for Command {
         let found_count = res.len();
 
         let mut found_layouts = if msg.is_private() {
-            let mut found_layouts = BoundedResponseVec::new().reserve(60);
+            let mut found_layouts = BoundedResponseVec::default().reserve(60);
             let _: Result<(), ()> = res.into_iter().try_for_each(|mut s| {
                 s.push('\n');
                 found_layouts.push(s)?;
