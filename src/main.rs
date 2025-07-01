@@ -103,24 +103,24 @@ impl EventHandler for Handler {
 }
 
 fn git_push() -> std::io::Result<()> {
-    Command::new("git")
-        .arg("add")
-        .arg("-A")
-        .arg("admins.json authors.json corpora.json likes.json links.json layouts.json cached_stats.json")
-        .output()?;
-    Command::new("git")
-        .arg("commit")
-        .arg("-m")
-        .arg("Sync data")
-        .output()?;
-    Command::new("git")
-        .arg("pull")
-        .output()?;
-    Command::new("git")
-        .arg("push")
-        .arg("origin")
-        .arg("main")
-        .output()?;
+    let outputs = [
+        Command::new("git")
+            .args(["add", "-A", "admins.json", "authors.json", "corpora.json", "likes.json", "links.json", "layouts.json", "cached_stats.json"])
+            .output()?,
+        Command::new("git")
+            .args(["commit", "-m", "Sync data"])
+            .output()?,
+        Command::new("git")
+            .arg("pull")
+            .output()?,
+        Command::new("git")
+            .arg("push")
+            .output()?,
+    ];
+    for output in outputs {
+        std::io::stdout().write_all(&output.stdout)?;
+        std::io::stderr().write_all(&output.stderr)?;
+    }
     Ok(())
 }
 
@@ -136,13 +136,16 @@ async fn daily_cron_job() {
     loop {
         interval.tick().await;
         sync_data();
-        let http = &BOT_CONTEXT.get().unwrap().http;
-        let dm_channel = UserId(ADMINS.owner_id()).create_dm_channel(http).await.unwrap();
-        if let Err(err) = git_push() {
-            let _ = dm_channel.say(http, err.to_string()).await;
-        } else {
-            let _ = dm_channel.say(http, "Successfully synced data").await;
-        }
+        let _ = git_push();
+
+        // You may enable this code to get a message from the bot
+        //
+        // let http = &BOT_CONTEXT.get().unwrap().http;
+        // let dm_channel = UserId(ADMINS.owner_id()).create_dm_channel(http).await.unwrap();
+        // let _ = match git_push() {
+        //     Ok(_) => dm_channel.say(http, "Successfully synced data").await,
+        //     Err(err) => dm_channel.say(http, err.to_string()).await,
+        // };
     }
 }
 
