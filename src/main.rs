@@ -1,11 +1,3 @@
-#![allow(unused)]
-#![warn(unused_variables)]
-#![warn(unused_mut)]
-#![warn(unused_imports)]
-#![warn(unused_must_use)]
-#![allow(clippy::result_unit_err)]
-#![allow(clippy::type_complexity)]
-
 use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};
 use serenity::model::channel::Message as DiscordMessage;
@@ -14,7 +6,6 @@ use std::fs;
 use std::io::Write;
 use std::process::Command;
 use std::sync::OnceLock;
-use serenity::model::id::UserId;
 use tokio::signal;
 use tokio::time::{self, Duration};
 
@@ -130,7 +121,7 @@ fn sync_data() {
 }
 
 async fn daily_cron_job() {
-    let mut interval = time::interval(Duration::from_secs(60));
+    let mut interval = time::interval(Duration::from_secs(86400));
     interval.tick().await;  // ticks immediately
 
     loop {
@@ -140,6 +131,7 @@ async fn daily_cron_job() {
 
         // You may enable this code to get a message from the bot
         //
+        // use serenity::model::id::UserId
         // let http = &BOT_CONTEXT.get().unwrap().http;
         // let dm_channel = UserId(ADMINS.owner_id()).create_dm_channel(http).await.unwrap();
         // let _ = match git_push() {

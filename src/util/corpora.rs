@@ -1,3 +1,5 @@
+#![allow(clippy::result_unit_err)]
+
 use crate::prelude::*;
 use crate::core::{Corpus, Key, RawCorpus, RawServerCorpora, ServerCorpora, ServerWordCorpora, WordCorpus};
 use crate::util::jsons::{get_corpus, read_json};

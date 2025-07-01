@@ -23,6 +23,7 @@ impl Finger {
     pub const MAX: u8 = Finger::RP.as_u8();
     const MID: u8 = Finger::RT.as_u8();
 
+    #[allow(clippy::result_unit_err)]
     pub fn try_from_str(s: &str) -> Result<Self, ()> {
         Ok(match s {
             "LP" => Self::LP,

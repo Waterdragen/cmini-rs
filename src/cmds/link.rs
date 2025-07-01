@@ -1,5 +1,5 @@
 use crate::util::links::LINKS;
-use crate::util::memory::LAYOUTS;
+use crate::util::memory::{ADMINS, LAYOUTS};
 use crate::util::parser::split_words;
 use crate::{Commandable, Message};
 
@@ -17,6 +17,9 @@ impl Commandable for Command {
                     Help: use `unlink <layout_name>` to remove a link".to_owned()
         }
         let ll = &*LAYOUTS.find(name);
+        if ll.user != msg.id && !ADMINS.contains(msg.id) {
+            return "Unauthorized".to_owned();
+        }
         let mut links = LINKS.write();
         match links.insert(ll.name.to_owned(), new_link.to_owned()) {
             None => format!("Link added for {}.", ll.name),

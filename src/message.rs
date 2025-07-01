@@ -1,3 +1,5 @@
+#![allow(clippy::result_unit_err)]
+
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use serenity::model::channel::Message as DiscordMessage;
@@ -116,19 +118,6 @@ impl BoundedResponse {
         self.inner.push(c);
         Ok(())
     }
-
-    // pub fn try_remove_line(&mut self) -> usize {
-    //     if let Some(suffix) = self.inner.rsplit('\n').next() {
-    //         let freed = suffix.chars().count() + 1;
-    //         for _ in 0..freed {
-    //             self.inner.pop();  // Pop suffix + newline character
-    //         }
-    //         self.len -= freed;
-    //         freed
-    //     } else {
-    //         0
-    //     }
-    // }
 
     pub fn finish(self) -> String {
         self.inner

@@ -95,6 +95,8 @@ fn sync_layouts() -> Result<(), Box<dyn Error>> {
             keyboard[3][0..5].rotate_right(fill);
         }
         let mut keys_packed = "".to_owned();
+
+        #[allow(clippy::needless_range_loop)]
         for row_idx in 0..4 {
             for col_idx in 0..36 {
                 let (key, finger) = keyboard[row_idx][col_idx];

@@ -22,6 +22,7 @@ impl Commandable for Command {
             let mut s = String::from(
                 "Usage: `!cmini (command) [args]`\n\
                     ```\n");
+            #[allow(clippy::type_complexity)]
             let filter_fn: for<'a> fn((&'a String, &Box<dyn Commandable>)) -> Option<&'a String> = match ADMINS.contains(msg.id) {
                 true => |(name, _)| Some(name),
                 false => |(name, cmd)| (!cmd.mods_only()).then_some(name),

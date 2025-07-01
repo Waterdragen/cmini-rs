@@ -184,7 +184,15 @@ pub fn get_stats_str(stats: &Stat, finger_usage: &FingerUsage) -> String {
 
 fn matrix_to_str(matrix: &[[char; 36]; 4], indents: [u8; 4]) -> String {
     let mut output = String::with_capacity(250);
-    for (row_idx, (&indent, row)) in indents.iter().zip(matrix.iter()).enumerate() {
+    let matrix_trimmed = matrix.iter()
+        .map(|row| {
+            let end = row.iter().rposition(|&c| c != ' ')
+                .map(|i| i + 1)
+                .unwrap_or(0);
+            &row[..end]
+        });
+
+    for (row_idx, (&indent, row)) in indents.iter().zip(matrix_trimmed).enumerate() {
         if row_idx == 3 && row.iter().all(|&c| c == ' ') {
             continue;
         }
