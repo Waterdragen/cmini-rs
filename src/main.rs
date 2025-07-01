@@ -111,13 +111,15 @@ fn git_push() -> std::io::Result<()> {
     Command::new("git")
         .arg("commit")
         .arg("-m")
-        .arg("\"Sync data\"")
+        .arg("Sync data")
         .output()?;
     Command::new("git")
         .arg("pull")
         .output()?;
     Command::new("git")
         .arg("push")
+        .arg("origin")
+        .arg("main")
         .output()?;
     Ok(())
 }
@@ -128,7 +130,7 @@ fn sync_data() {
 }
 
 async fn daily_cron_job() {
-    let mut interval = time::interval(Duration::from_secs(15));
+    let mut interval = time::interval(Duration::from_secs(60));
     interval.tick().await;  // ticks immediately
 
     loop {

@@ -4,7 +4,7 @@ use fxhash::FxHashMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufRead, BufReader};
 use thiserror::Error;
 use crate::core::Finger;
 
@@ -33,6 +33,16 @@ pub fn read_json_checked<T: DeserializeOwned>(path: &str) -> Result<T, JsonError
 #[track_caller]
 pub fn read_json<T: DeserializeOwned>(path: &str) -> T {
     read_json_checked(path).unwrap()
+}
+
+#[track_caller]
+pub fn read_json_allow_empty<T: DeserializeOwned + Default>(path: &str) -> T {
+    let file = File::open(path).unwrap();
+    let mut reader = BufReader::new(file);
+    match reader.fill_buf() {
+        Ok(&[]) => T::default(),
+        _ => serde_json::from_reader(reader).unwrap(),
+    }
 }
 
 /// Reads corpus files with given file path, and converts into target `Gram`

@@ -1,16 +1,16 @@
 use crate::core::conv;
-use crate::core::{FxIndexMap, Key, LayoutConfig, CachedStat, CachedStatConfig, ServerCachedStats};
+use crate::core::{CachedStat, CachedStatConfig, FxIndexMap, Key, LayoutConfig, ServerCachedStats};
 use crate::util::corpora::{self, CORPORA};
-use crate::util::jsons::{read_json, write_json};
+use crate::util::jsons::{read_json_allow_empty, write_json};
 use crate::util::memory::LAYOUTS;
-use crate::Lazy;
+use crate::{Lazy, RwLock};
 use rayon::prelude::*;
 use std::io::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
-pub static CACHED_STATS: Lazy<ServerCachedStats> = Lazy::new(|| read_json("./cached_stats.json"));
+pub static CACHED_STATS: Lazy<ServerCachedStats> = Lazy::new(|| Arc::new(RwLock::new(read_json_allow_empty("./cached_stats.json"))));
 
 fn get_cache(name: &str) -> Option<Arc<CachedStatConfig>> {
     let cached_stats = CACHED_STATS.read();
