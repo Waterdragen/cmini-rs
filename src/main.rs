@@ -12,6 +12,9 @@ use serenity::model::channel::Message as DiscordMessage;
 use serenity::model::gateway::{GatewayIntents, Ready};
 use std::fs;
 use std::io::Write;
+use std::process::Command;
+use std::sync::OnceLock;
+use serenity::model::id::UserId;
 use tokio::signal;
 use tokio::time::{self, Duration};
 
@@ -22,6 +25,7 @@ use cmini_rs::util::memory::ADMINS;
 use cmini_rs::util::{self, validate_json};
 
 static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock::new(false)));
+static BOT_CONTEXT: OnceLock<Context> = OnceLock::new();
 
 fn maintenance_check(id: u64) -> bool {
     let mode = MAINTENANCE_MODE.read();
@@ -92,9 +96,30 @@ impl EventHandler for Handler {
         }
     }
 
-    async fn ready(&self, _: Context, ready: Ready) {
+    async fn ready(&self, ctx: Context, ready: Ready) {
+        BOT_CONTEXT.set(ctx).unwrap_or_else(|_| panic!("Cannot set bot context"));
         println!("{} is connected!", ready.user.name);
     }
+}
+
+fn git_push() -> std::io::Result<()> {
+    Command::new("git")
+        .arg("add")
+        .arg("-A")
+        .arg("admins.json authors.json corpora.json likes.json links.json layouts.json cached_stats.json")
+        .output()?;
+    Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg("\"Sync data\"")
+        .output()?;
+    Command::new("git")
+        .arg("pull")
+        .output()?;
+    Command::new("git")
+        .arg("push")
+        .output()?;
+    Ok(())
 }
 
 fn sync_data() {
@@ -103,12 +128,19 @@ fn sync_data() {
 }
 
 async fn daily_cron_job() {
-    let mut interval = time::interval(Duration::from_secs(86400));
+    let mut interval = time::interval(Duration::from_secs(15));
     interval.tick().await;  // ticks immediately
 
     loop {
         interval.tick().await;
         sync_data();
+        let http = &BOT_CONTEXT.get().unwrap().http;
+        let dm_channel = UserId(ADMINS.owner_id()).create_dm_channel(http).await.unwrap();
+        if let Err(err) = git_push() {
+            let _ = dm_channel.say(http, err.to_string()).await;
+        } else {
+            let _ = dm_channel.say(http, "Successfully synced data").await;
+        }
     }
 }
 

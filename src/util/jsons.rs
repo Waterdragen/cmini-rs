@@ -3,13 +3,23 @@ use crate::util::corpora::BorrowCorpus;
 use fxhash::FxHashMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
+use thiserror::Error;
 use crate::core::Finger;
 
-fn read_json_checked<T: DeserializeOwned>(path: &str) -> Result<T, Box<dyn Error>> {
-    let file = File::open(path)?;
+#[derive(Debug, Error)]
+pub enum JsonError {
+    #[error("File does not exist")]
+    FileNotFound,
+    #[error(transparent)]
+    ParseFails(#[from] serde_json::Error),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+}
+
+pub fn read_json_checked<T: DeserializeOwned>(path: &str) -> Result<T, JsonError> {
+    let file = File::open(path).map_err(|_| JsonError::FileNotFound)?;
     let reader = BufReader::new(file);
     Ok(serde_json::from_reader(reader)?)
 }
@@ -66,7 +76,7 @@ pub fn get_table(path: &str) -> Table {
     Table::from_inner(table)
 }
 
-fn write_json_checked<T>(path: &str, t: &T) -> Result<(), Box<dyn Error>>
+pub fn write_json_checked<T>(path: &str, t: &T) -> Result<(), JsonError>
 where T: ?Sized + Serialize {
     let file = File::create(path)?;
     Ok(serde_json::to_writer_pretty(file, t)?)

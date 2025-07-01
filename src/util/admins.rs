@@ -121,6 +121,10 @@ impl Admins {
         admin_names.push(authors.get_name(admins.owner).unwrap().to_owned());
         Ok(admin_names)
     }
+    pub fn owner_id(&self) -> u64 {
+        let admins = self.0.read();
+        admins.owner
+    }
 }
 
 impl Deref for Admins {

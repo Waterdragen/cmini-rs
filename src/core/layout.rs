@@ -122,7 +122,7 @@ impl<'de> Deserialize<'de> for ServerLayouts {
 }
 
 #[derive(Deserialize)]
-struct JsonLayoutConfig {
+pub struct JsonLayoutConfig {
     pub user: u64,
     pub board: String,
     pub keys: String,
