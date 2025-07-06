@@ -1,19 +1,18 @@
 mod alias;
 mod corpus;
 mod finger;
+mod key;
 mod layout;
 mod metric;
 mod position;
 mod stat;
 mod table;
 
-pub mod admins;
 pub mod authors;
 pub mod conv;
 pub mod get;
 pub mod finger_alias;
 pub mod metric_alias;
-mod key;
 
 pub use alias::*;
 pub use corpus::{Corpus, RawCorpus, WordCorpus};

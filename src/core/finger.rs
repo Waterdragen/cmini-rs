@@ -52,6 +52,10 @@ impl Finger {
     pub const fn as_u8(self) -> u8 {
         self as u8
     }
+    #[inline]
+    pub const fn as_usize(self) -> usize {
+        self as usize
+    }
     pub fn as_digit_char(self) -> char {
         char::from_digit(self as u32, 10).unwrap()  // memory layout is < 10
     }
@@ -139,7 +143,7 @@ impl<T: Copy + Default> FromIterator<(Finger, T)> for FingerMap<T> {
         let mut finger_map = FingerMap([T::default(); 10]);
         iter.into_iter()
             .for_each(|(finger, value)| {
-                finger_map.0[usize::from(finger.as_u8())] = value;
+                finger_map.0[finger.as_usize()] = value;
             });
         finger_map
     }
@@ -174,13 +178,13 @@ impl<T> Index<Finger> for FingerMap<T> {
     type Output = T;
 
     fn index(&self, finger: Finger) -> &Self::Output {
-        &self.0[usize::from(finger.as_u8())]
+        &self.0[finger.as_usize()]
     }
 }
 
 impl<T> IndexMut<Finger> for FingerMap<T> {
     fn index_mut(&mut self, finger: Finger) -> &mut Self::Output {
-        &mut self.0[usize::from(finger.as_u8())]
+        &mut self.0[finger.as_usize()]
     }
 }
 
@@ -209,7 +213,7 @@ impl<const N: usize> FingerCombo<N> {
     pub fn index(self) -> usize {
         self.inner.iter()
             .fold(0usize, |acc, &finger| {
-                10 * acc + usize::from(finger.as_u8())
+                10 * acc + finger.as_usize()
             })
     }
 }

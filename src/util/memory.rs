@@ -11,6 +11,7 @@ use std::io::{BufRead, BufReader};
 use thiserror::Error;
 use crate::util::admins::Admins;
 use rphonetic::{Encoder, MatchRatingApproach};
+use crate::util::cache;
 
 pub static AUTHORS: Lazy<Arc<RwLock<Authors>>> = Lazy::new(||
     Arc::new(RwLock::new(Authors::open("./authors.json").unwrap()))
@@ -28,7 +29,7 @@ pub static PAIRS: Lazy<FxHashSet<[char; 2]>> = Lazy::new(||
             [chars.next().unwrap(), chars.next().unwrap()]
         }).collect()
 );
-pub static DIRECT_WRITE_LOCK: Lazy<Arc<Mutex<()>>> = Lazy::new(|| Arc::new(Mutex::new(())));
+pub static DIRECT_WRITE_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
 #[derive(Debug, Error)]
 pub enum RemoveError<'a> {
@@ -67,11 +68,12 @@ pub static PHONETIC_CODE_FREQS: Lazy<FxHashMap<String, (u64, String)>> = Lazy::n
     freqs
 });
 
-pub fn sync_data() {
+pub fn sync_data_local() {
     write_json("./admins.json", &*ADMINS);
     write_json("./authors.json", &*AUTHORS);
     write_json("./corpora.json", &*CORPORA_PREFS);
     write_json("./layouts.json", &*LAYOUTS);
     write_json("./likes.json", &*LIKES);
     write_json("./links.json", &*LINKS);
+    cache::cache_main();
 }

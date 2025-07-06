@@ -1,5 +1,7 @@
 use crate::consts;
 
+mod admins;
+mod analyzer;
 mod commandable;
 
 pub mod cache;
@@ -11,8 +13,8 @@ pub mod links;
 pub mod memory;
 pub mod minigames;
 pub mod parser;
-mod admins;
-mod analyzer;
+pub mod restart;
+pub mod shell;
 
 pub use commandable::Commandable;
 

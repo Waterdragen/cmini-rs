@@ -74,6 +74,12 @@ pub fn get_user_corpus(id: u64) -> String {
         .unwrap_or(CORPUS).to_owned()
 }
 
+pub fn get_user_corpus_upper(id: u64) -> String {
+    let mut corpus_name = get_user_corpus(id);
+    corpus_name.make_ascii_uppercase();
+    corpus_name
+}
+
 pub fn set_user_corpus(id: u64, corpus_name: &str) -> Result<(), ()> {
     let corpus_name = corpus_name.to_lowercase();
 
@@ -109,16 +115,4 @@ fn list_corpora() -> Arc<[String]> {
         .unwrap_or_else(|_| panic!("Path does not exist"));
     corpora.sort();
     Arc::from(corpora)
-}
-
-#[test]
-fn test_glob() {
-    let pattern = "corpora/*";
-
-    for entry in glob(pattern).expect("Failed to read glob pattern") {
-        match entry {
-            Ok(path) => println!("{:?}", path),
-            Err(e) => println!("Error: {:?}", e),
-        }
-    }
 }

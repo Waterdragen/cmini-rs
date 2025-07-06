@@ -1,8 +1,8 @@
 use crate::core::{Col, FingerMap, Key, Layout, LayoutConfig, Position, Row};
-use crate::{Commandable, Message};
 use crate::util::corpora;
-use crate::util::corpora::get_user_corpus;
+use crate::util::corpora::get_user_corpus_upper;
 use crate::util::memory::LAYOUTS;
+use crate::{Commandable, Message};
 
 pub struct Command;
 
@@ -20,7 +20,7 @@ impl Commandable for Command {
         }
 
         let header = ll.header();
-        let corpus_name = get_user_corpus(msg.id).to_ascii_uppercase();
+        let corpus_name = get_user_corpus_upper(msg.id);
         let mut output = format!("```\n\
                                          {header}\n\
                                          {corpus_name}:\n\

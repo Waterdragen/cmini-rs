@@ -3,10 +3,17 @@
 ## MSRV (Minimum supported Rust version)
 - at least 1.82.0
 
-## Running the bot
+## Running the bot (server)
 ```bash
-cargo run -r
+sh start.sh
 ```
+
+## Running the bot (debug)
+```bash
+cargo run
+```
+
+You can use `-r` flag for release build, and `-- -y` to always cache files on ctrl-c
 
 There are also a couple of helper binaries
 
@@ -14,11 +21,6 @@ There are also a couple of helper binaries
 - note: `cached_stats.json` cannot be missing or invalid
 ```bash
 cargo run --bin cache_now
-```
-
-`gen_table`: generate a new `table.json`
-```bash
-cargo run --bin gen_table
 ```
 
 `sync_from_cmini`: convert `authors.json`, `likes.json`, and `layouts/` to rmini format

@@ -1,6 +1,6 @@
 use crate::core::{ClonableIterator, KeyPat};
 use crate::util::corpora;
-use crate::util::corpora::get_user_corpus;
+use crate::util::corpora::get_user_corpus_upper;
 use crate::util::parser::get_args;
 use crate::{Commandable, Message};
 
@@ -36,7 +36,7 @@ impl Commandable for Command {
 
         let mut subtotals = [0.0; NGRAM_TYPES];
         let sep_line = "-".repeat(11 + 9 * NGRAM_TYPES) + "\n";
-        let corpus_name = get_user_corpus(msg.id).to_ascii_uppercase();
+        let corpus_name = get_user_corpus_upper(msg.id);
         let mut output = format!("```\n\
                                          {corpus_name}\n{sep_line} bigrams ");
         for i in 0..NGRAM_TYPES {

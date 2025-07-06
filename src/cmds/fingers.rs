@@ -1,7 +1,7 @@
 use crate::core::metric_alias::{list_metric_union_names, METRIC_NAMES};
 use crate::core::Finger;
 use crate::core::{FingerUsage, LayoutConfig, Metric};
-use crate::util::corpora::{self, get_user_corpus};
+use crate::util::corpora::{self, get_user_corpus_upper};
 use crate::util::memory::AUTHORS;
 use crate::util::memory::{LAYOUTS, LIKES};
 use crate::util::parser::split_words;
@@ -75,7 +75,7 @@ where F: FnMut(f64) -> f64 {
             .unwrap()  // Always succeeds: all authors added to LAYOUTS exist in AUTHORS, ensured by add command
             .to_owned()
     };
-    let corpus_name = get_user_corpus(id).to_ascii_uppercase();
+    let corpus_name = get_user_corpus_upper(id);
     let likes = {
         let likes = LIKES.read();
         likes.get(&ll.name)

@@ -4,8 +4,11 @@ use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use serenity::model::channel::Message as DiscordMessage;
 use serenity::prelude::Context;
+use std::sync::OnceLock;
 use crate::consts::CMINI_CHANNEL;
 use crate::util::parser::{split_word, split_words};
+
+pub static BOT_CONTEXT: OnceLock<Context> = OnceLock::new();
 
 pub struct Message<'a> {
     pub msg: &'a DiscordMessage,
@@ -171,4 +174,3 @@ impl BoundedResponseVec {
         self.inner
     }
 }
-

@@ -1,9 +1,9 @@
-use crate::Commandable;
 use crate::message::Message;
-use crate::util::corpora::get_user_corpus;
+use crate::util::corpora::get_user_corpus_upper;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::split_words;
 use crate::util::{corpora, layout};
+use crate::Commandable;
 
 pub struct Command;
 
@@ -31,7 +31,7 @@ impl Commandable for Command {
         new_use.values_mut().zip(old_use.values())
             .for_each(|(new, old)| *new -= old);
 
-        let corpus_name = get_user_corpus(msg.id).to_ascii_uppercase();
+        let corpus_name = get_user_corpus_upper(msg.id);
         let (new_name, old_name) = (&new_ll.name, &old_ll.name);
         let matrix_str = new_ll.get_common_matrix(old_ll);
         let stats_str = layout::get_stats_str(&new_stats, &new_use);

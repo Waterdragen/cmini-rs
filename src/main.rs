@@ -4,26 +4,25 @@ use serenity::model::channel::Message as DiscordMessage;
 use serenity::model::gateway::{GatewayIntents, Ready};
 use std::fs;
 use std::io::Write;
-use std::process::Command;
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::signal;
-use tokio::time::{self, Duration};
+use tokio::sync::mpsc::channel;
 
-use cmini_rs::consts::TRIGGERS;
-use cmini_rs::prelude::*;
 use cmini_rs::cmds;
-use cmini_rs::util::memory::ADMINS;
-use cmini_rs::util::{self, validate_json};
+use cmini_rs::consts::TRIGGERS;
+use cmini_rs::cron_job::daily_cron_job;
+use cmini_rs::error::{BotError, Signal};
+use cmini_rs::message::BOT_CONTEXT;
+use cmini_rs::prelude::*;
+use cmini_rs::util::memory::{self, ADMINS};
+use cmini_rs::util::restart::RESTART_FLAG;
+use cmini_rs::util::{restart, validate_json};
 
-static MAINTENANCE_MODE: Lazy<Arc<RwLock<bool>>> = Lazy::new(|| Arc::new(RwLock::new(false)));
-static BOT_CONTEXT: OnceLock<Context> = OnceLock::new();
+static MAINTENANCE_FLAG: AtomicBool = AtomicBool::new(false);
 
 fn maintenance_check(id: u64) -> bool {
-    let mode = MAINTENANCE_MODE.read();
-    if *mode {
-        return ADMINS.contains(id);
-    }
-    !*mode
+    let active = MAINTENANCE_FLAG.load(Ordering::Relaxed);
+    !active || ADMINS.contains(id)
 }
 
 struct Handler;
@@ -62,7 +61,7 @@ impl EventHandler for Handler {
                 "Try `!cmini help`".to_owned()
             }
             "maintenance" | "1984" => {
-                cmds::maintenance::Command.exec(msg.arg, id, Arc::clone(&MAINTENANCE_MODE))
+                cmds::maintenance::Command.exec(&msg, &MAINTENANCE_FLAG).await
             }
             "question" => {
                 cmds::question::Command.exec().await
@@ -88,56 +87,15 @@ impl EventHandler for Handler {
     }
 
     async fn ready(&self, ctx: Context, ready: Ready) {
-        BOT_CONTEXT.set(ctx).unwrap_or_else(|_| panic!("Cannot set bot context"));
+        // Not cmini's first run?
+        if let Some((message_id, channel_id)) = restart::try_get_channel_id() {
+            if let Ok(msg) = channel_id.message(&ctx.http, message_id).await {
+                let _ = msg.reply_ping(&ctx.http, "Cmini sucessfully restarted!").await;
+            }
+        }
+
         println!("{} is connected!", ready.user.name);
-    }
-}
-
-fn git_push() -> std::io::Result<()> {
-    let outputs = [
-        Command::new("git")
-            .args(["add", "-A", "admins.json", "authors.json", "corpora.json", "likes.json", "links.json", "layouts.json", "cached_stats.json"])
-            .output()?,
-        Command::new("git")
-            .args(["commit", "-m", "Sync data"])
-            .output()?,
-        Command::new("git")
-            .arg("pull")
-            .output()?,
-        Command::new("git")
-            .arg("push")
-            .output()?,
-    ];
-    for output in outputs {
-        std::io::stdout().write_all(&output.stdout)?;
-        std::io::stderr().write_all(&output.stderr)?;
-    }
-    Ok(())
-}
-
-fn sync_data() {
-    util::cache::cache_main();
-    util::memory::sync_data();
-}
-
-async fn daily_cron_job() {
-    let mut interval = time::interval(Duration::from_secs(86400));
-    interval.tick().await;  // ticks immediately
-
-    loop {
-        interval.tick().await;
-        sync_data();
-        let _ = git_push();
-
-        // You may enable this code to get a message from the bot
-        //
-        // use serenity::model::id::UserId
-        // let http = &BOT_CONTEXT.get().unwrap().http;
-        // let dm_channel = UserId(ADMINS.owner_id()).create_dm_channel(http).await.unwrap();
-        // let _ = match git_push() {
-        //     Ok(_) => dm_channel.say(http, "Successfully synced data").await,
-        //     Err(err) => dm_channel.say(http, err.to_string()).await,
-        // };
+        BOT_CONTEXT.set(ctx).unwrap_or_else(|_| panic!("Cannot set bot context"));
     }
 }
 
@@ -162,25 +120,37 @@ async fn start_discord_bot() {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), BotError> {
     validate_json();
 
     let args: Vec<String> = std::env::args().collect();
-    if !args.is_empty() && args.contains(&String::from("cache")) {
-        util::cache::cache_main();
-        return;
-    }
+    let always_cache = args.iter().any(|s| s == "-y");
 
     tokio::spawn(daily_cron_job());
     tokio::spawn(start_discord_bot());
 
-    let _ = signal::ctrl_c().await;
-    let mut input = String::new();
-    println!("Aborting cmini. Warning: cmini might have unsaved changes!");
-    print!("Sync data? [Y/n]: ");
-    std::io::stdout().flush().unwrap();
-    std::io::stdin().read_line(&mut input).unwrap();
-    if input.trim().to_lowercase() != "n" {
-        sync_data()
+    let (tx, mut rx) = channel(1);
+    let _ = RESTART_FLAG.set(tx);
+
+    let signal = tokio::select! {
+        _ = rx.recv() => Signal::AdminRestart,
+        _ = signal::ctrl_c() => Signal::ForceEnd,
+    };
+    if always_cache {
+        println!("Caching cmini...");
+        memory::sync_data_local();
+    } else {
+        println!("Aborting cmini. Warning: cmini might have unsaved changes!");
+        print!("Sync data? [Y/n]: ");
+        std::io::stdout().flush()?;
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        if input.trim().to_lowercase() != "n" {
+            memory::sync_data_local()
+        }
+    }
+    match signal {
+        Signal::AdminRestart => Ok(()),
+        Signal::ForceEnd => Err(BotError::CtrlC),
     }
 }

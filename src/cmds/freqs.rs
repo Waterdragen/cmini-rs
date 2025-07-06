@@ -1,7 +1,7 @@
 use crate::core::KeyPat;
 use crate::message::Message;
 use crate::util::corpora;
-use crate::util::corpora::get_user_corpus;
+use crate::util::corpora::get_user_corpus_upper;
 use crate::util::parser::get_args;
 use crate::Commandable;
 use itertools::Itertools;
@@ -34,7 +34,7 @@ impl Commandable for Command {
             3 => (trigrams.dyn_len_iter(), trigrams.sum as f64),
             _ => return "Please provide ngrams between 1-3 chars".to_owned(),
         };
-        let corpus_name = get_user_corpus(id).to_ascii_uppercase();
+        let corpus_name = get_user_corpus_upper(id);
         let mut output = format!("```\n{corpus_name}\n");
         let mut subtotal = 0.0;
 

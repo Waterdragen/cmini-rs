@@ -1,9 +1,9 @@
-use crate::util::corpora::get_user_corpus;
-use crate::util::parser::get_pattern;
+use crate::consts::ZERO_WIDTH_SPACE;
 use crate::util::corpora;
+use crate::util::corpora::get_user_corpus_upper;
+use crate::util::parser::get_pattern;
 use crate::{Commandable, Message};
 use regex::Regex;
-use crate::consts::ZERO_WIDTH_SPACE;
 
 const MOST_COMMON: usize = 10;
 
@@ -20,7 +20,7 @@ impl Commandable for Command {
         let words = corpora::words(msg.id);
         let total = words.sum as f64;
         let mut sub_total = 0.0;
-        let corpus_name = get_user_corpus(msg.id).to_ascii_uppercase();
+        let corpus_name = get_user_corpus_upper(msg.id);
         let mut examples = "".to_owned();
         words.iter()
             .filter_map(|(word, freq)| {
