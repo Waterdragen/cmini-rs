@@ -10,8 +10,9 @@ mod table;
 
 pub mod authors;
 pub mod conv;
-pub mod get;
 pub mod finger_alias;
+pub mod get;
+pub mod keysolve;
 pub mod metric_alias;
 
 pub use alias::*;

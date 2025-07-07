@@ -1,5 +1,6 @@
 use crate::consts::TABLE;
 use crate::core::{ContainsMetric, Corpus, FingerCombo, FingerMap, FingerUsage, Key, Layout, LayoutConfig, Metric, MetricUnion, Stat};
+use crate::core::keysolve::{KSBigramMetric, KSStat, KSTrigramMetric};
 use crate::core::metric_alias::SFS;
 
 impl LayoutConfig {
@@ -84,6 +85,39 @@ impl LayoutConfig {
         counter.iter()
             .map(|(&metric, &freq)| (metric, freq as f64 / total))
             .collect()
+    }
+    #[allow(unused)]
+    pub fn keysolve_stats(&self, trigrams: &Corpus<3>) -> KSStat<f64> {
+        let mut stats = KSStat::<u64>::default();
+        trigrams.iter()
+            .try_for_each(|([key0, key1, key2], freq)| {
+                let [pos0, pos1, pos2] = [*self.keys.get(key0)?, *self.keys.get(key1)?, *self.keys.get(key2)?];
+                if let Some(metric) = KSBigramMetric::from_positions([pos0, pos1])
+                    .or_else(|| KSBigramMetric::from_positions([pos1, pos2])) {
+                    stats.bigrams[metric] += freq;
+                }
+                if let Some(metric) = KSBigramMetric::from_positions([pos0, pos2]) {
+                    stats.skipgrams[metric] += freq;
+                }
+                if let Some(metric) = KSTrigramMetric::from_finger_combo([pos0.finger, pos1.finger, pos2.finger]) {
+                    stats.trigrams[metric] += freq;
+                }
+                Some(())
+            });
+        // Normalize counter
+        let total = trigrams.sum as f64;
+        let KSStat { bigrams, skipgrams, trigrams } = stats;
+        let bigrams = bigrams.iter()
+            .map(|(metric, freq)| (metric, *freq as f64 / total))
+            .collect();
+        let skipgrams = skipgrams.iter()
+            .map(|(metric, freq)| (metric, *freq as f64 / total))
+            .collect();
+        let trigrams = trigrams.iter()
+            .map(|(metric, freq)| (metric, *freq as f64 / total))
+            .collect();
+
+        KSStat { bigrams, skipgrams, trigrams }
     }
 }
 
