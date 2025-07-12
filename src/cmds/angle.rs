@@ -1,8 +1,8 @@
-use thiserror::Error;
 use crate::{Commandable, Message};
-use crate::core::LayoutConfig;
-use crate::core::Finger;
 use crate::util::memory::LAYOUTS;
+use cmini_core::{Finger, LayoutConfig};
+use thiserror::Error;
+use crate::util::layout::to_pretty;
 
 pub struct Command;
 
@@ -16,7 +16,7 @@ impl Commandable for Command {
             return err.to_string();
         }
         ll.name.push_str(" (angle modded)");
-        ll.to_pretty(msg.id)
+        to_pretty(&ll, msg.id)
     }
 
     fn usage<'a>(&self) -> &'a str {

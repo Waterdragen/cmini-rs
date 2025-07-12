@@ -1,5 +1,5 @@
-use crate::core::metric_alias::REDIRECTS;
 use crate::{Commandable, Message};
+use cmini_core::metric_alias::REDIRECTS;
 
 pub struct Command;
 

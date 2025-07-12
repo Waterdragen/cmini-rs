@@ -1,6 +1,6 @@
-use cmini_rs::core::{Finger, FxIndexMap};
 use cmini_rs::util::jsons::JsonError;
 use cmini_rs::util::jsons::{read_json_checked, write_json_checked};
+use cmini_core::{Finger, FxIndexMap};
 use fxhash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::error::Error;

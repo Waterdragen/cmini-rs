@@ -1,4 +1,4 @@
-use crate::core::FxIndexMap;
+use crate::FxIndexMap;
 use std::borrow::Cow;
 use std::ops::{Deref, DerefMut};
 use std::sync::{RwLockReadGuard, RwLockWriteGuard};

@@ -1,6 +1,6 @@
-use crate::core::{Finger, FingerUnion};
-use crate::Lazy;
+use crate::{Finger, FingerUnion};
 use fxhash::FxHashMap;
+use once_cell::sync::Lazy;
 
 const fn raw_bit(metric: Finger) -> u16 {
     1 << metric as u16

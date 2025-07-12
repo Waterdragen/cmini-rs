@@ -1,9 +1,9 @@
-use crate::core::conv;
-use crate::core::{CachedStat, CachedStatConfig, FxIndexMap, Key, LayoutConfig, ServerCachedStats};
 use crate::util::corpora::{self, CORPORA};
 use crate::util::jsons::{read_json_allow_empty, write_json};
 use crate::util::memory::LAYOUTS;
 use crate::{Lazy, RwLock};
+use cmini_core::conv;
+use cmini_core::{CachedStat, CachedStatConfig, FxIndexMap, Key, LayoutConfig, ServerCachedStats};
 use rayon::prelude::*;
 use std::io::Write;
 use std::sync::atomic::{AtomicUsize, Ordering};

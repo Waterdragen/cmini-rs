@@ -1,5 +1,5 @@
 use std::ops::Index;
-use crate::core::{Finger, FingerCombo, Metric};
+use crate::{Finger, FingerCombo, Metric};
 
 #[derive(Debug)]
 pub struct Table([Metric; 1000]);

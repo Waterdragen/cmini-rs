@@ -1,9 +1,8 @@
-use crate::core::KeyPat;
-use crate::message::Message;
 use crate::util::corpora;
 use crate::util::corpora::get_user_corpus_upper;
 use crate::util::parser::get_args;
-use crate::Commandable;
+use crate::{Commandable, Message};
+use cmini_core::KeyPat;
 use itertools::Itertools;
 
 pub struct Command;

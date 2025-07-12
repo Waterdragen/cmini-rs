@@ -1,19 +1,22 @@
 mod alias;
+mod analyzer;
 mod corpus;
 mod finger;
 mod key;
-mod layout;
 mod metric;
 mod position;
 mod stat;
 mod table;
 
-pub mod authors;
 pub mod conv;
+pub mod consts;
 pub mod finger_alias;
 pub mod get;
 pub mod keysolve;
 pub mod metric_alias;
+pub mod layout;
+pub mod lock;
+pub mod response;
 
 pub use alias::*;
 pub use corpus::{Corpus, RawCorpus, WordCorpus};
@@ -22,7 +25,7 @@ pub use finger::{Finger, FingerCombo, FingerMap, FingerUnion, FingerUsage};
 pub use key::{Key, KeyPat};
 pub use layout::{Layout, LayoutConfig, ServerLayouts};
 pub use metric::{ContainsMetric, Metric, MetricMap, MetricUnion};
-pub use position::{Position, Row, Col};
+pub use position::{Col, Position, Row};
 pub use stat::{CachedStat, CachedStatConfig, ServerCachedStats, Stat};
 pub use table::Table;
 

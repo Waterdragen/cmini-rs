@@ -5,7 +5,7 @@ pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
-        let guild = match msg.guild(msg.context) {
+        let guild = match msg.guild(msg.context.as_ref()) {
             None => return "No dofs here :(".to_owned(),
             Some(guild) => guild,
         };

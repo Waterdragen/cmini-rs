@@ -1,17 +1,16 @@
-use crate::core::ServerLayouts;
-use crate::core::authors::Authors;
 use crate::prelude::*;
+use crate::util::admins::Admins;
+use crate::util::authors::Authors;
+use crate::util::cache;
 use crate::util::corpora::CORPORA_PREFS;
 use crate::util::jsons::{read_json, write_json};
 use crate::util::links::LINKS;
+use cmini_core::ServerLayouts;
 use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
-use std::fmt::Debug;
+use rphonetic::{Encoder, MatchRatingApproach};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use thiserror::Error;
-use crate::util::admins::Admins;
-use rphonetic::{Encoder, MatchRatingApproach};
-use crate::util::cache;
+use std::sync::Arc;
 
 // Lazy statics are asserted by validate_json
 pub static AUTHORS: Lazy<Arc<RwLock<Authors>>> = Lazy::new(||
@@ -31,16 +30,6 @@ pub static PAIRS: Lazy<FxHashSet<[char; 2]>> = Lazy::new(||
         }).collect()
 );
 pub static DIRECT_WRITE_LOCK: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
-
-#[derive(Debug, Error)]
-pub enum RemoveError<'a> {
-    #[error("Error: `{0}` does not exist")]
-    NotFound(&'a str),
-    #[error("Error: you don't own `{0}`")]
-    NotOwner(&'a str),
-    #[error("Use commands with `--sudo` in a public channel")]
-    SudoInPrivateChannel,
-}
 
 pub fn get_like_count(name: &str) -> usize {
     let likes = LIKES.read();

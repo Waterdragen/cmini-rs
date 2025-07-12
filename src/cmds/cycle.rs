@@ -1,9 +1,10 @@
-use crate::core::{LayoutConfig, Position};
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::split_words;
 use crate::{Commandable, Message};
+use cmini_core::{LayoutConfig, Position};
 use fxhash::FxHashSet;
 use thiserror::Error;
+use crate::util::layout::to_pretty;
 
 pub struct Command;
 
@@ -20,7 +21,7 @@ impl Commandable for Command {
             return err.to_string();
         }
         ll.name.push_str(" (modified)");
-        ll.to_pretty(msg.id)
+        to_pretty(&ll, msg.id)
     }
 
     fn usage<'a>(&self) -> &'a str {

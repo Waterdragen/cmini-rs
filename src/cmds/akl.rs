@@ -1,9 +1,9 @@
 use std::cmp::Reverse;
 use fxhash::FxHashMap;
-use crate::message::{BoundedResponse, Message};
+use crate::{BoundedResponse, Message};
 use crate::prelude::Commandable;
-use serenity::utils::colours::roles::TEAL;
-use serenity::utils::Colour;
+use serenity::all::colours::roles::TEAL;
+use serenity::model::colour::Colour;
 
 const LAYOUT_ROLE_COLOR: Colour = TEAL;
 const QWERTY: &str = "QWERTY";
@@ -12,7 +12,7 @@ pub struct Command;
 
 impl Commandable for Command {
     fn exec(&self, msg: &Message) -> String {
-        let guild = match msg.guild(msg.context) {
+        let guild = match msg.guild(msg.context.as_ref()) {
             None => return "Cannot find akl server".to_owned(),
             Some(guild) => guild,
         };

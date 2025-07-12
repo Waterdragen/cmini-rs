@@ -1,4 +1,4 @@
-use crate::core::Finger;
+use crate::Finger;
 
 pub type Row = u8;
 pub type Col = u8;

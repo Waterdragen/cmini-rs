@@ -1,6 +1,8 @@
 use crate::cmds::angle::impl_angle;
-use crate::util::memory::{RemoveError, LAYOUTS};
+use crate::util::memory::LAYOUTS;
 use crate::{Commandable, Message};
+use cmini_core::layout::RemoveError;
+use crate::util::layout::to_pretty;
 
 pub struct Command;
 
@@ -14,7 +16,7 @@ impl Commandable for Command {
             return RemoveError::NotOwner(&ll.name).to_string();
         }
         match impl_angle(ll) {
-            Ok(_) => ll.to_pretty(msg.id) + "Successfully updated!",
+            Ok(_) => to_pretty(ll, msg.id) + "Successfully updated!",
             Err(err) => err.to_string(),
         }
     }

@@ -1,7 +1,6 @@
 use std::ops::{Add, BitOr, Index, IndexMut};
 use fxhash::FxHashMap;
-use strum::{EnumCount, IntoEnumIterator};
-use strum_macros::{EnumCount, EnumIter, EnumString, IntoStaticStr};
+use strum::{EnumCount, IntoEnumIterator, EnumIter, EnumString, IntoStaticStr};
 
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, EnumIter, EnumCount, EnumString, IntoStaticStr)]
 #[repr(u8)]

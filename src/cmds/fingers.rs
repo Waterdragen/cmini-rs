@@ -1,11 +1,11 @@
-use crate::core::metric_alias::{list_metric_union_names, METRIC_NAMES};
-use crate::core::Finger;
-use crate::core::{FingerUsage, LayoutConfig, Metric};
 use crate::util::corpora::{self, get_user_corpus_upper};
 use crate::util::memory::AUTHORS;
 use crate::util::memory::{LAYOUTS, LIKES};
 use crate::util::parser::split_words;
 use crate::{Commandable, Message};
+use cmini_core::metric_alias::{list_metric_union_names, METRIC_NAMES};
+use cmini_core::Finger;
+use cmini_core::{FingerUsage, LayoutConfig, Metric};
 use itertools::Itertools;
 
 pub struct Command;

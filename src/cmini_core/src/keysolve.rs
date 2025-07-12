@@ -1,8 +1,7 @@
 use std::ops::{Index, IndexMut};
 use once_cell::sync::Lazy;
-use strum::{EnumCount, IntoEnumIterator};
-use strum_macros::{EnumCount, EnumIter};
-use crate::core::{Finger, FingerCombo, Position};
+use strum::{EnumCount, IntoEnumIterator, EnumIter};
+use crate::{Finger, FingerCombo, Position};
 
 #[derive(Copy, Clone, EnumCount, EnumIter)]
 pub enum KSBigramMetric {

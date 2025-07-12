@@ -1,7 +1,6 @@
-use crate::core::get::{Get, GetMut};
-use crate::core::{conv, FxIndexMap, Key, Position};
-use crate::prelude::RwLock;
-use crate::util::memory::RemoveError;
+use crate::get::{Get, GetMut};
+use crate::{conv, FxIndexMap, Key, Position};
+use crate::lock::RwLock;
 use fxhash::FxHashMap;
 use serde::ser::SerializeMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -9,6 +8,8 @@ use std::borrow::Cow;
 use std::ops::Deref;
 use std::sync::Arc;
 use strsim::jaro_winkler;
+use thiserror::Error;
+use crate::consts::{COL_LIMIT, ROW_LIMIT};
 
 pub type Layout = FxHashMap<Key, Position>;
 
@@ -170,6 +171,54 @@ impl LayoutConfig {
         sorted.sort_unstable_by_key(|(_, pos)| (pos.row, pos.col));
         sorted
     }
+    pub fn matrix(&self) -> [[char; 36]; 4] {
+        let mut keyboard = [[' '; 36]; 4];
+        for (&key, &Position { row, col, .. }) in self.keys.iter() {
+            let (row, col) = (usize::from(row), usize::from(col));
+            if row > ROW_LIMIT || col > COL_LIMIT { panic!("index out of bounds"); }  // This should never happen as checked by add command and pos::unpack
+            keyboard[row][col] = key;
+        }
+        keyboard
+    }
+    fn indents(&self) -> [u8; 4] {
+        match self.board.as_str() {
+            "angle" => [2, 2, 3, 3],
+            "stagger" => [2, 3, 4, 5],
+            _ => [2, 2, 2, 2],
+        }
+    }
+    pub fn finger_matrix(&self) -> [[char; 36]; 4] {
+        let mut keyboard = [[' '; 36]; 4];
+        for &Position { row, col, finger } in self.keys.values() {
+            let (row, col) = (usize::from(row), usize::from(col));
+            if row > ROW_LIMIT || col > COL_LIMIT { panic!("index out of bounds"); }  // This should never happen as checked by add command and pos::unpack
+            keyboard[row][col] = finger.as_digit_char();
+        }
+        keyboard
+    }
+    pub fn matrix_str(&self) -> String {
+        let matrix = self.matrix();
+        let indents = self.indents();
+        matrix_to_str(&matrix, indents)
+    }
+    pub fn finger_matrix_str(&self) -> String {
+        let finger_matrix = self.finger_matrix();
+        let indents = self.indents();
+        matrix_to_str(&finger_matrix, indents)
+    }
+    pub fn get_common_matrix(&self, ll2: &Self) -> String {
+        let mut matrix1 = self.matrix();
+        let matrix2 = ll2.matrix();
+        matrix1.iter_mut().flatten()
+            .zip(matrix2.iter().flatten())
+            .for_each(|(char0, char1)| {
+                if char0 != char1 {
+                    *char0 = '~';
+                }
+            });
+        let indents = self.indents();
+        matrix_to_str(&matrix1, indents)
+    }
 }
 
 impl Serialize for LayoutConfig {
@@ -180,4 +229,44 @@ impl Serialize for LayoutConfig {
         map.serialize_entry("keys", &conv::layout::pack(&self.keys))?;
         map.end()
     }
+}
+
+#[derive(Debug, Error)]
+pub enum RemoveError<'a> {
+    #[error("Error: `{0}` does not exist")]
+    NotFound(&'a str),
+    #[error("Error: you don't own `{0}`")]
+    NotOwner(&'a str),
+    #[error("Use commands with `--sudo` in a public channel")]
+    SudoInPrivateChannel,
+}
+
+fn matrix_to_str(matrix: &[[char; 36]; 4], indents: [u8; 4]) -> String {
+    let mut output = String::with_capacity(250);
+    let matrix_trimmed = matrix.iter()
+        .map(|row| {
+            let end = row.iter().rposition(|&c| c != ' ')
+                .map(|i| i + 1)
+                .unwrap_or(0);
+            &row[..end]
+        });
+
+    for (row_idx, (&indent, row)) in indents.iter().zip(matrix_trimmed).enumerate() {
+        if row_idx == 3 && row.iter().all(|&c| c == ' ') {
+            continue;
+        }
+        (0..indent).for_each(|_| output.push(' '));
+        let mut row_iter = row.iter();
+        row_iter.by_ref().take(5).for_each(|&c| {
+            output.push(c);
+            output.push(' ');
+        });
+        output.push(' ');
+        row_iter.for_each(|&c| {
+            output.push(c);
+            output.push(' ');
+        });
+        output.push('\n');
+    }
+    output
 }

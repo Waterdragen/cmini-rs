@@ -1,8 +1,8 @@
-use crate::consts::ZERO_WIDTH_SPACE;
 use crate::util::corpora;
 use crate::util::corpora::get_user_corpus_upper;
 use crate::util::parser::get_pattern;
 use crate::{Commandable, Message};
+use cmini_core::consts::ZERO_WIDTH_SPACE;
 use regex::Regex;
 
 const MOST_COMMON: usize = 10;

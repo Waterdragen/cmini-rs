@@ -1,7 +1,8 @@
 use crate::util::memory::ADMINS;
-use crate::util::memory::{LAYOUTS, RemoveError};
+use crate::util::memory::LAYOUTS;
 use crate::util::parser::{get_kwargs, KwargType};
-use crate::{Commandable, Message, Lazy};
+use crate::{Commandable, Lazy, Message};
+use cmini_core::layout::RemoveError;
 use fxhash::FxHashMap;
 use std::borrow::ToOwned;
 

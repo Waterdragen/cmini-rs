@@ -1,8 +1,9 @@
-use crate::core::{Col, FingerMap, Key, Layout, LayoutConfig, Position, Row};
 use crate::util::corpora;
 use crate::util::corpora::get_user_corpus_upper;
+use crate::util::layout::header;
 use crate::util::memory::LAYOUTS;
 use crate::{Commandable, Message};
+use cmini_core::{Col, FingerMap, Key, Layout, LayoutConfig, Position, Row};
 
 pub struct Command;
 
@@ -19,7 +20,7 @@ impl Commandable for Command {
             used_fingers[pos.finger] = true;
         }
 
-        let header = ll.header();
+        let header = header(ll);
         let corpus_name = get_user_corpus_upper(msg.id);
         let mut output = format!("```\n\
                                          {header}\n\

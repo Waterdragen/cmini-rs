@@ -1,6 +1,5 @@
 use std::fmt::{Debug, Formatter};
 use std::io;
-use std::io::Error;
 
 pub enum Signal {
     AdminRestart,
@@ -22,7 +21,7 @@ impl Debug for BotError {
 }
 
 impl From<io::Error> for BotError {
-    fn from(err: Error) -> Self {
+    fn from(err: io::Error) -> Self {
         BotError::Io(err)
     }
 }

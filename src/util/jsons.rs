@@ -1,5 +1,5 @@
-use crate::core::{FxIndexMap, RawCorpus};
 use crate::util::corpora::BorrowCorpus;
+use cmini_core::{FxIndexMap, RawCorpus};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fs::File;
@@ -47,7 +47,6 @@ pub fn read_json_allow_empty<T: DeserializeOwned + Default>(path: &str) -> T {
 /// # Note
 /// - grams are converted into lowercase
 /// - vec does not merge duplicates, might affect most common gram counting
-// FIXME: implement scripts to merge corpora counts
 ///
 /// # Panics
 /// This function will panic if:

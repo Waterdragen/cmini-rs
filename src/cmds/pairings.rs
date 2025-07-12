@@ -1,7 +1,7 @@
-use crate::core::{FxIndexMap, Key, Position};
 use crate::message::Message;
 use crate::prelude::Commandable;
 use crate::util::memory::LAYOUTS;
+use cmini_core::{FxIndexMap, Key, Position};
 
 pub struct Command;
 

@@ -1,7 +1,8 @@
 use std::ops::Deref;
 use fxhash::FxHashMap;
-use crate::core::{ClonableIterator, Key};
-use crate::prelude::*;
+use std::sync::Arc;
+use crate::lock::RwLock;
+use crate::{ClonableIterator, Key};
 
 pub struct RawCorpus<Gram: AsRef<[Key]>> {
     inner: Arc<[(Gram, u64)]>,

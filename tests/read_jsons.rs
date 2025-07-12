@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod read_jsons {
     use cmini_rs::util::jsons::{get_corpus, read_json};
-    use cmini_rs::core::Key;
+    use cmini_rs::cmini_core::Key;
     use fxhash::FxHashMap;
 
     #[test]

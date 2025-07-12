@@ -1,9 +1,9 @@
-use crate::core::metric_alias::{IN_ROLLTALS, ONEHANDS, OUT_ROLLTALS, REDIRECTS, ROLLS, ROLLTALS, SFS};
-use crate::core::{ContainsMetric, FxIndexMap, Metric as M, Metric, MetricUnion, Stat};
 use crate::util::cache::CACHED_STATS;
 use crate::util::corpora::get_user_corpus;
 use crate::util::parser::{get_kwargs, split_words, KwargType};
 use crate::{Commandable, Message, Lazy};
+use cmini_core::metric_alias::{IN_ROLLTALS, ONEHANDS, OUT_ROLLTALS, REDIRECTS, ROLLS, ROLLTALS, SFS};
+use cmini_core::{ContainsMetric, FxIndexMap, Metric as M, Metric, MetricUnion, Stat};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use std::borrow::ToOwned;

@@ -24,6 +24,12 @@ name = "cache_now"
 path = "src/bin/cache_now.rs"
 test = false
 
+[profile.dev]
+incremental = true
+
+[profile.release]
+incremental = true
+
 [dependencies]
 fxhash = "0.2.1"
 glob = "0.3.2"
@@ -38,14 +44,15 @@ rphonetic = "3.0.3"
 serde = { version = "1.0.197", features = ["rc"] }
 serde_json = "1.0.115"
 strsim = "0.11.0"
-strum = "0.26.2"
-strum_macros = "0.26.2"
+strum = { version = "0.26.2", features = ["derive"] }
 time = "0.3.41"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
-tokio-scoped = "0.2.0"
 thiserror = "2.0.12"
 
 [dependencies.serenity]
-version = "0.11.7"
+version = "0.12.4"
 default-features = false
 features = ["cache", "client", "gateway", "model", "rustls_backend"]
+
+[dependencies.cmini_core]
+path = "./src/cmini_core"

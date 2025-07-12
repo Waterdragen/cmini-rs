@@ -7,6 +7,7 @@ use crate::util::parser::{get_kwargs, KwargType};
 use crate::{Commandable, Message, Lazy};
 use fxhash::FxHashMap;
 use std::borrow::ToOwned;
+use crate::util::layout::to_pretty;
 
 pub struct Command;
 
@@ -49,7 +50,7 @@ impl Commandable for Command {
             }
         }
         ll.name.push_str(" (modified)");
-        ll.to_pretty(msg.id)
+        to_pretty(&ll, msg.id)
     }
 
     fn usage<'a>(&self) -> &'a str {

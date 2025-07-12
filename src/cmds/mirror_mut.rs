@@ -1,6 +1,8 @@
 use crate::cmds::mirror::impl_mirror;
 use crate::{Commandable, Message};
-use crate::util::memory::{RemoveError, LAYOUTS};
+use crate::util::memory::LAYOUTS;
+use cmini_core::layout::RemoveError;
+use crate::util::layout::to_pretty;
 
 pub struct Command;
 
@@ -15,7 +17,7 @@ impl Commandable for Command {
         }
         impl_mirror(&mut ll);
         ll.name.push_str(" (mirrored)");
-        ll.to_pretty(msg.id)
+        to_pretty(&ll, msg.id)
     }
 
     fn usage<'a>(&self) -> &'a str {

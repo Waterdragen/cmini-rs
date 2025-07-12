@@ -1,6 +1,6 @@
-use crate::core::Position;
 use crate::util::memory::LAYOUTS;
 use crate::{Message, Lazy, Commandable};
+use cmini_core::Position;
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use std::borrow::Cow;

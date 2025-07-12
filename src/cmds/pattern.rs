@@ -1,12 +1,12 @@
-use itertools::Itertools;
-use crate::core::finger_alias::{ANY_FINGER, NO_FINGER};
-use crate::core::{Finger, FingerCombo};
 use crate::message::Message;
 use crate::util::corpora;
 use crate::util::corpora::NGRAMS;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::split_words;
 use crate::Commandable;
+use cmini_core::finger_alias::{ANY_FINGER, NO_FINGER};
+use cmini_core::{Finger, FingerCombo};
+use itertools::Itertools;
 
 pub struct Command;
 

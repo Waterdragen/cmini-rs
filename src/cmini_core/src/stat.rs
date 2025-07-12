@@ -1,4 +1,4 @@
-use crate::core::{conv, Finger, FingerUnion, FxIndexMap, Metric, MetricMap, SyncIndexMap};
+use crate::{conv, Finger, FingerUnion, FxIndexMap, Metric, MetricMap, SyncIndexMap};
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::ops::Deref;

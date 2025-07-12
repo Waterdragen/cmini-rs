@@ -1,7 +1,7 @@
-use crate::core::{LayoutConfig, Position};
 use crate::util::memory::LAYOUTS;
 use crate::{Commandable, Message};
-use crate::core::Finger;
+use cmini_core::{Finger, LayoutConfig, Position};
+use crate::util::layout::to_pretty;
 
 pub struct Command;
 
@@ -13,7 +13,7 @@ impl Commandable for Command {
         let mut ll = LAYOUTS.find(msg.arg).clone();
         impl_mirror(&mut ll);
         ll.name.push_str(" (mirrored)");
-        ll.to_pretty(msg.id)
+        to_pretty(&ll, msg.id)
     }
 
     fn usage<'a>(&self) -> &'a str {

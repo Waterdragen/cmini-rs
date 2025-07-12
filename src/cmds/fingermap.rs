@@ -1,6 +1,7 @@
 use crate::message::Message;
 use crate::prelude::Commandable;
 use crate::util::memory::LAYOUTS;
+use crate::util::layout::header;
 
 pub struct Command;
 
@@ -10,7 +11,7 @@ impl Commandable for Command {
             return self.help();
         }
         let ll = &*LAYOUTS.find(msg.arg);
-        let header = ll.header();
+        let header = header(ll);
         let matrix = ll.matrix_str();
         let finger_matrix = ll.finger_matrix_str();
         format!("```\n\

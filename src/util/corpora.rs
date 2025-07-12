@@ -1,8 +1,8 @@
 #![allow(clippy::result_unit_err)]
 
 use crate::prelude::*;
-use crate::core::{Corpus, Key, RawCorpus, RawServerCorpora, ServerCorpora, ServerWordCorpora, WordCorpus};
 use crate::util::jsons::{get_corpus, read_json};
+use cmini_core::{Corpus, Key, RawCorpus, RawServerCorpora, ServerCorpora, ServerWordCorpora, WordCorpus};
 use fxhash::FxHashMap;
 use glob::glob;
 use std::fmt::Debug;

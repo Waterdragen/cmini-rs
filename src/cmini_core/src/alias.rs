@@ -1,4 +1,5 @@
-use crate::prelude::{Arc, RwLock};
+use std::sync::Arc;
+use crate::lock::RwLock;
 use fxhash::FxBuildHasher;
 use indexmap::IndexMap;
 

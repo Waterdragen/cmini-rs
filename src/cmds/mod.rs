@@ -69,11 +69,12 @@ mod guess;
 mod count;
 
 use crate::Commandable;
-use crate::core::{ContainsMetric};
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::{get_kwargs, KwargType, ParseKwargError};
 use crate::{Message, Lazy};
+use cmini_core::{ContainsMetric};
 use fxhash::FxHashMap;
+use crate::util::layout::top_trigrams_of_metric;
 
 static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
     FxHashMap::from_iter([
@@ -189,7 +190,7 @@ fn cmd_for_top_trigrams_of_metric<M: ContainsMetric>(msg: &Message, metric: M, m
         }
     };
     let layout_name = &ll.name;
-    let filtered_trigrams = ll.top_trigrams_of_metric(msg.id, metric, top_n);
+    let filtered_trigrams = top_trigrams_of_metric(ll, msg.id, metric, top_n);
     let mut s = format!("```\nTop {top_n} {layout_name} {metric_name}:\n");
     for (gram, freq) in filtered_trigrams {
         let freq_percent = freq * 100.0;

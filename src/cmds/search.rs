@@ -1,9 +1,9 @@
-use crate::core::finger_alias::FINGER_NAMES;
-use crate::core::FingerUnion;
 use crate::prelude::BoundedResponse;
 use crate::util::cache::CACHED_STATS;
 use crate::util::parser::{get_kwargs, KwargType as KT};
 use crate::{Commandable, Lazy, Message};
+use cmini_core::finger_alias::FINGER_NAMES;
+use cmini_core::FingerUnion;
 use fxhash::FxHashMap;
 use rand::prelude::{SeedableRng, SliceRandom, StdRng};
 use std::iter::IntoIterator;

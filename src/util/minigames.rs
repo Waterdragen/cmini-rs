@@ -1,5 +1,5 @@
-use crate::core::Key;
 use crate::prelude::{Lazy, Mutex};
+use cmini_core::Key;
 use fxhash::FxHashMap;
 use rand::prelude::{SliceRandom, StdRng};
 use std::cmp::Ordering;

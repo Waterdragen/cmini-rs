@@ -1,5 +1,6 @@
 use crate::util::memory::LAYOUTS;
 use crate::{Commandable, Message};
+use crate::util::layout::to_pretty;
 
 pub struct Command;
 
@@ -10,7 +11,7 @@ impl Commandable for Command {
             return self.help();
         }
         let ll = &*LAYOUTS.find(name);
-        ll.to_pretty(msg.id)
+        to_pretty(ll, msg.id)
     }
 
     fn usage<'a>(&self) -> &'a str {

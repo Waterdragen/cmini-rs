@@ -1,7 +1,7 @@
 use crate::consts::TABLE;
-use crate::core::{ContainsMetric, Corpus, FingerCombo, FingerMap, FingerUsage, Key, Layout, LayoutConfig, Metric, MetricUnion, Position, Stat};
-use crate::core::keysolve::{KSBigramMetric, KSStat, KSTrigramMetric};
-use crate::core::metric_alias::SFS;
+use crate::{ContainsMetric, Corpus, FingerCombo, FingerMap, FingerUsage, Key, Layout, LayoutConfig, Metric, MetricUnion, Position, Stat};
+use crate::keysolve::{KSBigramMetric, KSStat, KSTrigramMetric};
+use crate::metric_alias::SFS;
 
 impl LayoutConfig {
     pub fn fingers_usage(&self, monograms: &Corpus<1>) -> FingerUsage {

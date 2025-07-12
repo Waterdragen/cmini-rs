@@ -10,7 +10,7 @@ pub fn hash_keys(keys: &str) -> u64 {
 
 pub mod layout {
     use super::pos;
-    use crate::core::Layout;
+    use crate::Layout;
 
     pub fn pack(layout: &Layout) -> String {
         let mut layout_packed_ordered: Vec<(String, u32)> = layout.iter().map(|(key, pos)| {
@@ -91,8 +91,8 @@ pub mod freq {
 
 mod pos {
     use crate::consts::COL_RADIX;
-    use crate::core::Position;
-    use crate::core::Finger;
+    use crate::Position;
+    use crate::Finger;
 
     #[inline]
     pub fn pack(Position { row, col, finger }: Position) -> String {

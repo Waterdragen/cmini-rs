@@ -1,10 +1,12 @@
-use crate::consts::{COL_LIMIT, FREE_CHAR, ROW_LIMIT};
-use crate::core::finger_alias::THUMB;
-use crate::core::Finger;
 use crate::message::Message;
 use crate::prelude::Commandable;
-use crate::util::memory::{RemoveError, LAYOUTS};
+use crate::util::layout::header;
+use crate::util::memory::LAYOUTS;
 use crate::util::parser::get_layout;
+use cmini_core::consts::{COL_LIMIT, FREE_CHAR, ROW_LIMIT};
+use cmini_core::finger_alias::THUMB;
+use cmini_core::Finger;
+use cmini_core::layout::RemoveError;
 
 pub struct Command;
 
@@ -79,7 +81,7 @@ impl Commandable for Command {
         let name = ll.name.to_owned();
         let mut new_ll = LAYOUTS.raw_get_mut(&name);  // this name is from Layouts.find()
         *new_ll = ll;
-        let header = new_ll.header();
+        let header = header(&new_ll);
         let matrix = new_ll.matrix_str();
         let finger_matrix = new_ll.finger_matrix_str();
         format!("Success!\n\

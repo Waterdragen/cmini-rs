@@ -1,7 +1,7 @@
 use std::ops::{Add, BitOr, Index, IndexMut, Shl};
-use strum_macros::IntoStaticStr;
-use crate::core::finger_alias::{LH, RH};
-use crate::core::{Key, Layout};
+use strum::IntoStaticStr;
+use crate::finger_alias::{LH, RH};
+use crate::{Key, Layout};
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Copy, Clone, IntoStaticStr)]
 #[repr(u8)]

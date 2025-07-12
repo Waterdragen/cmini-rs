@@ -1,11 +1,10 @@
 use crate::util::memory::AUTHORS;
-use crate::consts::{COL_LIMIT, FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR, ROW_LIMIT};
-use crate::core::{Layout, LayoutConfig, Position};
-use crate::util::layout::check_name;
+use crate::util::layout::{check_name, to_pretty};
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::get_layout;
 use crate::{Commandable, Message};
-use crate::core::Finger;
+use cmini_core::consts::{COL_LIMIT, FMAP_ANGLE, FMAP_STANDARD, FREE_CHAR, ROW_LIMIT};
+use cmini_core::{Finger, Layout, LayoutConfig, Position};
 
 pub struct Command;
 
@@ -93,7 +92,7 @@ impl Commandable for Command {
                 let mut authors = AUTHORS.write();
                 authors.update(msg.id, &msg.author.name);
             }
-            format!("Success!\n{}", LAYOUTS.raw_get(&name).to_pretty(msg.id))  // raw_get: we just added the layout with that name
+            format!("Success!\n{}", to_pretty(&LAYOUTS.raw_get(&name), msg.id))  // raw_get: we just added the layout with that name
         } else {
             format!("Error: `{name}` already exists")
         }

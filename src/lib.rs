@@ -1,6 +1,5 @@
 pub mod cmds;
 pub mod consts;
-pub mod core;
 pub mod cron_job;
 pub mod error;
 pub mod message;

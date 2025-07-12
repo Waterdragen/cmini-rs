@@ -1,8 +1,7 @@
-use crate::core::Key;
-use crate::message::Message;
-use crate::{Commandable, Lazy};
+use crate::{Commandable, Message, Lazy};
 use crate::util::corpora;
 use crate::util::minigames::{GuessPlayer, GUESS_PLAYERS};
+use cmini_core::Key;
 use rand::prelude::{SeedableRng, SliceRandom, StdRng};
 use std::time::SystemTime;
 

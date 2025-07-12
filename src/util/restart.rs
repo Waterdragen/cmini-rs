@@ -14,15 +14,15 @@ pub fn try_log_channel_id(message_id: MessageId, channel_id: ChannelId) {
 
 fn impl_try_log_channel_id(message_id: MessageId, channel_id: ChannelId) -> Option<()> {
     let mut file = File::create(PATH).ok()?;
-    writeln!(file, "{}", message_id.0).ok()?;
-    writeln!(file, "{}", channel_id.0).ok()?;
+    writeln!(file, "{}", message_id.get()).ok()?;
+    writeln!(file, "{}", channel_id.get()).ok()?;
     Some(())
 }
 
 pub fn try_get_channel_id() -> Option<(MessageId, ChannelId)> {
     let reader = BufReader::new(File::open(PATH).ok()?);
     let mut lines = reader.lines();
-    let message_id = MessageId(lines.next()?.ok()?.parse::<u64>().ok()?);
-    let channel_id = ChannelId(lines.next()?.ok()?.parse::<u64>().ok()?);
+    let message_id = MessageId::new(lines.next()?.ok()?.parse::<u64>().ok()?);
+    let channel_id = ChannelId::new(lines.next()?.ok()?.parse::<u64>().ok()?);
     Some((message_id, channel_id))
 }

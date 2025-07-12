@@ -1,9 +1,10 @@
-use crate::consts::FREE_CHAR;
-use crate::core::Finger::{self, *};
-use crate::core::{Col, LayoutConfig, Position, Row};
 use crate::message::Message;
 use crate::prelude::Commandable;
+use crate::util::layout::to_pretty;
 use crate::util::memory::{PAIRS, PLACES};
+use cmini_core::consts::FREE_CHAR;
+use cmini_core::Finger::{self, *};
+use cmini_core::{Col, LayoutConfig, Position, Row};
 use fxhash::{FxHashMap, FxHashSet};
 use rand::prelude::{SeedableRng, StdRng};
 use rand::Rng;
@@ -65,7 +66,7 @@ impl Commandable for Command {
             "ortho".to_owned(),
             keys,
         );
-        res.to_pretty(msg.id)
+        to_pretty(&res, msg.id)
     }
 
     fn usage<'a>(&self) -> &'a str {

@@ -1,7 +1,7 @@
-use crate::core::Position;
 use crate::util::memory::LAYOUTS;
 use crate::util::parser::get_pattern;
 use crate::{BoundedResponseVec, Commandable, Message};
+use cmini_core::Position;
 use itertools::Itertools;
 use rand::prelude::{SeedableRng, SliceRandom, StdRng};
 use regex::{Error as RegexError, Regex};

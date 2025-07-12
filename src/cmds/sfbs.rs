@@ -1,5 +1,5 @@
 use crate::{Commandable, Message};
-use crate::core::Metric;
+use cmini_core::Metric;
 
 pub struct Command;
 

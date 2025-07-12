@@ -1,7 +1,6 @@
 use once_cell::sync::Lazy;
 
 mod admins;
-mod analyzer;
 mod commandable;
 
 pub mod cache;
@@ -15,6 +14,7 @@ pub mod minigames;
 pub mod parser;
 pub mod restart;
 pub mod shell;
+pub mod authors;
 
 pub use commandable::Commandable;
 

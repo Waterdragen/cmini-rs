@@ -1,7 +1,7 @@
-use crate::core::KeyPat;
 use crate::util::corpora::{self, get_user_corpus_upper};
 use crate::util::parser::get_args;
 use crate::{Commandable, Message};
+use cmini_core::KeyPat;
 
 pub struct Command;
 
