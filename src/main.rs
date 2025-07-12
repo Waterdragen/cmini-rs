@@ -90,7 +90,7 @@ impl EventHandler for Handler {
         // Not cmini's first run?
         if let Some((message_id, channel_id)) = restart::try_get_channel_id() {
             if let Ok(msg) = channel_id.message(&ctx.http, message_id).await {
-                let _ = msg.reply_ping(&ctx.http, "Cmini sucessfully restarted!").await;
+                let _ = msg.reply_ping(&ctx.http, "Cmini successfully restarted!").await;
             }
         }
 
@@ -124,6 +124,7 @@ async fn main() -> Result<(), BotError> {
     validate_json();
 
     let args: Vec<String> = std::env::args().collect();
+    // FIXME: write a proper cmd line parser if more flags are used in the future
     let always_cache = args.iter().any(|s| s == "-y");
 
     tokio::spawn(daily_cron_job());
@@ -150,7 +151,7 @@ async fn main() -> Result<(), BotError> {
         }
     }
     match signal {
-        Signal::AdminRestart => Ok(()),
+        Signal::AdminRestart => Ok(()),  // shell script auto-restarts on OK
         Signal::ForceEnd => Err(BotError::CtrlC),
     }
 }

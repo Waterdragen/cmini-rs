@@ -17,7 +17,7 @@ pub enum PermissionError {
     #[error("Error: already an admin")]
     AddAlreadyAdmin,
     #[error("Error: invalid ID")]
-    AddNonAklAuthor,
+    NotAklAuthor,
     #[error("Error: owner cannot remove self")]
     OwnerRemoveSelf,
 }
@@ -42,12 +42,16 @@ pub struct BaseAdmins {
 impl Admins {
     #[track_caller]
     pub fn open(path: &str) -> Self {
-        let admins = read_json::<Self>(path);
+        let admins = read_json::<BaseAdmins>(path);
         {
-            let read = admins.0.read();
-            assert!(!read.admins.contains(&read.owner));
+            assert!(!admins.admins.contains(&admins.owner));
+            let authors = AUTHORS.read();
+            assert!(authors.get_name(admins.owner).is_some());
+            for &admin in admins.admins.iter() {
+                assert!(authors.get_name(admin).is_some());
+            }
         }
-        admins
+        Self(Arc::new(RwLock::new(admins)))
     }
     fn permission_of(&self, id: u64) -> Permission {
         let admins = self.0.read();
@@ -60,6 +64,10 @@ impl Admins {
         Permission::User
     }
     fn raw_try_add(&self, id: u64) -> Result<(), PermissionError> {
+        let authors = AUTHORS.read();
+        if authors.get_name(id).is_none() {
+            return Err(PermissionError::NotAklAuthor);
+        }
         let mut admins = self.0.write();
         if admins.admins.contains(&id) {
             return Err(PermissionError::AddAlreadyAdmin);
@@ -70,7 +78,7 @@ impl Admins {
     fn raw_try_remove(&self, id: u64) -> Result<(), PermissionError> {
         let authors = AUTHORS.read();
         if authors.get_name(id).is_none() {
-            return Err(PermissionError::AddNonAklAuthor);
+            return Err(PermissionError::NotAklAuthor);
         }
 
         let mut admins = self.0.write();
@@ -84,10 +92,6 @@ impl Admins {
     }
     pub fn contains(&self, id: u64) -> bool {
         matches!(self.permission_of(id), Permission::Admin | Permission::Owner)
-    }
-    pub fn count(&self) -> usize {
-        let admins = self.0.read();
-        admins.admins.len() + 1
     }
     pub fn add(&self, caller: u64, target: u64) -> Result<(), PermissionError> {
         match self.permission_of(caller) {
@@ -116,9 +120,9 @@ impl Admins {
         let authors = AUTHORS.read();
         let admins = self.0.read();
         let mut admin_names = admins.admins.iter()
-            .map(|id| authors.get_name(*id).unwrap().to_owned())
+            .map(|id| authors.get_name(*id).unwrap().to_owned())  // checked by open and raw_try_add
             .collect::<Vec<String>>();
-        admin_names.push(authors.get_name(admins.owner).unwrap().to_owned());
+        admin_names.push(authors.get_name(admins.owner).unwrap().to_owned());  // checked by open and raw_try_add
         Ok(admin_names)
     }
     pub fn owner_id(&self) -> u64 {

@@ -10,9 +10,10 @@ impl Commandable for Command {
         if layout_name.is_empty() || author.is_empty() {
             return self.help();
         }
-        if !LAYOUTS.contains(layout_name) {
+        let mut layout = LAYOUTS.raw_get_mut(layout_name);
+        let Some(layout) = layout.checked() else {
             return format!("Error: `{layout_name}` does not exist");
-        }
+        };
         let authors = AUTHORS.read();
 
         let author_id = match author.parse::<u64>() {
@@ -27,11 +28,8 @@ impl Commandable for Command {
             // Assign using name
             Err(_) => authors.get_id(author),
         };
-        {
-            let layout = &mut*LAYOUTS.get_mut(layout_name);  // always contains layout
-            layout.user = author_id;
-            format!("`{layout_name}` has been assigned to `{author}`")
-        }
+        layout.user = author_id;
+        format!("`{layout_name}` has been assigned to `{author}`")
     }
 
     fn usage<'a>(&self) -> &'a str {

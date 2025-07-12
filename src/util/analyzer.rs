@@ -1,5 +1,5 @@
 use crate::consts::TABLE;
-use crate::core::{ContainsMetric, Corpus, FingerCombo, FingerMap, FingerUsage, Key, Layout, LayoutConfig, Metric, MetricUnion, Stat};
+use crate::core::{ContainsMetric, Corpus, FingerCombo, FingerMap, FingerUsage, Key, Layout, LayoutConfig, Metric, MetricUnion, Position, Stat};
 use crate::core::keysolve::{KSBigramMetric, KSStat, KSTrigramMetric};
 use crate::core::metric_alias::SFS;
 
@@ -8,11 +8,7 @@ impl LayoutConfig {
         let mut usage = FingerMap::<u64>::default();
 
         for (gram, count) in monograms.iter() {
-            let gram = gram[0];
-            if !self.keys.contains_key(&gram) {
-                continue;
-            }
-            let finger = self.keys.get(&gram).unwrap().finger;
+            let Some(&Position{ finger, .. }) = self.keys.get(&gram[0]) else { continue };
             usage[finger] += count;
         }
         let total = usage.values().sum::<u64>() as f64;  // this total is zeroable
@@ -90,7 +86,7 @@ impl LayoutConfig {
     pub fn keysolve_stats(&self, trigrams: &Corpus<3>) -> KSStat<f64> {
         let mut stats = KSStat::<u64>::default();
         trigrams.iter()
-            .try_for_each(|([key0, key1, key2], freq)| {
+            .try_fold((), |_, ([key0, key1, key2], freq)| {
                 let [pos0, pos1, pos2] = [*self.keys.get(key0)?, *self.keys.get(key1)?, *self.keys.get(key2)?];
                 if let Some(metric) = KSBigramMetric::from_positions([pos0, pos1])
                     .or_else(|| KSBigramMetric::from_positions([pos1, pos2])) {

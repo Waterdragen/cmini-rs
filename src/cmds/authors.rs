@@ -17,8 +17,7 @@ impl Commandable for Command {
         let result: Result<(), ()> = author_names
             .iter()
             .try_for_each(|name| {
-            resp.push_str(name)?;
-            resp.push('\n')?;
+            resp.push_str(name).and_then(|_| resp.push('\n'))?;
             count += 1;
             Ok(())
         });

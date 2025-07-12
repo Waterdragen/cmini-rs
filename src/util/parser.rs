@@ -164,7 +164,7 @@ pub fn get_kwargs(s: &str, cmd_kwargs: &FxHashMap<String, KwargType>)
             continue;
         }
         let word = remove_kw_prefix(word);
-        let kw_type = *cmd_kwargs.get(&word).unwrap();
+        let kw_type = *cmd_kwargs.get(&word).unwrap();  // checked by is_kwarg() and is_kwargs: cmd_kwargs contains all words with -- prefix
 
         // Encountered next keyword, stops previous vec
         if in_vec {

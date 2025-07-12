@@ -1,4 +1,4 @@
-use crate::consts;
+use once_cell::sync::Lazy;
 
 mod admins;
 mod analyzer;
@@ -19,21 +19,20 @@ pub mod shell;
 pub use commandable::Commandable;
 
 pub fn validate_json() {
-    let count = memory::ADMINS.count();
-    assert_ne!(count, 0);
+    Lazy::force(&memory::ADMINS);
     let reader = memory::AUTHORS.read();
     assert!(!reader.is_empty());
     let reader = cache::CACHED_STATS.read();
     assert!(!reader.is_empty());
-    let reader = &corpora::CORPORA;
-    assert!(!reader.is_empty());
+    assert!(!corpora::CORPORA.is_empty());
     let reader=  corpora::CORPORA_PREFS.read();
     assert!(!reader.is_empty());
-    let _reader = &*consts::TABLE;  // Table is never empty
     let reader = links::LINKS.read();
     assert!(!reader.is_empty());
     let reader = memory::LAYOUTS.read();
     assert!(!reader.is_empty());
     let reader = memory::LIKES.read();
     assert!(!reader.is_empty());
+    assert!(!memory::PLACES.is_empty());
+    assert!(!memory::PAIRS.is_empty());
 }

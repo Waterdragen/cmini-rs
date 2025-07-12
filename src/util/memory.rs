@@ -13,6 +13,7 @@ use crate::util::admins::Admins;
 use rphonetic::{Encoder, MatchRatingApproach};
 use crate::util::cache;
 
+// Lazy statics are asserted by validate_json
 pub static AUTHORS: Lazy<Arc<RwLock<Authors>>> = Lazy::new(||
     Arc::new(RwLock::new(Authors::open("./authors.json").unwrap()))
 );

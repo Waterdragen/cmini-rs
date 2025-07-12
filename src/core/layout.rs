@@ -33,16 +33,28 @@ impl ServerLayouts {
         layouts_mut.insert(ll.name.clone(), ll);
         true
     }
-    pub fn get<'a>(&'a self, name: &'a str) -> Get<'a, LayoutConfig> {
+    /// # Panic on deref
+    /// - the layout name does not exist
+    #[track_caller]
+    pub fn raw_get<'a>(&'a self, name: &'a str) -> Get<'a, LayoutConfig> {
         Get(self.read(), Cow::Borrowed(name))
     }
-    pub fn get_mut<'a>(&'a self, name: &'a str) -> GetMut<'a, LayoutConfig> {
+    /// # Panic on deref
+    /// - the layout name does not exist
+    #[track_caller]
+    pub fn raw_get_mut<'a>(&'a self, name: &'a str) -> GetMut<'a, LayoutConfig> {
         GetMut(self.write(), Cow::Borrowed(name))
     }
+    /// # Panic on deref
+    /// - the layout name is empty
+    #[track_caller]
     pub fn find(&self, name: &str) -> Get<LayoutConfig> {
         let closest = self.best_match(name);
         Get(self.read(), Cow::Owned(closest))
     }
+    /// # Panic on deref
+    /// - the layout name is empty
+    #[track_caller]
     pub fn find_mut(&self, name: &str) -> GetMut<LayoutConfig> {
         let closest = self.best_match(name);
         GetMut(self.write(), Cow::Owned(closest))
@@ -57,13 +69,13 @@ impl ServerLayouts {
     pub fn remove_as_admin<'a>(&self, name: &'a str, id: u64, in_public_channel: bool) -> Result<LayoutConfig, RemoveError<'a>> {
         self.remove_impl(name, id, Some(in_public_channel))
     }
+    #[track_caller]
     fn remove_impl<'a>(&self, name: &'a str, id: u64, admin: Option<bool>) -> Result<LayoutConfig, RemoveError<'a>> {
         let user = {
             // Must drop or else deadlock
-            let ll = self.get(name);
-            match ll.checked() {
+            match self.raw_get(name).checked() {
                 None => return Err(RemoveError::NotFound(name)),
-                Some(_) => ll.user,
+                Some(ll) => ll.user,
             }
         };
         match (user == id, admin) {

@@ -1,30 +1,24 @@
 use crate::util::{memory, shell};
 use std::time::Duration;
-use std::io::Write;
-use tokio::time::interval;
+use time::{UtcDateTime, Time};
+use tokio::time::{sleep, interval};
 
-fn sync_data_github() -> std::io::Result<()> {
-    let outputs = [
-        shell::git_add_jsons()?,
-        shell::git_commit_sync_data()?,
-        shell::git_pull()?,
-        shell::git_push()?,
-    ];
-    for output in outputs {
-        std::io::stdout().write_all(&output.stdout)?;
-        std::io::stderr().write_all(&output.stderr)?;
-    }
-    Ok(())
+const ONE_DAY: Duration = Duration::from_secs(86400);
+
+async fn wait_until_utc_midnight() {
+    let now = UtcDateTime::now();
+    let dur_until_midnight = Duration::try_from(Time::MAX - now.time()).unwrap();  // Time::MAX - now is always non-negative, can safely cast back to StdDuration
+    sleep(dur_until_midnight).await;
 }
 
-pub async fn daily_cron_job() {
-    let mut interval = interval(Duration::from_secs(86400));
-    interval.tick().await;  // ticks immediately
+pub async fn daily_cron_job() -> ! {
+    wait_until_utc_midnight().await;
 
+    let mut interval = interval(ONE_DAY);
     loop {
         interval.tick().await;
         memory::sync_data_local();
-        let _ = sync_data_github();
+        let _ = shell::sync_github();
 
         // You may enable this code to get a message from the bot
 

@@ -77,7 +77,7 @@ impl Commandable for Command {
         }
 
         let name = ll.name.to_owned();
-        let mut new_ll = LAYOUTS.get_mut(&name);
+        let mut new_ll = LAYOUTS.raw_get_mut(&name);  // this name is from Layouts.find()
         *new_ll = ll;
         let header = new_ll.header();
         let matrix = new_ll.matrix_str();

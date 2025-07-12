@@ -12,7 +12,7 @@ pub struct Command;
 impl Commandable for Command {
     fn exec(&self, _: &Message) -> String {
         let mut rng = StdRng::from_entropy();
-        RESPONSES.choose(&mut rng).unwrap().to_string()
+        RESPONSES.choose(&mut rng).unwrap().to_string()  // choices are not empty
     }
 
     fn usage<'a>(&self) -> &'a str {

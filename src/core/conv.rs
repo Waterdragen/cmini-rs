@@ -103,13 +103,16 @@ mod pos {
         s
     }
 
-    #[track_caller]
     #[inline]
     pub fn unpack(packed_str: &str) -> Position {
+        impl_unpack(packed_str).unwrap()  // this function is only called by i/o, asserted by validate_json
+    }
+
+    fn impl_unpack(packed_str: &str) -> Option<Position> {
         let mut chars = packed_str.chars();
-        let row = chars.next().unwrap().to_digit(4).unwrap() as u8;
-        let col = chars.next().unwrap().to_digit(COL_RADIX).unwrap() as u8;
-        let finger = chars.next().unwrap().to_digit(10).unwrap() as u8;
-        Position::new(row, col, Finger::from_u8(finger))
+        let row = chars.next()?.to_digit(4)? as u8;
+        let col = chars.next()?.to_digit(COL_RADIX)? as u8;
+        let finger = chars.next()?.to_digit(10)? as u8;
+        Some(Position::new(row, col, Finger::from_u8(finger)))
     }
 }

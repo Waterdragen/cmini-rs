@@ -93,7 +93,7 @@ impl Commandable for Command {
                 let mut authors = AUTHORS.write();
                 authors.update(msg.id, &msg.author.name);
             }
-            format!("Success!\n{}", LAYOUTS.get(&name).to_pretty(msg.id))
+            format!("Success!\n{}", LAYOUTS.raw_get(&name).to_pretty(msg.id))  // raw_get: we just added the layout with that name
         } else {
             format!("Error: `{name}` already exists")
         }
