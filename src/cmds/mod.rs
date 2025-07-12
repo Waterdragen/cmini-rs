@@ -153,6 +153,7 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
 
 static OTHER_COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
     FxHashMap::from_iter([
+        ("1984", maintenance::Command.init()),
         ("maintenance", maintenance::Command.init()),
         ("question", question::Command.init()),
     ].into_iter().map(|(name, obj)| (name.to_string(), obj)))

@@ -90,7 +90,7 @@ impl EventHandler for Handler {
         // Not cmini's first run?
         if let Some((message_id, channel_id)) = restart::try_get_channel_id() {
             if let Ok(msg) = channel_id.message(&ctx.http, message_id).await {
-                let _ = msg.reply_ping(&ctx.http, "Cmini successfully restarted!").await;
+                let _ = msg.reply(&ctx.http, "Cmini successfully restarted!").await;
             }
         }
 

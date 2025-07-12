@@ -26,7 +26,7 @@ impl Command {
                     return "Maintenance mode disabled".to_owned();
                 }
                 "restart" => {
-                    let _ = msg.msg.reply_ping(&msg.context.http, "Cmini is restarting soon. Caching files...").await;
+                    let _ = msg.msg.reply(&msg.context.http, "Cmini is restarting soon. Caching files...").await;
                     active.store(true, Ordering::Relaxed);
                     if let Ok(output) = shell::git_pull() {
                         let _ = std::io::stdout().write_all(&output.stdout);
@@ -46,7 +46,7 @@ impl Command {
         }
         {
             let is_active = active.load(Ordering::Relaxed);
-            format!("Maintenance mode: {is_active}")
+            format!("Maintenance mode: {is_active}\n{}", self.help())
         }
     }
 }

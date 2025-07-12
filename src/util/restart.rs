@@ -24,5 +24,6 @@ pub fn try_get_channel_id() -> Option<(MessageId, ChannelId)> {
     let mut lines = reader.lines();
     let message_id = MessageId::new(lines.next()?.ok()?.parse::<u64>().ok()?);
     let channel_id = ChannelId::new(lines.next()?.ok()?.parse::<u64>().ok()?);
+    File::create(PATH).and_then(|file| file.set_len(0)).ok()?;  // clear cached ids
     Some((message_id, channel_id))
 }
