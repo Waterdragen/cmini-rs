@@ -62,7 +62,7 @@ impl Commandable for Command {
                 let (key0, key1) = (pat0.0, pat1.0);
                 let mut sum_str = format!(" {key0}{key1} + {key1}{key0} ");
                 let mut forward_str = format!("   {key0}{key1}    ");
-                let mut backward_str = format!("   {key1}{key1}    ");
+                let mut backward_str = format!("   {key1}{key0}    ");
                 for idx in 0..NGRAM_TYPES {
                     let total = totals[idx];
                     let sum = counter.sum(idx) as f64 * 100.0 / total;
