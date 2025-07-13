@@ -12,7 +12,7 @@ use cmini_rs::cmds;
 use cmini_rs::consts::TRIGGERS;
 use cmini_rs::cron_job::daily_cron_job;
 use cmini_rs::error::{BotError, Signal};
-use cmini_rs::message::BOT_CONTEXT;
+use cmini_rs::message::{BOT_CLIENT_HTTP, BOT_CONTEXT};
 use cmini_rs::prelude::*;
 use cmini_rs::util::memory::{self, ADMINS};
 use cmini_rs::util::restart::RESTART_FLAG;
@@ -61,7 +61,7 @@ impl EventHandler for Handler {
                 "Try `!cmini help`".to_owned()
             }
             "akl" => {
-                cmds::akl::Command.exec(&msg).await
+                cmds::akl::Command.exec().await
             }
             "maintenance" | "1984" => {
                 cmds::maintenance::Command.exec(&msg, &MAINTENANCE_FLAG).await
@@ -116,6 +116,7 @@ async fn start_discord_bot() {
         .event_handler(Handler)
         .await
         .expect("Error creating client");
+    let _ = BOT_CLIENT_HTTP.set(Arc::clone(&client.http));
 
     if let Err(err) = client.start_autosharded().await {
         println!("Client error: {:?}", err);

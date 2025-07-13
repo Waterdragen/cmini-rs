@@ -5,6 +5,7 @@ use crate::prelude::Commandable;
 use serenity::all::colours::roles::TEAL;
 use serenity::all::GuildId;
 use serenity::model::colour::Colour;
+use crate::message::BOT_CLIENT_HTTP;
 
 const LAYOUT_ROLE_COLOR: Colour = TEAL;
 const QWERTY: &str = "QWERTY";
@@ -13,14 +14,17 @@ const AKL_ID: GuildId = GuildId::new(807843650717483049);
 pub struct Command;
 
 impl Command {
-    pub async fn exec(&self, msg: &Message<'_>) -> String {
-        let Ok(members) = AKL_ID.members(&msg.context.http, None, None).await else {
+    pub async fn exec(&self) -> String {
+        let Some(http) = BOT_CLIENT_HTTP.get() else {
             return "Cannot find akl server".to_owned();
         };
-        let Some(guild) = msg.guild(msg.context.as_ref()) else {
-            return "Cannot find akl server".to_owned();
+        let Ok(members) = AKL_ID.members(&http, None, None).await else {
+            return "Cannot find akl members".to_owned();
         };
-        let mut layout_roles = guild.roles.iter()
+        let Ok(roles) = AKL_ID.roles(&http).await else {
+            return "Cannot find akl roles".to_owned();
+        };
+        let mut layout_roles = roles.iter()
             .filter_map(|(id, role)| {
                 (role.colour == LAYOUT_ROLE_COLOR || role.name == QWERTY)
                     .then_some((*id, RoleWrapper::new(&role.name)))
