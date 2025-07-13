@@ -23,8 +23,8 @@ impl Commandable for Command {
             })
             .collect::<FxHashMap<_, _>>();
         if !guild.members.is_empty() {
-            let count = guild.members.values().flat_map(|member| &member.roles).count();
-            return format!("There are {} total roles", count);
+            let count = guild.members.len();
+            return format!("There are {} total members", count);
         }
         guild.members.values()
             .flat_map(|member| &member.roles)
