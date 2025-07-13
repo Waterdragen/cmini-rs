@@ -3,18 +3,22 @@ use fxhash::FxHashMap;
 use crate::{BoundedResponse, Message};
 use crate::prelude::Commandable;
 use serenity::all::colours::roles::TEAL;
+use serenity::all::GuildId;
 use serenity::model::colour::Colour;
 
 const LAYOUT_ROLE_COLOR: Colour = TEAL;
 const QWERTY: &str = "QWERTY";
+const AKL_ID: GuildId = GuildId::new(807843650717483049);
 
 pub struct Command;
 
-impl Commandable for Command {
-    fn exec(&self, msg: &Message) -> String {
-        let guild = match msg.guild(msg.context.as_ref()) {
-            None => return "Cannot find akl server".to_owned(),
-            Some(guild) => guild,
+impl Command {
+    pub async fn exec(&self, msg: &Message<'_>) -> String {
+        let Ok(members) = AKL_ID.members(&msg.context.http, None, None).await else {
+            return "Cannot find akl server".to_owned();
+        };
+        let Some(guild) = msg.guild(msg.context.as_ref()) else {
+            return "Cannot find akl server".to_owned();
         };
         let mut layout_roles = guild.roles.iter()
             .filter_map(|(id, role)| {
@@ -22,11 +26,7 @@ impl Commandable for Command {
                     .then_some((*id, RoleWrapper::new(&role.name)))
             })
             .collect::<FxHashMap<_, _>>();
-        if !guild.members.is_empty() {
-            let count = guild.members.len();
-            return format!("There are {} total members", count);
-        }
-        guild.members.values()
+        members.iter()
             .flat_map(|member| &member.roles)
             .for_each(|id| {
                 if let Some(role) = layout_roles.get_mut(id) {
@@ -46,6 +46,12 @@ impl Commandable for Command {
         let mut output = output.finish();
         output.push_str("```");
         output
+    }
+}
+
+impl Commandable for Command {
+    fn exec(&self, _: &Message) -> String {
+        unimplemented!()
     }
 
     fn usage<'a>(&self) -> &'a str {

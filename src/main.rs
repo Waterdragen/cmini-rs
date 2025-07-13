@@ -60,6 +60,9 @@ impl EventHandler for Handler {
             "" => {
                 "Try `!cmini help`".to_owned()
             }
+            "akl" => {
+                cmds::akl::Command.exec(&msg).await
+            }
             "maintenance" | "1984" => {
                 cmds::maintenance::Command.exec(&msg, &MAINTENANCE_FLAG).await
             }

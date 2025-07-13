@@ -1,72 +1,72 @@
 mod _8ball;
 mod add;
 mod admin;
+pub mod akl;
+mod alt;
 mod alternates;
+mod angle;
+mod angle_mut;
 mod assign;
 mod authors;
 mod catball;
+mod compare;
 mod corpus;
+mod count;
+mod cycle;
+mod cycle_mut;
 mod dofball;
+mod examples;
+mod filter;
+mod fingers;
+mod fingermap;
+mod flip;
+mod freq;
+mod freqs;
+mod fspeed;
+mod freqd;
+mod gen;
 mod github;
+mod guess;
+mod homerow;
 mod help;
 mod inrolls;
 mod inrolltals;
 mod like;
 mod likes;
 mod link;
+mod list;
 pub mod maintenance;
+mod mirror;
+mod mirror_mut;
+mod modify;
+mod names;
 mod onehands;
 mod outrolltals;
+mod outrolls;
+mod pairings;
+mod pattern;
 pub mod question;
 mod random;
+mod rank;
 mod redirects;
 mod remove;
 mod rename;
 mod rolls;
 mod rolltals;
+mod search;
+mod setfingermap;
 mod sfbs;
 mod sfs;
+mod stats;
 mod suggest;
 mod unlike;
 mod unlink;
 mod view;
 mod wooperball;
 mod woopercat;
-mod angle;
-mod angle_mut;
-mod cycle;
-mod cycle_mut;
 mod unangle;
 mod unangle_mut;
-mod mirror;
-mod mirror_mut;
-mod fingers;
-mod freq;
-mod modify;
-mod flip;
-mod examples;
-mod homerow;
-mod rank;
-mod filter;
-mod search;
-mod compare;
-mod akl;
-mod alt;
-mod fingermap;
-mod list;
-mod gen;
 mod xkb;
-mod pairings;
-mod outrolls;
-mod setfingermap;
-mod names;
-mod pattern;
-mod stats;
-mod freqs;
-mod fspeed;
-mod freqd;
-mod guess;
-mod count;
 
 use crate::Commandable;
 use crate::util::memory::LAYOUTS;
@@ -81,7 +81,6 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
         ("8ball", _8ball::Command.init()),
         ("add", add::Command.init()),
         ("admin", admin::Command.init()),
-        ("akl", akl::Command.init()),
         ("alt", alt::Command.init()),
         ("alternates", alternates::Command.init()),
         ("angle", angle::Command.init()),
@@ -154,6 +153,7 @@ static COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
 static OTHER_COMMANDS: Lazy<FxHashMap<String, Box<dyn Commandable>>> = Lazy::new(|| {
     FxHashMap::from_iter([
         ("1984", maintenance::Command.init()),
+        ("akl", akl::Command.init()),
         ("maintenance", maintenance::Command.init()),
         ("question", question::Command.init()),
     ].into_iter().map(|(name, obj)| (name.to_string(), obj)))
