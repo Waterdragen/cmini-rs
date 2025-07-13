@@ -22,6 +22,9 @@ impl Commandable for Command {
                     .then_some((*id, RoleWrapper::new(&role.name)))
             })
             .collect::<FxHashMap<_, _>>();
+        if guild.members.is_empty() {
+            return format!("There are {} members in the guild, cannot get member information", guild.member_count);
+        }
         guild.members.values()
             .flat_map(|member| &member.roles)
             .for_each(|id| {
