@@ -4,6 +4,7 @@ use crate::{BoundedResponse, Message};
 use crate::prelude::Commandable;
 use serenity::all::colours::roles::TEAL;
 use serenity::all::GuildId;
+use serenity::futures::StreamExt;
 use serenity::model::colour::Colour;
 use crate::message::BOT_CLIENT_HTTP;
 
@@ -18,9 +19,10 @@ impl Command {
         let Some(http) = BOT_CLIENT_HTTP.get() else {
             return "Cannot find akl server".to_owned();
         };
-        let Ok(members) = AKL_ID.members(&http, None, None).await else {
-            return "Cannot find akl members".to_owned();
-        };
+        let mut members = AKL_ID.members_iter(&http).boxed();
+        // let Ok(members) = AKL_ID.members_iter(&http) else {
+        //     return "Cannot find akl members".to_owned();
+        // };
         let Ok(roles) = AKL_ID.roles(&http).await else {
             return "Cannot find akl roles".to_owned();
         };
@@ -30,13 +32,14 @@ impl Command {
                     .then_some((*id, RoleWrapper::new(&role.name)))
             })
             .collect::<FxHashMap<_, _>>();
-        members.iter()
-            .flat_map(|member| &member.roles)
-            .for_each(|id| {
+        while let Some(member) = members.next().await {
+            let Ok(member) = member else { return "Cannot find akl members".to_owned() };
+            for id in member.roles.iter() {
                 if let Some(role) = layout_roles.get_mut(id) {
                     role.counter += 1;
                 }
-            });
+            }
+        }
         let mut layout_roles = layout_roles.into_values().collect::<Vec<_>>();
         layout_roles.sort_unstable_by_key(|role| Reverse(role.counter));
 
