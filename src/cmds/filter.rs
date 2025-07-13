@@ -9,7 +9,7 @@ use crate::util::parser::{get_kwargs, KwargType as KT};
 use crate::{Commandable, Lazy, Message};
 use cmini_core::finger_alias::FINGER_NAMES;
 use cmini_core::metric_alias::METRIC_NAMES;
-use cmini_core::FingerUnion;
+use cmini_core::{ContainsMetric, FingerUnion, Metric};
 use fxhash::FxHashMap;
 use rand::prelude::{SeedableRng, SliceRandom, StdRng};
 use std::borrow::ToOwned;
@@ -71,8 +71,14 @@ impl Commandable for Command {
         }
         let filter_stats = match METRIC_NAMES.iter()
             .filter_map(|(name, metric_union)| {
-                Some(compare_with_str(kwargs.get(name)?.unwrap_str()?)  // Propagate unsupported/unused metrics
-                    .map(|comparator| (*metric_union, comparator)))
+                let res = compare_with_str(kwargs.get(name)?.unwrap_str()?)
+                    .map(|mut comparator| {
+                        if metric_union.contains(Metric::Sfb) {
+                            comparator.value *= 2.0;  // Comparator multipied by 2 is target value divided by 2
+                        }
+                        (*metric_union, comparator)
+                    });
+                Some(res)
             })
             .collect::<Result<Vec<_>, _>>() {
             Ok(filter_stats) => filter_stats,
