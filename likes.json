@@ -2,7 +2,9 @@
   "but": [
     1150484529157509221
   ],
-  "snth-wuv": [],
+  "qwerty-vertical": [
+    621924065581465611
+  ],
   "brass": [
     736739510251028480
   ],
@@ -68,8 +70,12 @@
     213706767031468033
   ],
   "racket-fspeed": [],
-  "chogtest7": [],
-  "peekaboo": [],
+  "inrolly": [
+    328195824238723072
+  ],
+  "onehanded-layout-where-the-right-hand-is-the-second-layer-mirrored": [
+    335456391617839106
+  ],
   "canary": [
     250635497141960705,
     805982808878350366,
@@ -114,12 +120,8 @@
     805982808878350366,
     328195824238723072
   ],
-  "inrolly": [
-    328195824238723072
-  ],
-  "onehanded-layout-where-the-right-hand-is-the-second-layer-mirrored": [
-    335456391617839106
-  ],
+  "chogtest7": [],
+  "peekaboo": [],
   "indra-dw": [
     805982808878350366
   ],
@@ -2881,6 +2883,7 @@
   "south": [
     695273206096855050
   ],
+  "snth-wuv": [],
   "neo": [
     665569828433821697
   ],
@@ -2890,8 +2893,5 @@
   ],
   "hieamtsrn": [
     1045224657596457063
-  ],
-  "qwerty-vertical": [
-    621924065581465611
   ]
 }
