@@ -56,3 +56,6 @@ features = ["cache", "client", "gateway", "model", "rustls_backend"]
 
 [dependencies.cmini_core]
 path = "./src/cmini_core"
+
+[dependencies.cmini_img]
+path = "./src/cmini_img"
